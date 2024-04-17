@@ -4,8 +4,8 @@
 #include <memory>
 #include <sstream>
 #include <string>
-#include <vector>
 
+#include "input/input.h"
 #include "token.h"
 
 namespace tinyc {
@@ -13,7 +13,7 @@ namespace tinyc {
 // Advance `input` until it reach to non-whitespace character, or advance to end
 // if `input` has only whitespaces.
 void skip_whitespaces(Input& input) {
-    while (!input.empty()) {
+    while (!input.eoi()) {
         if (std::isspace(input.ch())) {
             input.advance();
         } else {
@@ -28,7 +28,7 @@ std::shared_ptr<Token> token(Input& input) {
     auto start = input.pos();
     if (input.ch() == '&') {
         input.advance();
-        if (!input.empty() && input.ch() == '&') {
+        if (!input.eoi() && input.ch() == '&') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::And,
@@ -40,7 +40,7 @@ std::shared_ptr<Token> token(Input& input) {
         }
     } else if (input.ch() == '|') {
         input.advance();
-        if (!input.empty() && input.ch() == '|') {
+        if (!input.eoi() && input.ch() == '|') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::Or,
@@ -56,7 +56,7 @@ std::shared_ptr<Token> token(Input& input) {
         return std::make_shared<SymbolToken>(TokenKind::Hat, Span(start, end));
     } else if (input.ch() == '=') {
         input.advance();
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::EQ,
@@ -66,7 +66,7 @@ std::shared_ptr<Token> token(Input& input) {
         }
     } else if (input.ch() == '!') {
         input.advance();
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::EQ,
@@ -76,12 +76,12 @@ std::shared_ptr<Token> token(Input& input) {
         }
     } else if (input.ch() == '<') {
         input.advance();
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::LE,
                                                  Span(start, end));
-        } else if (!input.empty() && input.ch() == '<') {
+        } else if (!input.eoi() && input.ch() == '<') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::LShift,
@@ -93,12 +93,12 @@ std::shared_ptr<Token> token(Input& input) {
         }
     } else if (input.ch() == '>') {
         input.advance();
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::GE,
                                                  Span(start, end));
-        } else if (!input.empty() && input.ch() == '>') {
+        } else if (!input.eoi() && input.ch() == '>') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::RShift,
@@ -148,7 +148,7 @@ std::shared_ptr<Token> token(Input& input) {
                                              Span(start, end));
     } else if (std::isdigit(input.ch())) {
         std::string buf;
-        while (!input.empty()) {
+        while (!input.eoi()) {
             if (std::isdigit(input.ch())) {
                 buf.push_back(input.ch());
                 input.advance();
@@ -162,7 +162,7 @@ std::shared_ptr<Token> token(Input& input) {
                                                        value, Span(start, end));
     } else if (std::isalpha(input.ch())) {
         std::string buf;
-        while (!input.empty()) {
+        while (!input.eoi()) {
             if (std::isalnum(input.ch()) || input.ch() == '_') {
                 buf.push_back(input.ch());
                 input.advance();
@@ -185,7 +185,7 @@ std::shared_ptr<Token> token(Input& input) {
 TokenStream lex(Input& input, std::vector<LexError>& es) {
     std::vector<std::shared_ptr<Token>> ts;
     skip_whitespaces(input);
-    while (!input.empty()) {
+    while (!input.eoi()) {
         try {
             ts.push_back(token(input));
         } catch (LexError e) {

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-#include "input.h"
+#include "input/input.h"
 #include "lexer.h"
 #include "span.h"
 

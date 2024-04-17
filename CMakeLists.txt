@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 project(tinyc CXX)
 
-file(GLOB SOURCES "src/*.cpp")
-
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME})
+target_sources(${PROJECT_NAME} PRIVATE
+    src/main.cpp
+    src/token.cpp
+    src/lexer.cpp
+)

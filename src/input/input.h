@@ -21,7 +21,7 @@ public:
 
     // Returns current peeking character of this input.
     // It's undefined behavior to call this when `empty()` returns true.
-    inline char ch() const { return empty() ? '\0' : lines_[row_][offset_]; }
+    inline char ch() const { return eoi() ? '\0' : lines_[row_][offset_]; }
 
     // Returns pair of current peeking character's row and offset.
     inline std::pair<int, int> pos() const { return {row_, offset_}; }
@@ -33,12 +33,12 @@ public:
     inline int offset() const { return offset_; }
 
     // Returns true if no character remain in this input.
-    inline bool empty() const { return row_ >= lines_.size(); }
+    inline bool eoi() const { return row_ >= lines_.size(); }
 
     // Advance the position in this input.
     // Nothing happen if `empty()` returns true.
     inline void advance() {
-        if (empty()) {
+        if (eoi()) {
             return;
         }
         offset_++;
@@ -48,6 +48,12 @@ public:
             offset_ = 0;
             row_++;
         }
+    }
+
+    // Reset position and go back to start.
+    inline void reset() {
+        row_ = 0;
+        offset_ = 0;
     }
 
 private:

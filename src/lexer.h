@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-#include "input.h"
+#include "input/input.h"
 #include "span.h"
 #include "token.h"
 
