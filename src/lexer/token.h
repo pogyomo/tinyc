@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "../input/cache.h"
 #include "../span.h"
 
 namespace tinyc {

@@ -78,7 +78,7 @@ public:
     }
 
     inline Span span() const override {
-        return Span(op_.span().start(), expr_->span().end());
+        return Span(op_.span().start(), expr_->span().end(), op_.span().id());
     }
 
     inline std::string debug() const override {
@@ -165,7 +165,7 @@ public:
     }
 
     inline Span span() const override {
-        return Span(lhs_->span().start(), rhs_->span().end());
+        return Span(lhs_->span().start(), rhs_->span().end(), op_.span().id());
     }
 
     inline std::string debug() const override {
@@ -223,7 +223,7 @@ public:
     }
 
     inline Span span() const override {
-        return Span(expr_->span().start(), op_.span().end());
+        return Span(expr_->span().start(), op_.span().end(), op_.span().id());
     }
 
     inline std::string debug() const override {
@@ -311,7 +311,8 @@ public:
     }
 
     inline Span span() const override {
-        return Span(expr_->span().start(), field_.span().end());
+        return Span(expr_->span().start(), field_.span().end(),
+                    op_.span().id());
     }
 
     inline std::string debug() const override {
@@ -370,7 +371,8 @@ public:
     }
 
     inline Span span() const override {
-        return Span(expr_->span().start(), rsquare_.span().end());
+        return Span(expr_->span().start(), rsquare_.span().end(),
+                    rsquare_.span().id());
     }
 
     inline std::string debug() const override {
@@ -433,7 +435,8 @@ public:
     }
 
     inline Span span() const override {
-        return Span(expr_->span().start(), rparen_.span().end());
+        return Span(expr_->span().start(), rparen_.span().end(),
+                    rparen_.span().id());
     }
 
     std::string debug() const override {
@@ -503,7 +506,8 @@ public:
     };
 
     inline Span span() const override {
-        return Span(cond_->span().start(), otherwise_->span().end());
+        return Span(cond_->span().start(), otherwise_->span().end(),
+                    cond_->span().id());
     }
 
     inline std::string debug() const override {

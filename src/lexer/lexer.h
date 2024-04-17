@@ -3,8 +3,10 @@
 
 #include <exception>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
+#include "../input/cache.h"
 #include "../input/input.h"
 #include "../span.h"
 #include "token.h"
@@ -12,19 +14,16 @@
 namespace tinyc {
 
 // A class represent an error happen during lexing.
-class LexError : public std::exception {
+class LexError : public std::runtime_error {
 public:
     // Construct a new `LexError` with message and its span.
-    LexError(const std::string& msg, Span span) : msg_(msg), span_(span) {}
-
-    // Returns error message.
-    const std::string& msg() const { return msg_; }
+    LexError(const std::string& msg, Span span)
+        : std::runtime_error(msg), span_(span) {}
 
     // Returns span where this error happen.
     const Span& span() const { return span_; }
 
 private:
-    std::string msg_;
     Span span_;
 };
 
@@ -48,7 +47,7 @@ public:
     inline const std::shared_ptr<Token>& token() const { return ts_[pos_]; }
 
     // Returns last token in token stream.
-    // It's undefined behavior to call this when `eos()` returns true.
+    // It's undefined behavior to call this when `empty()` returns true.
     inline const std::shared_ptr<Token>& last() { return ts_.back(); }
 
     // Returns current state.
@@ -84,9 +83,10 @@ private:
     const std::vector<std::shared_ptr<Token>> ts_;
 };
 
-// Convert given input into token stream.
+// Convert input associated with id into token stream.
 // Errors happen during lexing is stored into `errors`.
-TokenStream lex(Input& input, std::vector<LexError>& es);
+TokenStream lex(InputCache& cache, InputCache::cacheid_t id,
+                std::vector<LexError>& es);
 
 }  // namespace tinyc
 

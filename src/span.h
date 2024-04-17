@@ -3,14 +3,22 @@
 
 #include <utility>
 
+#include "input/cache.h"
+
 namespace tinyc {
 
+// A class represent a range of source code.
+// Span(start, end) correspond to the range [start, end) of source code.
 class Span {
 public:
-    Span(int start_row, int start_offset, int end_row, int end_offset)
-        : start_({start_row, start_offset}), end_({end_row, end_offset}) {}
-    Span(std::pair<int, int> start, std::pair<int, int> end)
-        : start_(start), end_(end) {}
+    Span(int start_row, int start_offset, int end_row, int end_offset,
+         InputCache::cacheid_t id)
+        : start_({start_row, start_offset}),
+          end_({end_row, end_offset}),
+          id_(id) {}
+    Span(std::pair<int, int> start, std::pair<int, int> end,
+         InputCache::cacheid_t id)
+        : start_(start), end_(end), id_(id) {}
 
     // Returns pair of start row and offset of this span.
     inline std::pair<int, int> start() const { return start_; }
@@ -30,9 +38,13 @@ public:
     // Returns end offset of this span.
     inline int end_offset() const { return end_.second; }
 
+    // Returns cached input id which this span is associated.
+    inline InputCache::cacheid_t id() const { return id_; }
+
 private:
     const std::pair<int, int> start_;
     const std::pair<int, int> end_;
+    const InputCache::cacheid_t id_;
 };
 
 }  // namespace tinyc

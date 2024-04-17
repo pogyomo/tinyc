@@ -23,8 +23,8 @@ public:
     // Create `Input` from given input stream and return unique id for it.
     cacheid_t cache(std::istream& is, const std::string& name) {
         Input input(is);
-        inputs_.push_back({input, name});
         cacheid_t id = inputs_.size();
+        inputs_.push_back({input, name});
         name_to_id_[name] = id;
         return id;
     }
