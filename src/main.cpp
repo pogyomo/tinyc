@@ -4,7 +4,7 @@
 
 #include "input/cache.h"
 #include "lexer/lexer.h"
-#include "report.h"
+#include "report/report.h"
 #include "span.h"
 
 int main(int argc, char *argv[]) {
@@ -13,16 +13,16 @@ int main(int argc, char *argv[]) {
     }
 
     tinyc::InputCache cache;
-    std::ifstream ifs(argv[1]);
-
     tinyc::ErrorReport report(cache);
 
+    std::ifstream ifs(argv[1]);
     auto id = cache.cache(ifs, argv[1]);
+
     std::vector<tinyc::LexError> es;
     auto ts = tinyc::lex(cache, id, es);
     if (!es.empty()) {
         for (auto e : es) {
-            report.report(e.what(), e.span());
+            report.error(e.what(), e.span());
         }
         return 0;
     }
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
         auto [start_row, start_offset] = ts.token()->span().start();
         auto [end_row, end_offset] = ts.token()->span().end();
         std::cout << start_row << ":" << start_offset << ":" << end_row << ":"
-                  << end_offset << ":" << ts.token()->debug() << std::endl;
+                  << end_offset << ": " << ts.token()->debug() << std::endl;
         ts.advance();
     }
 }

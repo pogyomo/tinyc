@@ -2,6 +2,7 @@
 #define TINYC_INPUT_INPUT_H_
 
 #include <istream>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,31 +15,26 @@ public:
     // Construct a new `Input` from given `is` input stream.
     Input(std::istream& is) : row_(0), offset_(0) {
         std::string line;
-        int row = 0;
         while (std::getline(is, line, '\n')) {
-            if (!line.empty()) {
-                lines_.push_back({row, line});
-            }
-            row++;
+            lines_.push_back(line);
         }
     }
 
     // Returns current peeking character of this input.
     // It's undefined behavior to call this when `empty()` returns true.
-    inline char ch() const {
-        return eoi() ? '\0' : lines_[row_].second[offset_];
-    }
+    inline char ch() const { return eoi() ? '\0' : lines_[row_][offset_]; }
 
     // Returns pair of current peeking character's row and offset.
-    inline std::pair<int, int> pos() const {
-        return {lines_[row_].first, offset_};
-    }
+    inline std::pair<int, int> pos() const { return {row_, offset_}; }
 
     // Returns current peeking character's row in this input.
-    inline int row() const { return lines_[row_].first; }
+    inline int row() const { return row_; }
 
     // Returns current peeking character's offset in this input.
     inline int offset() const { return offset_; }
+
+    // Returns line correspond to given row.
+    inline const std::string& line(int row) { return lines_[row]; }
 
     // Returns true if no character remain in this input.
     inline bool eoi() const { return row_ >= lines_.size(); }
@@ -50,7 +46,9 @@ public:
             return;
         }
         offset_++;
-        if (offset_ >= lines_[row_].second.size()) {
+
+        // Skip empty lines.
+        while (row_ < lines_.size() && offset_ >= lines_[row_].size()) {
             offset_ = 0;
             row_++;
         }
@@ -65,7 +63,7 @@ public:
 private:
     int row_;
     int offset_;
-    std::vector<std::pair<int, std::string>> lines_;
+    std::vector<std::string> lines_;
 };
 
 }  // namespace tinyc

@@ -8,7 +8,8 @@
 namespace tinyc {
 
 // A class represent a range of source code.
-// Span(start, end) correspond to the range [start, end) of source code.
+// The range this class represent is inclusive: Span(start, end, id) represent
+// range of [start, end].
 class Span {
 public:
     Span(int start_row, int start_offset, int end_row, int end_offset,
@@ -16,6 +17,7 @@ public:
         : start_({start_row, start_offset}),
           end_({end_row, end_offset}),
           id_(id) {}
+
     Span(std::pair<int, int> start, std::pair<int, int> end,
          InputCache::cacheid_t id)
         : start_(start), end_(end), id_(id) {}
