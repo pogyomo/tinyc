@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "span.h"
+#include "../span.h"
 
 namespace tinyc {
 
@@ -497,6 +497,21 @@ public:
 
     // Returns otherwise in `cond ? then : otherwise`.
     const std::shared_ptr<Expression>& otherwise() const { return otherwise_; }
+
+    inline ExpressionKind kind() const override {
+        return ExpressionKind::Conditional;
+    };
+
+    inline Span span() const override {
+        return Span(cond_->span().start(), otherwise_->span().end());
+    }
+
+    inline std::string debug() const override {
+        auto cond = cond_->debug();
+        auto then = then_->debug();
+        auto otherwise = otherwise_->debug();
+        return "(" + cond + " ? " + then + " : " + otherwise + ")";
+    }
 
 private:
     const std::shared_ptr<Expression> cond_;

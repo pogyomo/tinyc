@@ -2,9 +2,9 @@
 
 #include <memory>
 
+#include "../lexer/lexer.h"
+#include "../lexer/token.h"
 #include "expr.h"
-#include "lexer.h"
-#include "token.h"
 
 // TODO: complete implementation
 
@@ -113,5 +113,9 @@ std::shared_ptr<Expression> parse_cond_expr(TokenStream& ts) {
     return std::make_shared<ConditionalExpression>(cond, then, otherwise,
                                                    exclamation, colon);
 }
+
+std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) { return NULL; }
+
+std::shared_ptr<Expression> parse_logical_or(TokenStream& ts) { return NULL; }
 
 }  // namespace tinyc

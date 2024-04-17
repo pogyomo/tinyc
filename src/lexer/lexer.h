@@ -5,8 +5,8 @@
 #include <memory>
 #include <vector>
 
-#include "input/input.h"
-#include "span.h"
+#include "../input/input.h"
+#include "../span.h"
 #include "token.h"
 
 namespace tinyc {

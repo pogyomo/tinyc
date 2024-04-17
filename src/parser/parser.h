@@ -4,7 +4,7 @@
 #include <exception>
 #include <vector>
 
-#include "lexer.h"
+#include "../lexer/lexer.h"
 
 namespace tinyc {
 

@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-#include "input/input.h"
+#include "../input/input.h"
 #include "token.h"
 
 namespace tinyc {

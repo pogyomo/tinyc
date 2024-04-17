@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "span.h"
+#include "../span.h"
 
 namespace tinyc {
 

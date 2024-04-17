@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "input/input.h"
-#include "lexer.h"
+#include "lexer/lexer.h"
 #include "span.h"
 
 int main(int argc, char *argv[]) {
