@@ -1,5 +1,5 @@
-#ifndef TINYC_EXPR_H_
-#define TINYC_EXPR_H_
+#ifndef TINYC_PARSER_EXPR_H_
+#define TINYC_PARSER_EXPR_H_
 
 #include <memory>
 #include <sstream>
@@ -576,4 +576,4 @@ private:
 
 }  // namespace tinyc
 
-#endif  // TINYC_EXPR_H_
+#endif  // TINYC_PARSER_EXPR_H_

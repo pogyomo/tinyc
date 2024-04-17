@@ -1,5 +1,5 @@
-#ifndef TINYC_PARSER_H_
-#define TINYC_PARSER_H_
+#ifndef TINYC_PARSER_PARSER_H_
+#define TINYC_PARSER_PARSER_H_
 
 #include <exception>
 #include <vector>
@@ -27,4 +27,4 @@ Program parse(TokenStream& ts, std::vector<ParseError>& es);
 
 }  // namespace tinyc
 
-#endif
+#endif  // TINYC_PARSER_PARSER_H_

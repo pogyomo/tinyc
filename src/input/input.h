@@ -1,5 +1,5 @@
-#ifndef TINYC_INPUT_H_
-#define TINYC_INPUT_H_
+#ifndef TINYC_INPUT_INPUT_H_
+#define TINYC_INPUT_INPUT_H_
 
 #include <istream>
 #include <string>
@@ -64,4 +64,4 @@ private:
 
 }  // namespace tinyc
 
-#endif  // TINYC_INPUT_H_
+#endif  // TINYC_INPUT_INPUT_H_

@@ -1,5 +1,5 @@
-#ifndef TINYC_TOKEN_H_
-#define TINYC_TOKEN_H_
+#ifndef TINYC_LEXER_TOKEN_H_
+#define TINYC_LEXER_TOKEN_H_
 
 #include <string>
 
@@ -93,4 +93,4 @@ private:
 
 }  // namespace tinyc
 
-#endif  // TINYC_TOKEN_H_
+#endif  // TINYC_LEXER_TOKEN_H_

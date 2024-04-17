@@ -1,5 +1,5 @@
-#ifndef TINYC_LEXER_H_
-#define TINYC_LEXER_H_
+#ifndef TINYC_LEXER_LEXER_H_
+#define TINYC_LEXER_LEXER_H_
 
 #include <exception>
 #include <memory>
@@ -90,4 +90,4 @@ TokenStream lex(Input& input, std::vector<LexError>& es);
 
 }  // namespace tinyc
 
-#endif  // TINYC_LEXER_H_
+#endif  // TINYC_LEXER_LEXER_H_
