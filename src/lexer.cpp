@@ -33,7 +33,7 @@ std::shared_ptr<Token> token(Input& input) {
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::And,
                                                  Span(start, end));
-        } else if (!input.empty() && input.ch() == '=') {
+        } else if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::AndAssign,
@@ -50,7 +50,7 @@ std::shared_ptr<Token> token(Input& input) {
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::Or,
                                                  Span(start, end));
-        } else if (!input.empty() && input.ch() == '=') {
+        } else if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::OrAssign,
@@ -61,7 +61,7 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '^') {
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::XorAssign,
@@ -105,7 +105,7 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         } else if (!input.eoi() && input.ch() == '<') {
             input.advance();
-            if (!input.empty() && input.ch() == '=') {
+            if (!input.eoi() && input.ch() == '=') {
                 input.advance();
                 auto end = input.pos();
                 return std::make_shared<SymbolToken>(TokenKind::LShiftAssign,
@@ -129,7 +129,7 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         } else if (!input.eoi() && input.ch() == '>') {
             input.advance();
-            if (!input.empty() && input.ch() == '=') {
+            if (!input.eoi() && input.ch() == '=') {
                 input.advance();
                 auto end = input.pos();
                 return std::make_shared<SymbolToken>(TokenKind::RShiftAssign,
@@ -145,12 +145,12 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '+') {
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::AddAssign,
                                                  Span(start, end));
-        } else if (!input.empty() && input.ch() == '+') {
+        } else if (!input.eoi() && input.ch() == '+') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::PlusPlus,
@@ -162,12 +162,12 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '-') {
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::SubAssign,
                                                  Span(start, end));
-        } else if (!input.empty() && input.ch() == '-') {
+        } else if (!input.eoi() && input.ch() == '-') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::MinusMinus,
@@ -179,7 +179,7 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '*') {
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::MulAssign,
@@ -191,7 +191,7 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '/') {
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::DivAssign,
@@ -203,7 +203,7 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '%') {
-        if (!input.empty() && input.ch() == '=') {
+        if (!input.eoi() && input.ch() == '=') {
             input.advance();
             auto end = input.pos();
             return std::make_shared<SymbolToken>(TokenKind::ModAssign,
