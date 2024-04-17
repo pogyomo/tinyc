@@ -54,4 +54,4 @@ TokenStream lex(Input& input);
 
 }  // namespace tinyc
 
-#endif
+#endif  // TINYC_LEXER_H_

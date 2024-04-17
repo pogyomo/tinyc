@@ -58,4 +58,4 @@ private:
 
 }  // namespace tinyc
 
-#endif
+#endif  // TINYC_INPUT_H_
