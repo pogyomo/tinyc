@@ -32,6 +32,8 @@ private:
 // sequence and can advance/retrest it.
 class TokenStream {
 public:
+    using state_t = int;
+
     // Construct a new empty `TokenStream`.
     TokenStream() : pos_(0), ts_() {}
 
@@ -41,13 +43,24 @@ public:
         : pos_(0), ts_(ts) {}
 
     // Returns current peeking token in this stream.
-    // It's undefined behavior to call this when `empty()` returns true.
+    // It's undefined behavior to call this when `empty()` or `eos()` returns
+    // true.
     inline const std::shared_ptr<Token>& token() const { return ts_[pos_]; }
+
+    // Returns last token in token stream.
+    // It's undefined behavior to call this when `eos()` returns true.
+    inline const std::shared_ptr<Token>& last() { return ts_.back(); }
+
+    // Returns current state.
+    inline state_t state() const { return pos_; }
+
+    // Set given state to this stream.
+    inline void set_state(state_t state) { pos_ = state; }
 
     // Advance the position in this stream.
     // If `empty()` returns true, nothing happen and has no effect.
     inline void advance() {
-        if (!empty()) {
+        if (!eos()) {
             pos_++;
         }
     }
@@ -61,7 +74,10 @@ public:
     }
 
     // Returns true if no token available from this stream.
-    inline bool empty() { return pos_ >= ts_.size(); }
+    inline bool eos() { return pos_ >= ts_.size(); }
+
+    // Returns true if no token is exist in this stream.
+    inline bool empty() { return ts_.empty(); }
 
 private:
     int pos_;
