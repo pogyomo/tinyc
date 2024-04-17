@@ -3,8 +3,8 @@
 #include <cctype>
 #include <memory>
 #include <sstream>
-#include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "token.h"
 
@@ -25,9 +25,8 @@ void skip_whitespaces(Input& input) {
 // Extract a toke from non-empty `input`.
 // It's undefined behavior to call this when `input` is empty.
 std::shared_ptr<Token> token(Input& input) {
-    // TODO: returns error with span.
+    auto start = input.pos();
     if (input.ch() == '&') {
-        auto start = input.pos();
         input.advance();
         if (!input.empty() && input.ch() == '&') {
             input.advance();
@@ -40,7 +39,6 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '|') {
-        auto start = input.pos();
         input.advance();
         if (!input.empty() && input.ch() == '|') {
             input.advance();
@@ -53,12 +51,10 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '^') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::Hat, Span(start, end));
     } else if (input.ch() == '=') {
-        auto start = input.pos();
         input.advance();
         if (!input.empty() && input.ch() == '=') {
             input.advance();
@@ -69,7 +65,6 @@ std::shared_ptr<Token> token(Input& input) {
             throw std::runtime_error("expected = after =");
         }
     } else if (input.ch() == '!') {
-        auto start = input.pos();
         input.advance();
         if (!input.empty() && input.ch() == '=') {
             input.advance();
@@ -80,7 +75,6 @@ std::shared_ptr<Token> token(Input& input) {
             throw std::runtime_error("expected = after !");
         }
     } else if (input.ch() == '<') {
-        auto start = input.pos();
         input.advance();
         if (!input.empty() && input.ch() == '=') {
             input.advance();
@@ -98,7 +92,6 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '>') {
-        auto start = input.pos();
         input.advance();
         if (!input.empty() && input.ch() == '=') {
             input.advance();
@@ -116,54 +109,45 @@ std::shared_ptr<Token> token(Input& input) {
                                                  Span(start, end));
         }
     } else if (input.ch() == '+') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::Plus, Span(start, end));
     } else if (input.ch() == '-') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::Minus,
                                              Span(start, end));
     } else if (input.ch() == '*') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::Star, Span(start, end));
     } else if (input.ch() == '/') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::Slash,
                                              Span(start, end));
     } else if (input.ch() == '%') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::Percent,
                                              Span(start, end));
     } else if (input.ch() == '(') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::LParen,
                                              Span(start, end));
     } else if (input.ch() == ')') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::RParen,
                                              Span(start, end));
     } else if (input.ch() == ';') {
-        auto start = input.pos();
         input.advance();
         auto end = input.pos();
         return std::make_shared<SymbolToken>(TokenKind::Semicolon,
                                              Span(start, end));
     } else if (std::isdigit(input.ch())) {
         std::string buf;
-        auto start = input.pos();
         while (!input.empty()) {
             if (std::isdigit(input.ch())) {
                 buf.push_back(input.ch());
@@ -178,7 +162,6 @@ std::shared_ptr<Token> token(Input& input) {
                                                        value, Span(start, end));
     } else if (std::isalpha(input.ch())) {
         std::string buf;
-        auto start = input.pos();
         while (!input.empty()) {
             if (std::isalnum(input.ch()) || input.ch() == '_') {
                 buf.push_back(input.ch());
@@ -192,16 +175,22 @@ std::shared_ptr<Token> token(Input& input) {
                                                          buf, Span(start, end));
     } else {
         std::stringstream ss;
-        ss << "unexpected character '" << (int)input.ch() << "' found";
-        throw std::runtime_error(ss.str());
+        ss << "unexpected character '" << input.ch() << "' found";
+        input.advance();
+        auto end = input.pos();
+        throw LexError(ss.str(), Span(start, end));
     }
 }
 
-TokenStream lex(Input& input) {
+TokenStream lex(Input& input, std::vector<LexError>& es) {
     std::vector<std::shared_ptr<Token>> ts;
     skip_whitespaces(input);
     while (!input.empty()) {
-        ts.push_back(token(input));
+        try {
+            ts.push_back(token(input));
+        } catch (LexError e) {
+            es.push_back(e);
+        }
         skip_whitespaces(input);
     }
     return TokenStream(ts);

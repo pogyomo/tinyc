@@ -1,13 +1,32 @@
 #ifndef TINYC_LEXER_H_
 #define TINYC_LEXER_H_
 
+#include <exception>
 #include <memory>
 #include <vector>
 
 #include "input.h"
+#include "span.h"
 #include "token.h"
 
 namespace tinyc {
+
+// A class represent an error happen during lexing.
+class LexError : public std::exception {
+public:
+    // Construct a new `LexError` with message and its span.
+    LexError(const std::string& msg, Span span) : msg_(msg), span_(span) {}
+
+    // Returns error message.
+    const std::string& msg() const { return msg_; }
+
+    // Returns span where this error happen.
+    const Span& span() const { return span_; }
+
+private:
+    std::string msg_;
+    Span span_;
+};
 
 // A class represent a sequence of token which hold current position at the
 // sequence and can advance/retrest it.
@@ -50,7 +69,8 @@ private:
 };
 
 // Convert given input into token stream.
-TokenStream lex(Input& input);
+// Errors happen during lexing is stored into `errors`.
+TokenStream lex(Input& input, std::vector<LexError>& es);
 
 }  // namespace tinyc
 

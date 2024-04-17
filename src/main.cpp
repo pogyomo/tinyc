@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #include "input.h"
 #include "lexer.h"
@@ -11,7 +12,14 @@ int main(int argc, char *argv[]) {
     }
     std::ifstream ifs(argv[1]);
     tinyc::Input input(ifs);
-    auto ts = tinyc::lex(input);
+    std::vector<tinyc::LexError> es;
+    auto ts = tinyc::lex(input, es);
+    if (!es.empty()) {
+        for (auto e : es) {
+            std::cout << e.msg() << std::endl;
+        }
+        return 0;
+    }
     while (!ts.empty()) {
         auto [start_row, start_offset] = ts.token()->span().start();
         std::cout << start_row << ":" << start_offset << ":"
