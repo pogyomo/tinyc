@@ -34,8 +34,12 @@ std::string SymbolToken::debug() const {
             return ">>";
         case TokenKind::Plus:
             return "+";
+        case TokenKind::PlusPlus:
+            return "++";
         case TokenKind::Minus:
             return "-";
+        case TokenKind::MinusMinus:
+            return "--";
         case TokenKind::Star:
             return "*";
         case TokenKind::Slash:
@@ -46,8 +50,46 @@ std::string SymbolToken::debug() const {
             return "(";
         case TokenKind::RParen:
             return ")";
+        case TokenKind::LCurly:
+            return "{";
+        case TokenKind::RCurly:
+            return "}";
+        case TokenKind::LSquare:
+            return "[";
+        case TokenKind::RSquare:
+            return "]";
         case TokenKind::Semicolon:
             return ";";
+        case TokenKind::Colon:
+            return ":";
+        case TokenKind::Comma:
+            return ",";
+        case TokenKind::Tilde:
+            return "~";
+        case TokenKind::Not:
+            return "!";
+        case TokenKind::Assign:
+            return "=";
+        case TokenKind::OrAssign:
+            return "|=";
+        case TokenKind::XorAssign:
+            return "^=";
+        case TokenKind::AndAssign:
+            return "&=";
+        case TokenKind::LShiftAssign:
+            return "<<=";
+        case TokenKind::RShiftAssign:
+            return ">>=";
+        case TokenKind::AddAssign:
+            return "+=";
+        case TokenKind::SubAssign:
+            return "-=";
+        case TokenKind::MulAssign:
+            return "*=";
+        case TokenKind::DivAssign:
+            return "/=";
+        case TokenKind::ModAssign:
+            return "%=";
         default:
             return "unknown symbol token";
     }
