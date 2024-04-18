@@ -10,13 +10,8 @@
 
 namespace tinyc {
 
-enum class ReportLevel {
-    Error,
-    Warning,
-};
-
-// Generate colored string such that "error: ", "warning:", etc. and its length
-// when it is displayed.
+// Generate colored string such that "error: ", "warning:", etc. with location
+// and its length when it is displayed.
 std::pair<std::string, int> gen_info(const std::string& name,
                                      std::pair<int, int> start,
                                      ReportLevel level, bool show_level) {
@@ -44,23 +39,28 @@ std::pair<std::string, int> gen_info(const std::string& name,
     return {info.str(), len};
 }
 
-void report(InputCache& cache, const std::string& msg, Span span,
-            ReportLevel level) {
-    auto name = cache.fetch_name(span.id());
-    auto input = cache.fetch_input(span.id());
+void Reporter::report(const Reportable& r) {
+    auto span = r.span();
+    auto level = r.level();
+    auto name = cache_.fetch_name(span.id());
+    auto input = cache_.fetch_input(span.id());
     if (span.start_row() == span.end_row()) {
         auto [info, info_len] = gen_info(name, span.start(), level, true);
+
+        std::cerr << name << ": " << r.situation() << std::endl;
 
         auto line = input.line(span.start_row());
         std::cerr << info << line << std::endl;
         std::cerr << std::string(span.start_offset() + info_len, ' ');
         std::cerr << std::string(span.end_offset() - span.start_offset() + 1,
                                  '^');
-        std::cerr << "-- " << msg << std::endl;
+        std::cerr << "-- " << r.what() << std::endl;
     } else {
         auto [sinfo, sinfo_len] = gen_info(name, span.start(), level, true);
         auto [einfo, einfo_len] = gen_info(name, span.end(), level, false);
         auto info_len = sinfo_len > einfo_len ? sinfo_len : einfo_len;
+
+        std::cerr << name << ": " << r.situation() << std::endl;
 
         auto sline = input.line(span.start_row());
         std::cerr << sinfo << sline << std::endl;
@@ -72,16 +72,8 @@ void report(InputCache& cache, const std::string& msg, Span span,
         std::cerr << einfo << eline << std::endl;
         std::cerr << std::string(info_len, ' ');
         std::cerr << std::string(span.end_offset() + 1, '^');
-        std::cerr << "-- " << msg << std::endl;
+        std::cerr << "-- " << r.what() << std::endl;
     }
-}
-
-void ErrorReport::error(const std::string& msg, Span span) {
-    report(cache_, msg, span, ReportLevel::Error);
-}
-
-void ErrorReport::warning(const std::string& msg, Span span) {
-    report(cache_, msg, span, ReportLevel::Warning);
 }
 
 }  // namespace tinyc

@@ -6,16 +6,29 @@
 
 namespace tinyc {
 
-class ErrorReport {
+enum class ReportLevel {
+    Error,
+    Warning,
+};
+
+// An abstract class for which can report via `Reporter`.
+class Reportable {
 public:
-    // Construct a new `ErrorReport` with reference of `InputCache`.
-    ErrorReport(InputCache& cache) : cache_(cache) {}
+    virtual ~Reportable() {}
+    virtual ReportLevel level() const = 0;
+    virtual std::string situation() const = 0;
+    virtual std::string what() const = 0;
+    virtual Span span() const = 0;
+};
 
-    // Report error to standard error.
-    void error(const std::string& msg, Span span);
+// A class which report arbitrary error, warning or etc.
+class Reporter {
+public:
+    // Construct a new `Reporter` with reference of `InputCache`.
+    Reporter(InputCache& cache) : cache_(cache) {}
 
-    // Report warning to standard error.
-    void warning(const std::string& msg, Span span);
+    // Report given `Reportable`.
+    void report(const Reportable& r);
 
 private:
     InputCache& cache_;

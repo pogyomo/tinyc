@@ -8,23 +8,29 @@
 
 #include "../input/cache.h"
 #include "../input/input.h"
+#include "../report/report.h"
 #include "../span.h"
 #include "token.h"
 
 namespace tinyc {
 
 // A class represent an error happen during lexing.
-class LexError : public std::runtime_error {
+class LexError : public Reportable {
 public:
     // Construct a new `LexError` with message and its span.
-    LexError(const std::string& msg, Span span)
-        : std::runtime_error(msg), span_(span) {}
+    LexError(const std::string& what, Span span) : what_(what), span_(span) {}
 
-    // Returns span where this error happen.
-    const Span& span() const { return span_; }
+    ReportLevel level() const override { return ReportLevel::Error; }
+
+    std::string situation() const override { return "while lexing input"; }
+
+    std::string what() const override { return what_; }
+
+    Span span() const override { return span_; }
 
 private:
-    Span span_;
+    const std::string what_;
+    const Span span_;
 };
 
 // A class represent a sequence of token which hold current position at the

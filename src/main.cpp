@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     }
 
     tinyc::InputCache cache;
-    tinyc::ErrorReport report(cache);
+    tinyc::Reporter report(cache);
 
     std::ifstream ifs(argv[1]);
     auto id = cache.cache(ifs, argv[1]);
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     auto ts = tinyc::lex(cache, id, es);
     if (!es.empty()) {
         for (auto e : es) {
-            report.error(e.what(), e.span());
+            report.report(e);
         }
         return 0;
     }
