@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "../span.h"
+#include "type.h"
 
 namespace tinyc {
 
@@ -18,6 +19,9 @@ enum class ExpressionKind {
     Indexing,
     Calling,
     Conditional,
+    SizeofExpression,
+    SizeofType,
+    Cast,
     Integer,
     Identifier,
 };
@@ -523,6 +527,155 @@ private:
     const std::shared_ptr<Expression> otherwise_;
     const ConditionalExpressionExclamationOp exclamation_;
     const ConditionalExpressionColonOp colon_;
+};
+
+class SizeofKeyword {
+public:
+    SizeofKeyword(Span span) : span_(span) {}
+
+    const Span& span() const { return span_; }
+
+private:
+    const Span span_;
+};
+
+// sizeof expr
+class SizeofExpressionExpression : public Expression {
+public:
+    SizeofExpressionExpression(SizeofKeyword keyword,
+                               const std::shared_ptr<Expression>& expr)
+        : keyword_(keyword), expr_(expr) {}
+
+    const SizeofKeyword& keyword() const { return keyword_; }
+
+    const std::shared_ptr<Expression>& expr() const { return expr_; }
+
+    ExpressionKind kind() const override {
+        return ExpressionKind::SizeofExpression;
+    };
+
+    Span span() const override {
+        return Span(keyword_.span().start(), expr_->span().end(),
+                    keyword_.span().id());
+    }
+
+    std::string debug() const override {
+        return "(sizeof " + expr_->debug() + ")";
+    }
+
+private:
+    const SizeofKeyword keyword_;
+    const std::shared_ptr<Expression> expr_;
+};
+
+class SizeofTypeExpressionLParen {
+public:
+    SizeofTypeExpressionLParen(Span span) : span_(span) {}
+
+    const Span& span() const { return span_; }
+
+private:
+    const Span span_;
+};
+
+class SizeofTypeExpressionRParen {
+public:
+    SizeofTypeExpressionRParen(Span span) : span_(span) {}
+
+    const Span& span() const { return span_; }
+
+private:
+    const Span span_;
+};
+
+// sizeof (type)
+class SizeofTypeExpression : public Expression {
+public:
+    SizeofTypeExpression(SizeofKeyword keyword,
+                         const std::shared_ptr<Type>& type,
+                         SizeofTypeExpressionLParen lparen,
+                         SizeofTypeExpressionRParen rparen)
+        : keyword_(keyword), type_(type), lparen_(lparen), rparen_(rparen) {}
+
+    const SizeofKeyword& keyword() const { return keyword_; }
+
+    const std::shared_ptr<Type>& type() const { return type_; }
+
+    const SizeofTypeExpressionLParen& lparen() const { return lparen_; }
+
+    const SizeofTypeExpressionRParen& rparen() const { return rparen_; }
+
+    ExpressionKind kind() const override {
+        return ExpressionKind::SizeofExpression;
+    };
+
+    Span span() const override {
+        return Span(keyword_.span().start(), type_->span().end(),
+                    keyword_.span().id());
+    }
+
+    std::string debug() const override {
+        return "(sizeof (" + type_->debug() + "))";
+    }
+
+private:
+    const SizeofKeyword keyword_;
+    const std::shared_ptr<Type> type_;
+    const SizeofTypeExpressionLParen lparen_;
+    const SizeofTypeExpressionRParen rparen_;
+};
+
+class CastExpressionLParen {
+public:
+    CastExpressionLParen(Span span) : span_(span) {}
+
+    const Span& span() const { return span_; }
+
+private:
+    const Span span_;
+};
+
+class CastExpressionRParen {
+public:
+    CastExpressionRParen(Span span) : span_(span) {}
+
+    const Span& span() const { return span_; }
+
+private:
+    const Span span_;
+};
+
+class CastExpression : public Expression {
+public:
+    CastExpression(const std::shared_ptr<Type>& type,
+                   const std::shared_ptr<Expression>& expr,
+                   CastExpressionLParen lparen, CastExpressionRParen rparen)
+        : type_(type), expr_(expr), lparen_(lparen), rparen_(rparen) {}
+
+    const std::shared_ptr<Type>& type() const { return type_; }
+
+    const std::shared_ptr<Expression>& expr() const { return expr_; }
+
+    const CastExpressionLParen& lparen() const { return lparen_; }
+
+    const CastExpressionRParen& rparen() const { return rparen_; }
+
+    inline ExpressionKind kind() const override { return ExpressionKind::Cast; }
+
+    inline Span span() const override {
+        return Span(lparen_.span().start(), expr_->span().end(),
+                    lparen_.span().id());
+    }
+
+    inline std::string debug() const override {
+        return "((" + type_->debug() + ")(" + expr_->debug() + "))";
+    }
+
+private:
+    const std::shared_ptr<Type> type_;
+    const std::shared_ptr<Expression> expr_;
+    const CastExpressionLParen lparen_;
+    const CastExpressionRParen rparen_;
 };
 
 // A class represent an integer expression.
