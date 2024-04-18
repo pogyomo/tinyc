@@ -167,6 +167,11 @@ std::shared_ptr<Token> token(Input& input, InputCache::cacheid_t id) {
             input.advance();
             return std::make_shared<SymbolToken>(TokenKind::MinusMinus,
                                                  Span(start, end, id));
+        } else if (!input.eoi() && input.ch() == '>') {
+            end = input.pos();
+            input.advance();
+            return std::make_shared<SymbolToken>(TokenKind::Arrow,
+                                                 Span(start, end, id));
         } else {
             return std::make_shared<SymbolToken>(TokenKind::Minus,
                                                  Span(start, end, id));
@@ -231,6 +236,10 @@ std::shared_ptr<Token> token(Input& input, InputCache::cacheid_t id) {
     } else if (input.ch() == '!') {
         input.advance();
         return std::make_shared<SymbolToken>(TokenKind::Not,
+                                             Span(start, end, id));
+    } else if (input.ch() == '.') {
+        input.advance();
+        return std::make_shared<SymbolToken>(TokenKind::Dot,
                                              Span(start, end, id));
     } else if (input.accept("auto")) {
         end = input.pos();

@@ -41,6 +41,8 @@ enum class TokenKind {
     Comma,         // ,
     Tilde,         // ~
     Not,           // !
+    Dot,           // .
+    Arrow,         // ->
     Assign,        // =
     OrAssign,      // |=
     XorAssign,     // ^=
