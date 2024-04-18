@@ -232,6 +232,142 @@ std::shared_ptr<Token> token(Input& input, InputCache::cacheid_t id) {
         input.advance();
         return std::make_shared<SymbolToken>(TokenKind::Not,
                                              Span(start, end, id));
+    } else if (input.accept("auto")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Auto,
+                                             Span(start, end, id));
+    } else if (input.accept("break")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Break,
+                                             Span(start, end, id));
+    } else if (input.accept("case")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Case,
+                                             Span(start, end, id));
+    } else if (input.accept("char")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Char,
+                                             Span(start, end, id));
+    } else if (input.accept("const")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Const,
+                                             Span(start, end, id));
+    } else if (input.accept("continue")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Continue,
+                                             Span(start, end, id));
+    } else if (input.accept("default")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Default,
+                                             Span(start, end, id));
+    } else if (input.accept("do")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Do,
+                                             Span(start, end, id));
+    } else if (input.accept("double")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Double,
+                                             Span(start, end, id));
+    } else if (input.accept("else")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Else,
+                                             Span(start, end, id));
+    } else if (input.accept("enum")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Enum,
+                                             Span(start, end, id));
+    } else if (input.accept("extern")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Extern,
+                                             Span(start, end, id));
+    } else if (input.accept("float")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Float,
+                                             Span(start, end, id));
+    } else if (input.accept("for")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::For,
+                                             Span(start, end, id));
+    } else if (input.accept("goto")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Goto,
+                                             Span(start, end, id));
+    } else if (input.accept("if")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::If,
+                                             Span(start, end, id));
+    } else if (input.accept("inline")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Inline,
+                                             Span(start, end, id));
+    } else if (input.accept("int")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Int,
+                                             Span(start, end, id));
+    } else if (input.accept("long")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Long,
+                                             Span(start, end, id));
+    } else if (input.accept("register")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Register,
+                                             Span(start, end, id));
+    } else if (input.accept("restrict")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Restrict,
+                                             Span(start, end, id));
+    } else if (input.accept("return")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Return,
+                                             Span(start, end, id));
+    } else if (input.accept("short")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Short,
+                                             Span(start, end, id));
+    } else if (input.accept("signed")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Signed,
+                                             Span(start, end, id));
+    } else if (input.accept("sizeof")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Sizeof,
+                                             Span(start, end, id));
+    } else if (input.accept("static")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Static,
+                                             Span(start, end, id));
+    } else if (input.accept("struct")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Struct,
+                                             Span(start, end, id));
+    } else if (input.accept("switch")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Switch,
+                                             Span(start, end, id));
+    } else if (input.accept("typedef")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Typedef,
+                                             Span(start, end, id));
+    } else if (input.accept("union")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Union,
+                                             Span(start, end, id));
+    } else if (input.accept("unsigned")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Unsigned,
+                                             Span(start, end, id));
+    } else if (input.accept("void")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Void,
+                                             Span(start, end, id));
+    } else if (input.accept("volatile")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::Volatile,
+                                             Span(start, end, id));
+    } else if (input.accept("while")) {
+        end = input.pos();
+        return std::make_shared<SymbolToken>(TokenKind::While,
+                                             Span(start, end, id));
     } else if (std::isdigit(input.ch())) {
         std::string buf;
         while (!input.eoi()) {

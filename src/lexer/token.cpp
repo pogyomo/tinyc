@@ -90,6 +90,74 @@ std::string SymbolToken::debug() const {
             return "/=";
         case TokenKind::ModAssign:
             return "%=";
+        case TokenKind::Auto:
+            return "auto";
+        case TokenKind::Break:
+            return "break";
+        case TokenKind::Case:
+            return "case";
+        case TokenKind::Char:
+            return "char";
+        case TokenKind::Const:
+            return "const";
+        case TokenKind::Continue:
+            return "continue";
+        case TokenKind::Default:
+            return "default";
+        case TokenKind::Do:
+            return "do";
+        case TokenKind::Double:
+            return "double";
+        case TokenKind::Else:
+            return "else";
+        case TokenKind::Enum:
+            return "enum";
+        case TokenKind::Extern:
+            return "extern";
+        case TokenKind::Float:
+            return "float";
+        case TokenKind::For:
+            return "for";
+        case TokenKind::Goto:
+            return "goto";
+        case TokenKind::If:
+            return "if";
+        case TokenKind::Inline:
+            return "inline";
+        case TokenKind::Int:
+            return "int";
+        case TokenKind::Long:
+            return "long";
+        case TokenKind::Register:
+            return "register";
+        case TokenKind::Restrict:
+            return "restrict";
+        case TokenKind::Return:
+            return "return";
+        case TokenKind::Short:
+            return "short";
+        case TokenKind::Signed:
+            return "signed";
+        case TokenKind::Sizeof:
+            return "sizeof";
+        case TokenKind::Static:
+            return "static";
+        case TokenKind::Struct:
+            return "struct";
+        case TokenKind::Switch:
+            return "switch";
+        case TokenKind::Typedef:
+            return "typedef";
+        case TokenKind::Union:
+            return "union";
+        case TokenKind::Unsigned:
+            return "unsigned";
+        case TokenKind::Void:
+            return "void";
+        case TokenKind::Volatile:
+            return "volatile";
+        case TokenKind::While:
+            return "while";
         default:
             return "unknown symbol token";
     }

@@ -54,10 +54,21 @@ public:
         }
     }
 
-    // Reset position and go back to start.
-    inline void reset() {
-        row_ = 0;
-        offset_ = 0;
+    // If this input start with `s`, remove these characters and return true.
+    // Otherwise, return false and nothing happen.
+    inline bool accept(const std::string& s) {
+        int row = row_;
+        int offset = offset_;
+        for (auto c : s) {
+            if (eoi() || c != ch()) {
+                row_ = row;
+                offset_ = offset;
+                return false;
+            } else {
+                advance();
+            }
+        }
+        return true;
     }
 
 private:
