@@ -24,6 +24,7 @@ enum class ExpressionKind {
     Cast,
     Integer,
     Identifier,
+    Surrounded,
 };
 
 class Expression {
@@ -729,6 +730,58 @@ public:
 private:
     const std::string value_;
     const Span span_;
+};
+
+class SurroundedExpressionLParen {
+public:
+    SurroundedExpressionLParen(Span span) : span_(span) {}
+
+    const Span& span() const { return span_; }
+
+private:
+    const Span span_;
+};
+
+class SurroundedExpressionRParen {
+public:
+    SurroundedExpressionRParen(Span span) : span_(span) {}
+
+    const Span& span() const { return span_; }
+
+private:
+    const Span span_;
+};
+
+class SurroundedExpression : public Expression {
+public:
+    SurroundedExpression(const std::shared_ptr<Expression>& expr,
+                         SurroundedExpressionLParen lparen,
+                         SurroundedExpressionRParen rparen)
+        : expr_(expr), lparen_(lparen), rparen_(rparen) {}
+
+    const std::shared_ptr<Expression>& expr() const { return expr_; }
+
+    const SurroundedExpressionLParen& lparen() const { return lparen_; }
+
+    const SurroundedExpressionRParen& rparen() const { return rparen_; }
+
+    inline ExpressionKind kind() const override {
+        return ExpressionKind::Surrounded;
+    }
+
+    inline Span span() const override {
+        return Span(lparen_.span().start(), rparen_.span().end(),
+                    lparen_.span().id());
+    }
+
+    inline std::string debug() const override {
+        return "(" + expr_->debug() + ")";
+    }
+
+private:
+    const std::shared_ptr<Expression> expr_;
+    const SurroundedExpressionLParen lparen_;
+    const SurroundedExpressionRParen rparen_;
 };
 
 }  // namespace tinyc

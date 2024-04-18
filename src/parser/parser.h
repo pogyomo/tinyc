@@ -2,10 +2,12 @@
 #define TINYC_PARSER_PARSER_H_
 
 #include <exception>
+#include <memory>
 #include <vector>
 
 #include "../lexer/lexer.h"
 #include "../report/report.h"
+#include "expr.h"
 
 namespace tinyc {
 
@@ -31,6 +33,8 @@ private:
 class Program {};
 
 Program parse(TokenStream& ts, std::vector<ParseError>& es);
+
+std::shared_ptr<Expression> parse_expr(TokenStream& ts);
 
 }  // namespace tinyc
 
