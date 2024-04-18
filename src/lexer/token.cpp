@@ -90,6 +90,13 @@ std::string SymbolToken::debug() const {
             return "/=";
         case TokenKind::ModAssign:
             return "%=";
+        default:
+            return "unknown symbol token";
+    }
+}
+
+std::string KeywordToken::debug() const {
+    switch (kind()) {
         case TokenKind::Auto:
             return "auto";
         case TokenKind::Break:
@@ -159,7 +166,7 @@ std::string SymbolToken::debug() const {
         case TokenKind::While:
             return "while";
         default:
-            return "unknown symbol token";
+            return "unknown keyword token";
     }
 }
 

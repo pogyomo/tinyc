@@ -115,6 +115,13 @@ public:
     std::string debug() const override;
 };
 
+// A class for keyword like int, long, etc.
+class KeywordToken : public Token {
+public:
+    KeywordToken(TokenKind kind, Span span) : Token(kind, span) {}
+    std::string debug() const override;
+};
+
 // A class for literal like 10, ident, etc.
 template <class T>
 class ValueToken : public Token {
