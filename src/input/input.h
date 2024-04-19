@@ -56,15 +56,19 @@ public:
 
     // If this input start with `s`, remove these characters and return true.
     // Otherwise, return false and nothing happen.
-    inline bool accept(const std::string& s) {
+    // `last` will be updated to the position of last character when success.
+    inline bool accept(const std::string& s, std::pair<int, int>& last) {
         int row = row_;
         int offset = offset_;
+        std::pair<int, int> last_save = last;
         for (auto c : s) {
             if (eoi() || c != ch()) {
                 row_ = row;
                 offset_ = offset;
+                last = last_save;
                 return false;
             } else {
+                last = pos();
                 advance();
             }
         }

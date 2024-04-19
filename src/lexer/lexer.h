@@ -64,17 +64,25 @@ public:
 
     // Advance the position in this stream.
     // If `empty()` returns true, nothing happen and has no effect.
-    inline void advance() {
+    // This returns true if it success to advance the position.
+    inline bool advance() {
         if (!eos()) {
             pos_++;
+            return true;
+        } else {
+            return false;
         }
     }
 
     // Retrest the position in this stream.
     // If in the start of this stream, nothing happen and has no effect.
-    inline void retrest() {
+    // This returns true if it success to retrest the position.
+    inline bool retrest() {
         if (pos_ > 0) {
             pos_--;
+            return true;
+        } else {
+            return false;
         }
     }
 

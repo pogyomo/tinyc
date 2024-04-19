@@ -28,8 +28,8 @@ int main(int argc, char *argv[]) {
     }
 
     try {
-        auto expr = tinyc::parse_expr(ts);
-        std::cout << expr->debug() << std::endl;
+        auto stmt = tinyc::parse_stmt(ts);
+        std::cout << stmt->debug() << std::endl;
     } catch (tinyc::ParseError e) {
         report.report(e);
         return 0;

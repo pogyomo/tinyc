@@ -8,6 +8,7 @@
 #include "../lexer/lexer.h"
 #include "../report/report.h"
 #include "expr.h"
+#include "stmt.h"
 
 namespace tinyc {
 
@@ -35,6 +36,7 @@ class Program {};
 Program parse(TokenStream& ts, std::vector<ParseError>& es);
 
 std::shared_ptr<Expression> parse_expr(TokenStream& ts);
+std::shared_ptr<Statement> parse_stmt(TokenStream& ts);
 
 }  // namespace tinyc
 
