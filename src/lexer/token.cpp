@@ -68,6 +68,8 @@ std::string SymbolToken::debug() const {
             return "~";
         case TokenKind::Not:
             return "!";
+        case TokenKind::Question:
+            return "?";
         case TokenKind::Dot:
             return ".";
         case TokenKind::Arrow:

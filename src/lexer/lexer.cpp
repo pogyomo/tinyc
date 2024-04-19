@@ -249,9 +249,9 @@ std::shared_ptr<Token> token(Input& input, InputCache::cacheid_t id) {
         input.advance();
         return std::make_shared<SymbolToken>(TokenKind::Tilde,
                                              Span(start, end, id));
-    } else if (input.ch() == '!') {
+    } else if (input.ch() == '?') {
         input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::Not,
+        return std::make_shared<SymbolToken>(TokenKind::Question,
                                              Span(start, end, id));
     } else if (input.ch() == '.') {
         input.advance();
