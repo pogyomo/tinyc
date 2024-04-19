@@ -9,6 +9,7 @@
 
 #include "../span.h"
 #include "expr.h"
+#include "node.h"
 
 namespace tinyc {
 
@@ -30,36 +31,34 @@ enum class StatementKind {
     Return,
 };
 
-class Statement {
+class Statement : public Node {
 public:
     virtual ~Statement() {}
     virtual StatementKind kind() const = 0;
-    virtual Span span() const = 0;
-    virtual std::string debug() const = 0;
 };
 
-class LabeledStatementColon {
+class LabeledStatementColon : public Node {
 public:
     LabeledStatementColon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ":"; }
+    std::string debug() const override { return ":"; }
 
 private:
     const Span span_;
 };
 
-class LabeledStatementLabel {
+class LabeledStatementLabel : public Node {
 public:
     LabeledStatementLabel(const std::string& name, Span span)
         : span_(span), name_(name) {}
 
     const std::string& name() const { return name_; }
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return name_; }
+    std::string debug() const override { return name_; }
 
 private:
     const std::string name_;
@@ -95,25 +94,25 @@ private:
     const std::shared_ptr<Statement> stmt_;
 };
 
-class CaseStatementCaseKeyword {
+class CaseStatementCaseKeyword : public Node {
 public:
     CaseStatementCaseKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "case"; }
+    std::string debug() const override { return "case"; }
 
 private:
     const Span span_;
 };
 
-class CaseStatementColon {
+class CaseStatementColon : public Node {
 public:
     CaseStatementColon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ":"; }
+    std::string debug() const override { return ":"; }
 
 private:
     const Span span_;
@@ -157,25 +156,25 @@ private:
     const std::shared_ptr<Statement> stmt_;
 };
 
-class DefaultStatementDefaultKeyword {
+class DefaultStatementDefaultKeyword : public Node {
 public:
     DefaultStatementDefaultKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "default"; }
+    std::string debug() const override { return "default"; }
 
 private:
     const Span span_;
 };
 
-class DefaultStatementColon {
+class DefaultStatementColon : public Node {
 public:
     DefaultStatementColon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ":"; }
+    std::string debug() const override { return ":"; }
 
 private:
     const Span span_;
@@ -213,13 +212,13 @@ private:
     const std::shared_ptr<Statement> stmt_;
 };
 
-class EmptyStatementSemicolon {
+class EmptyStatementSemicolon : public Node {
 public:
     EmptyStatementSemicolon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ";"; }
+    std::string debug() const override { return ";"; }
 
 private:
     const Span span_;
@@ -242,13 +241,13 @@ private:
     const EmptyStatementSemicolon semicolon_;
 };
 
-class ExpressionStatementSemicolon {
+class ExpressionStatementSemicolon : public Node {
 public:
     ExpressionStatementSemicolon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ";"; }
+    std::string debug() const override { return ";"; }
 
 private:
     const Span span_;
@@ -280,25 +279,25 @@ private:
     const ExpressionStatementSemicolon semicolon_;
 };
 
-class BlockStatementLCurly {
+class BlockStatementLCurly : public Node {
 public:
     BlockStatementLCurly(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "{"; }
+    std::string debug() const override { return "{"; }
 
 private:
     const Span span_;
 };
 
-class BlockStatementRCurly {
+class BlockStatementRCurly : public Node {
 public:
     BlockStatementRCurly(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "}"; }
+    std::string debug() const override { return "}"; }
 
 private:
     const Span span_;
@@ -339,55 +338,55 @@ private:
     const BlockStatementRCurly rcurly_;
 };
 
-class IfStatementIfKeyword {
+class IfStatementIfKeyword : public Node {
 public:
     IfStatementIfKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "if"; }
+    std::string debug() const override { return "if"; }
 
 private:
     const Span span_;
 };
 
-class IfStatementElseKeyword {
+class IfStatementElseKeyword : public Node {
 public:
     IfStatementElseKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "else"; }
+    std::string debug() const override { return "else"; }
 
 private:
     const Span span_;
 };
 
-class IfStatementLParen {
+class IfStatementLParen : public Node {
 public:
     IfStatementLParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "("; }
+    std::string debug() const override { return "("; }
 
 private:
     const Span span_;
 };
 
-class IfStatementRParen {
+class IfStatementRParen : public Node {
 public:
     IfStatementRParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ")"; }
+    std::string debug() const override { return ")"; }
 
 private:
     const Span span_;
 };
 
-class IfStatementElseBody {
+class IfStatementElseBody : public Node {
 public:
     IfStatementElseBody(IfStatementElseKeyword else_keyword,
                         const std::shared_ptr<Statement>& otherwise)
@@ -397,12 +396,12 @@ public:
 
     const std::shared_ptr<Statement>& otherwise() const { return otherwise_; }
 
-    Span span() const {
+    Span span() const override {
         return Span(else_keyword_.span().start(), otherwise_->span().end(),
                     else_keyword_.span().id());
     }
 
-    std::string debug() const {
+    std::string debug() const override {
         return else_keyword_.debug() + " " + otherwise_->debug();
     }
 
@@ -471,37 +470,37 @@ private:
     const std::optional<IfStatementElseBody> else_body_;
 };
 
-class SwitchStatementSwitchKeyword {
+class SwitchStatementSwitchKeyword : public Node {
 public:
     SwitchStatementSwitchKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "switch"; }
+    std::string debug() const override { return "switch"; }
 
 private:
     const Span span_;
 };
 
-class SwitchStatementLParen {
+class SwitchStatementLParen : public Node {
 public:
     SwitchStatementLParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "("; }
+    std::string debug() const override { return "("; }
 
 private:
     const Span span_;
 };
 
-class SwitchStatementRParen {
+class SwitchStatementRParen : public Node {
 public:
     SwitchStatementRParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ")"; }
+    std::string debug() const override { return ")"; }
 
 private:
     const Span span_;
@@ -556,37 +555,37 @@ private:
     const std::shared_ptr<Statement> body_;
 };
 
-class WhileStatementWhileKeyword {
+class WhileStatementWhileKeyword : public Node {
 public:
     WhileStatementWhileKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "while"; }
+    std::string debug() const override { return "while"; }
 
 private:
     const Span span_;
 };
 
-class WhileStatementLParen {
+class WhileStatementLParen : public Node {
 public:
     WhileStatementLParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "("; }
+    std::string debug() const override { return "("; }
 
 private:
     const Span span_;
 };
 
-class WhileStatementRParen {
+class WhileStatementRParen : public Node {
 public:
     WhileStatementRParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ")"; }
+    std::string debug() const override { return ")"; }
 
 private:
     const Span span_;
@@ -641,61 +640,61 @@ private:
     const std::shared_ptr<Statement> body_;
 };
 
-class DoWhileStatementDoKeyword {
+class DoWhileStatementDoKeyword : public Node {
 public:
     DoWhileStatementDoKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "do"; }
+    std::string debug() const override { return "do"; }
 
 private:
     const Span span_;
 };
 
-class DoWhileStatementWhileKeyword {
+class DoWhileStatementWhileKeyword : public Node {
 public:
     DoWhileStatementWhileKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "while"; }
+    std::string debug() const override { return "while"; }
 
 private:
     const Span span_;
 };
 
-class DoWhileStatementLParen {
+class DoWhileStatementLParen : public Node {
 public:
     DoWhileStatementLParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "("; }
+    std::string debug() const override { return "("; }
 
 private:
     const Span span_;
 };
 
-class DoWhileStatementRParen {
+class DoWhileStatementRParen : public Node {
 public:
     DoWhileStatementRParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ")"; }
+    std::string debug() const override { return ")"; }
 
 private:
     const Span span_;
 };
 
-class DoWhileStatementSemicolon {
+class DoWhileStatementSemicolon : public Node {
 public:
     DoWhileStatementSemicolon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ";"; }
+    std::string debug() const override { return ";"; }
 
 private:
     const Span span_;
@@ -763,49 +762,49 @@ private:
     const DoWhileStatementSemicolon semicolon_;
 };
 
-class ForStatementForKeyword {
+class ForStatementForKeyword : public Node {
 public:
     ForStatementForKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "for"; }
+    std::string debug() const override { return "for"; }
 
 private:
     const Span span_;
 };
 
-class ForStatementLParen {
+class ForStatementLParen : public Node {
 public:
     ForStatementLParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "("; }
+    std::string debug() const override { return "("; }
 
 private:
     const Span span_;
 };
 
-class ForStatementRParen {
+class ForStatementRParen : public Node {
 public:
     ForStatementRParen(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ")"; }
+    std::string debug() const override { return ")"; }
 
 private:
     const Span span_;
 };
 
-class ForStatementSemicolon {
+class ForStatementSemicolon : public Node {
 public:
     ForStatementSemicolon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ";"; }
+    std::string debug() const override { return ";"; }
 
 private:
     const Span span_;
@@ -888,41 +887,41 @@ private:
     const std::shared_ptr<Statement> body_;
 };
 
-class GotoStatementLabel {
+class GotoStatementLabel : public Node {
 public:
     GotoStatementLabel(const std::string& name, Span span)
         : name_(name), span_(span) {}
 
     const std::string& name() const { return name_; }
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return name_; }
+    std::string debug() const override { return name_; }
 
 private:
     const std::string name_;
     const Span span_;
 };
 
-class GotoStatementGotoKeyword {
+class GotoStatementGotoKeyword : public Node {
 public:
     GotoStatementGotoKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "goto"; }
+    std::string debug() const override { return "goto"; }
 
 private:
     const Span span_;
 };
 
-class GotoStatementSemicolon {
+class GotoStatementSemicolon : public Node {
 public:
     GotoStatementSemicolon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ";"; }
+    std::string debug() const override { return ";"; }
 
 private:
     const Span span_;
@@ -962,25 +961,25 @@ private:
     const GotoStatementSemicolon semicolon_;
 };
 
-class ContinueStatementContinueKeyword {
+class ContinueStatementContinueKeyword : public Node {
 public:
     ContinueStatementContinueKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "continue"; }
+    std::string debug() const override { return "continue"; }
 
 private:
     const Span span_;
 };
 
-class ContinueStatementSemicolon {
+class ContinueStatementSemicolon : public Node {
 public:
     ContinueStatementSemicolon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ";"; }
+    std::string debug() const override { return ";"; }
 
 private:
     const Span span_;
@@ -1016,25 +1015,25 @@ private:
     const ContinueStatementSemicolon semicolon_;
 };
 
-class BreakStatementBreakKeyword {
+class BreakStatementBreakKeyword : public Node {
 public:
     BreakStatementBreakKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "break"; }
+    std::string debug() const override { return "break"; }
 
 private:
     const Span span_;
 };
 
-class BreakStatementSemicolon {
+class BreakStatementSemicolon : public Node {
 public:
     BreakStatementSemicolon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ";"; }
+    std::string debug() const override { return ";"; }
 
 private:
     const Span span_;
@@ -1070,25 +1069,25 @@ private:
     const BreakStatementSemicolon semicolon_;
 };
 
-class ReturnStatementReturnKeyword {
+class ReturnStatementReturnKeyword : public Node {
 public:
     ReturnStatementReturnKeyword(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return "return"; }
+    std::string debug() const override { return "return"; }
 
 private:
     const Span span_;
 };
 
-class ReturnStatementSemicolon {
+class ReturnStatementSemicolon : public Node {
 public:
     ReturnStatementSemicolon(Span span) : span_(span) {}
 
-    Span span() const { return span_; }
+    Span span() const override { return span_; }
 
-    std::string debug() const { return ";"; }
+    std::string debug() const override { return ";"; }
 
 private:
     const Span span_;

@@ -160,10 +160,10 @@ std::shared_ptr<Expression> parse_assign_expr(TokenStream& ts) {
 std::shared_ptr<Expression> parse_cond_expr(TokenStream& ts) {
     auto cond = parse_logical_or_expr(ts);
 
-    if (ts.eos() || ts.token()->kind() != TokenKind::Not) {
+    if (ts.eos() || ts.token()->kind() != TokenKind::Question) {
         return cond;
     }
-    auto exclamation = ConditionalExpressionExclamationOp(ts.token()->span());
+    auto question = ConditionalExpressionQuestionOp(ts.token()->span());
     ts.advance();
 
     auto then = parse_expr(ts);
@@ -174,7 +174,7 @@ std::shared_ptr<Expression> parse_cond_expr(TokenStream& ts) {
 
     auto otherwise = parse_cond_expr(ts);
     return std::make_shared<ConditionalExpression>(cond, then, otherwise,
-                                                   exclamation, colon);
+                                                   question, colon);
 }
 
 std::shared_ptr<Expression> parse_logical_or_expr(TokenStream& ts) {
