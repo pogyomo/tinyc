@@ -594,19 +594,19 @@ std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts) {
 // ========== statement parser ==========
 
 std::shared_ptr<Statement> parse_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_labeled_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_case_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_default_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_block_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_if_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_switch_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_while_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_do_while_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_for_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_goto_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_continue_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_break_stmt(TokenStream& ts);
-std::shared_ptr<Statement> parse_return_stmt(TokenStream& ts);
+std::shared_ptr<LabeledStatement> parse_labeled_stmt(TokenStream& ts);
+std::shared_ptr<CaseStatement> parse_case_stmt(TokenStream& ts);
+std::shared_ptr<DefaultStatement> parse_default_stmt(TokenStream& ts);
+std::shared_ptr<BlockStatement> parse_block_stmt(TokenStream& ts);
+std::shared_ptr<IfStatement> parse_if_stmt(TokenStream& ts);
+std::shared_ptr<SwitchStatement> parse_switch_stmt(TokenStream& ts);
+std::shared_ptr<WhileStatement> parse_while_stmt(TokenStream& ts);
+std::shared_ptr<DoWhileStatement> parse_do_while_stmt(TokenStream& ts);
+std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts);
+std::shared_ptr<GotoStatement> parse_goto_stmt(TokenStream& ts);
+std::shared_ptr<ContinueStatement> parse_continue_stmt(TokenStream& ts);
+std::shared_ptr<BreakStatement> parse_break_stmt(TokenStream& ts);
+std::shared_ptr<ReturnStatement> parse_return_stmt(TokenStream& ts);
 std::shared_ptr<Statement> parse_expr_stmt(TokenStream& ts);
 
 std::shared_ptr<Statement> parse_stmt(TokenStream& ts) {
@@ -647,7 +647,7 @@ std::shared_ptr<Statement> parse_stmt(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<Statement> parse_labeled_stmt(TokenStream& ts) {
+std::shared_ptr<LabeledStatement> parse_labeled_stmt(TokenStream& ts) {
     check(ts, TokenKind::Identifier, "identifier");
     auto tk = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
     LabeledStatementLabel label(tk->value(), tk->span());
@@ -662,7 +662,7 @@ std::shared_ptr<Statement> parse_labeled_stmt(TokenStream& ts) {
     return std::make_shared<LabeledStatement>(label, colon, stmt);
 }
 
-std::shared_ptr<Statement> parse_case_stmt(TokenStream& ts) {
+std::shared_ptr<CaseStatement> parse_case_stmt(TokenStream& ts) {
     check(ts, TokenKind::Case, "case");
     CaseStatementCaseKeyword keyword(ts.token()->span());
     ts.advance();
@@ -678,7 +678,7 @@ std::shared_ptr<Statement> parse_case_stmt(TokenStream& ts) {
     return std::make_shared<CaseStatement>(keyword, expr, colon, stmt);
 }
 
-std::shared_ptr<Statement> parse_default_stmt(TokenStream& ts) {
+std::shared_ptr<DefaultStatement> parse_default_stmt(TokenStream& ts) {
     check(ts, TokenKind::Default, "default");
     DefaultStatementDefaultKeyword keyword(ts.token()->span());
     ts.advance();
@@ -692,7 +692,7 @@ std::shared_ptr<Statement> parse_default_stmt(TokenStream& ts) {
     return std::make_shared<DefaultStatement>(keyword, colon, stmt);
 }
 
-std::shared_ptr<Statement> parse_block_stmt(TokenStream& ts) {
+std::shared_ptr<BlockStatement> parse_block_stmt(TokenStream& ts) {
     check(ts, TokenKind::LCurly, "{");
     BlockStatementLCurly lcurly(ts.token()->span());
     ts.advance();
@@ -709,7 +709,7 @@ std::shared_ptr<Statement> parse_block_stmt(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<Statement> parse_if_stmt(TokenStream& ts) {
+std::shared_ptr<IfStatement> parse_if_stmt(TokenStream& ts) {
     check(ts, TokenKind::If, "if");
     IfStatementIfKeyword if_keyword(ts.token()->span());
     ts.advance();
@@ -742,7 +742,7 @@ std::shared_ptr<Statement> parse_if_stmt(TokenStream& ts) {
                                          else_body);
 }
 
-std::shared_ptr<Statement> parse_switch_stmt(TokenStream& ts) {
+std::shared_ptr<SwitchStatement> parse_switch_stmt(TokenStream& ts) {
     check(ts, TokenKind::Switch, "switch");
     SwitchStatementSwitchKeyword switch_keyword(ts.token()->span());
     ts.advance();
@@ -763,7 +763,7 @@ std::shared_ptr<Statement> parse_switch_stmt(TokenStream& ts) {
                                              rparen, body);
 }
 
-std::shared_ptr<Statement> parse_while_stmt(TokenStream& ts) {
+std::shared_ptr<WhileStatement> parse_while_stmt(TokenStream& ts) {
     check(ts, TokenKind::While, "while");
     WhileStatementWhileKeyword switch_keyword(ts.token()->span());
     ts.advance();
@@ -784,7 +784,7 @@ std::shared_ptr<Statement> parse_while_stmt(TokenStream& ts) {
                                             rparen, body);
 }
 
-std::shared_ptr<Statement> parse_do_while_stmt(TokenStream& ts) {
+std::shared_ptr<DoWhileStatement> parse_do_while_stmt(TokenStream& ts) {
     check(ts, TokenKind::Do, "do");
     DoWhileStatementDoKeyword do_keyword(ts.token()->span());
     ts.advance();
@@ -813,7 +813,7 @@ std::shared_ptr<Statement> parse_do_while_stmt(TokenStream& ts) {
                                               lparen, cond, rparen, semicolon);
 }
 
-std::shared_ptr<Statement> parse_for_stmt(TokenStream& ts) {
+std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts) {
     check(ts, TokenKind::For, "for");
     ForStatementForKeyword for_keyword(ts.token()->span());
     ts.advance();
@@ -856,7 +856,7 @@ std::shared_ptr<Statement> parse_for_stmt(TokenStream& ts) {
                                           body);
 }
 
-std::shared_ptr<Statement> parse_goto_stmt(TokenStream& ts) {
+std::shared_ptr<GotoStatement> parse_goto_stmt(TokenStream& ts) {
     check(ts, TokenKind::Goto, "goto");
     GotoStatementGotoKeyword goto_keyword(ts.token()->span());
     ts.advance();
@@ -873,7 +873,7 @@ std::shared_ptr<Statement> parse_goto_stmt(TokenStream& ts) {
     return std::make_shared<GotoStatement>(goto_keyword, label, semicolon);
 }
 
-std::shared_ptr<Statement> parse_continue_stmt(TokenStream& ts) {
+std::shared_ptr<ContinueStatement> parse_continue_stmt(TokenStream& ts) {
     check(ts, TokenKind::Continue, "continue");
     ContinueStatementContinueKeyword continue_keyword(ts.token()->span());
     ts.advance();
@@ -885,7 +885,7 @@ std::shared_ptr<Statement> parse_continue_stmt(TokenStream& ts) {
     return std::make_shared<ContinueStatement>(continue_keyword, semicolon);
 }
 
-std::shared_ptr<Statement> parse_break_stmt(TokenStream& ts) {
+std::shared_ptr<BreakStatement> parse_break_stmt(TokenStream& ts) {
     check(ts, TokenKind::Break, "break");
     BreakStatementBreakKeyword break_keyword(ts.token()->span());
     ts.advance();
@@ -897,7 +897,7 @@ std::shared_ptr<Statement> parse_break_stmt(TokenStream& ts) {
     return std::make_shared<BreakStatement>(break_keyword, semicolon);
 }
 
-std::shared_ptr<Statement> parse_return_stmt(TokenStream& ts) {
+std::shared_ptr<ReturnStatement> parse_return_stmt(TokenStream& ts) {
     check(ts, TokenKind::Return, "return");
     ReturnStatementReturnKeyword return_keyword(ts.token()->span());
     ts.advance();
