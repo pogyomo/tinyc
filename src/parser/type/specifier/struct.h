@@ -11,22 +11,22 @@
 
 namespace tinyc {
 
-enum class StructSpecifierKind {
+enum class StructTypeSpecifierKind {
     Named,
     Anonymous,
 };
 
-class StructSpecifier : public TypeSpecifier {
+class StructTypeSpecifier : public TypeSpecifier {
 public:
-    virtual ~StructSpecifier() {}
-    virtual StructSpecifierKind struct_kind() const = 0;
+    virtual ~StructTypeSpecifier() {}
+    virtual StructTypeSpecifierKind struct_kind() const = 0;
 
     TypeSpecifierKind kind() const override { return TypeSpecifierKind::Enum; }
 };
 
-class StructSpecifierDeclIdent : public Node {
+class StructTypeSpecifierDeclIdent : public Node {
 public:
-    StructSpecifierDeclIdent(const std::string& name, Span span)
+    StructTypeSpecifierDeclIdent(const std::string& name, Span span)
         : name_(name), span_(span) {}
 
     inline const std::string& name() const { return name_; }
@@ -40,15 +40,15 @@ private:
     const Span span_;
 };
 
-class StructSpecifierDecl : public Node {
+class StructTypeSpecifierDecl : public Node {
 public:
-    StructSpecifierDecl(const std::shared_ptr<Type> type,
-                        const StructSpecifierDeclIdent& ident)
+    StructTypeSpecifierDecl(const std::shared_ptr<Type> type,
+                            const StructTypeSpecifierDeclIdent& ident)
         : type_(type), ident_(ident) {}
 
     inline const std::shared_ptr<Type>& type() const { return type_; }
 
-    inline const StructSpecifierDeclIdent& ident() const { return ident_; }
+    inline const StructTypeSpecifierDeclIdent& ident() const { return ident_; }
 
     inline Span span() const override {
         return concat_spans({type_->span(), ident_.span()});
@@ -60,19 +60,19 @@ public:
 
 private:
     const std::shared_ptr<Type> type_;
-    const StructSpecifierDeclIdent ident_;
+    const StructTypeSpecifierDeclIdent ident_;
 };
 
-class StructSpecifierBody : public Node {
+class StructTypeSpecifierBody : public Node {
 public:
-    StructSpecifierBody(LCurly lcurly,
-                        const std::vector<StructSpecifierDecl> decls,
-                        RCurly rcurly)
+    StructTypeSpecifierBody(LCurly lcurly,
+                            const std::vector<StructTypeSpecifierDecl> decls,
+                            RCurly rcurly)
         : lcurly_(lcurly), decls_(decls), rcurly_(rcurly) {}
 
     inline const LCurly& lcurly() const { return lcurly_; }
 
-    inline const std::vector<StructSpecifierDecl>& decls() const {
+    inline const std::vector<StructTypeSpecifierDecl>& decls() const {
         return decls_;
     }
 
@@ -100,13 +100,13 @@ public:
 
 private:
     const LCurly lcurly_;
-    const std::vector<StructSpecifierDecl> decls_;
+    const std::vector<StructTypeSpecifierDecl> decls_;
     const RCurly rcurly_;
 };
 
-class NamedStructSpecifierName : public Node {
+class NamedStructTypeSpecifierName : public Node {
 public:
-    NamedStructSpecifierName(const std::string& name, Span span)
+    NamedStructTypeSpecifierName(const std::string& name, Span span)
         : name_(name), span_(span) {}
 
     inline const std::string& name() const { return name_; }
@@ -120,13 +120,15 @@ private:
     const Span span_;
 };
 
-class NamedStructSpecifier : public StructSpecifier {
+class NamedStructTypeSpecifier : public StructTypeSpecifier {
 public:
-    NamedStructSpecifier(Struct struct_kw, const NamedStructSpecifierName& name)
+    NamedStructTypeSpecifier(Struct struct_kw,
+                             const NamedStructTypeSpecifierName& name)
         : struct_kw_(struct_kw), name_(name), body_(std::nullopt) {}
 
-    NamedStructSpecifier(Struct struct_kw, const NamedStructSpecifierName& name,
-                         StructSpecifierBody body)
+    NamedStructTypeSpecifier(Struct struct_kw,
+                             const NamedStructTypeSpecifierName& name,
+                             StructTypeSpecifierBody body)
         : struct_kw_(struct_kw), name_(name), body_(body) {}
 
     const Struct& struct_kw() const {
@@ -134,12 +136,12 @@ public:
         ;
     }
 
-    const NamedStructSpecifierName& name() const { return name_; }
+    const NamedStructTypeSpecifierName& name() const { return name_; }
 
-    const std::optional<StructSpecifierBody>& body() const { return body_; }
+    const std::optional<StructTypeSpecifierBody>& body() const { return body_; }
 
-    inline StructSpecifierKind struct_kind() const override {
-        return StructSpecifierKind::Named;
+    inline StructTypeSpecifierKind struct_kind() const override {
+        return StructTypeSpecifierKind::Named;
     }
 
     inline Span span() const override {
@@ -163,20 +165,20 @@ public:
 
 private:
     const Struct struct_kw_;
-    const NamedStructSpecifierName name_;
-    const std::optional<StructSpecifierBody> body_;
+    const NamedStructTypeSpecifierName name_;
+    const std::optional<StructTypeSpecifierBody> body_;
 };
 
-class AnonymousStructSpecifier : public StructSpecifier {
-    AnonymousStructSpecifier(Struct struct_kw, StructSpecifierBody body)
+class AnonymousStructTypeSpecifier : public StructTypeSpecifier {
+    AnonymousStructTypeSpecifier(Struct struct_kw, StructTypeSpecifierBody body)
         : struct_kw_(struct_kw), body_(body) {}
 
     const Struct& struct_kw() const { return struct_kw_; }
 
-    const StructSpecifierBody& body() const { return body_; }
+    const StructTypeSpecifierBody& body() const { return body_; }
 
-    inline StructSpecifierKind struct_kind() const override {
-        return StructSpecifierKind::Anonymous;
+    inline StructTypeSpecifierKind struct_kind() const override {
+        return StructTypeSpecifierKind::Anonymous;
     }
 
     inline Span span() const override {
@@ -189,7 +191,7 @@ class AnonymousStructSpecifier : public StructSpecifier {
 
 private:
     const Struct struct_kw_;
-    const StructSpecifierBody body_;
+    const StructTypeSpecifierBody body_;
 };
 
 }  // namespace tinyc

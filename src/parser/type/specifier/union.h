@@ -11,22 +11,22 @@
 
 namespace tinyc {
 
-enum class UnionSpecifierKind {
+enum class UnionTypeSpecifierKind {
     Named,
     Anonymous,
 };
 
-class UnionSpecifier : public TypeSpecifier {
+class UnionTypeSpecifier : public TypeSpecifier {
 public:
-    virtual ~UnionSpecifier() {}
-    virtual UnionSpecifierKind union_kind() const = 0;
+    virtual ~UnionTypeSpecifier() {}
+    virtual UnionTypeSpecifierKind union_kind() const = 0;
 
     TypeSpecifierKind kind() const override { return TypeSpecifierKind::Enum; }
 };
 
-class UnionSpecifierDeclIdent : public Node {
+class UnionTypeSpecifierDeclIdent : public Node {
 public:
-    UnionSpecifierDeclIdent(const std::string& name, Span span)
+    UnionTypeSpecifierDeclIdent(const std::string& name, Span span)
         : name_(name), span_(span) {}
 
     inline const std::string& name() const { return name_; }
@@ -40,15 +40,15 @@ private:
     const Span span_;
 };
 
-class UnionSpecifierDecl : public Node {
+class UnionTypeSpecifierDecl : public Node {
 public:
-    UnionSpecifierDecl(const std::shared_ptr<Type> type,
-                       const UnionSpecifierDeclIdent& ident)
+    UnionTypeSpecifierDecl(const std::shared_ptr<Type> type,
+                           const UnionTypeSpecifierDeclIdent& ident)
         : type_(type), ident_(ident) {}
 
     inline const std::shared_ptr<Type>& type() const { return type_; }
 
-    inline const UnionSpecifierDeclIdent& ident() const { return ident_; }
+    inline const UnionTypeSpecifierDeclIdent& ident() const { return ident_; }
 
     inline Span span() const override {
         return concat_spans({type_->span(), ident_.span()});
@@ -60,19 +60,19 @@ public:
 
 private:
     const std::shared_ptr<Type> type_;
-    const UnionSpecifierDeclIdent ident_;
+    const UnionTypeSpecifierDeclIdent ident_;
 };
 
-class UnionSpecifierBody : public Node {
+class UnionTypeSpecifierBody : public Node {
 public:
-    UnionSpecifierBody(LCurly lcurly,
-                       const std::vector<UnionSpecifierDecl> decls,
-                       RCurly rcurly)
+    UnionTypeSpecifierBody(LCurly lcurly,
+                           const std::vector<UnionTypeSpecifierDecl> decls,
+                           RCurly rcurly)
         : lcurly_(lcurly), decls_(decls), rcurly_(rcurly) {}
 
     inline const LCurly& lcurly() const { return lcurly_; }
 
-    inline const std::vector<UnionSpecifierDecl>& decls() const {
+    inline const std::vector<UnionTypeSpecifierDecl>& decls() const {
         return decls_;
     }
 
@@ -100,13 +100,13 @@ public:
 
 private:
     const LCurly lcurly_;
-    const std::vector<UnionSpecifierDecl> decls_;
+    const std::vector<UnionTypeSpecifierDecl> decls_;
     const RCurly rcurly_;
 };
 
-class NamedUnionSpecifierName : public Node {
+class NamedUnionTypeSpecifierName : public Node {
 public:
-    NamedUnionSpecifierName(const std::string& name, Span span)
+    NamedUnionTypeSpecifierName(const std::string& name, Span span)
         : name_(name), span_(span) {}
 
     inline const std::string& name() const { return name_; }
@@ -120,13 +120,15 @@ private:
     const Span span_;
 };
 
-class NamedUnionSpecifier : public UnionSpecifier {
+class NamedUnionTypeSpecifier : public UnionTypeSpecifier {
 public:
-    NamedUnionSpecifier(Union union_kw, const NamedUnionSpecifierName& name)
+    NamedUnionTypeSpecifier(Union union_kw,
+                            const NamedUnionTypeSpecifierName& name)
         : union_kw_(union_kw), name_(name), body_(std::nullopt) {}
 
-    NamedUnionSpecifier(Union union_kw, const NamedUnionSpecifierName& name,
-                        UnionSpecifierBody body)
+    NamedUnionTypeSpecifier(Union union_kw,
+                            const NamedUnionTypeSpecifierName& name,
+                            UnionTypeSpecifierBody body)
         : union_kw_(union_kw), name_(name), body_(body) {}
 
     const Union& union_kw() const {
@@ -134,12 +136,12 @@ public:
         ;
     }
 
-    const NamedUnionSpecifierName& name() const { return name_; }
+    const NamedUnionTypeSpecifierName& name() const { return name_; }
 
-    const std::optional<UnionSpecifierBody>& body() const { return body_; }
+    const std::optional<UnionTypeSpecifierBody>& body() const { return body_; }
 
-    inline UnionSpecifierKind union_kind() const override {
-        return UnionSpecifierKind::Named;
+    inline UnionTypeSpecifierKind union_kind() const override {
+        return UnionTypeSpecifierKind::Named;
     }
 
     inline Span span() const override {
@@ -163,20 +165,20 @@ public:
 
 private:
     const Union union_kw_;
-    const NamedUnionSpecifierName name_;
-    const std::optional<UnionSpecifierBody> body_;
+    const NamedUnionTypeSpecifierName name_;
+    const std::optional<UnionTypeSpecifierBody> body_;
 };
 
-class AnonymousUnionSpecifier : public UnionSpecifier {
-    AnonymousUnionSpecifier(Union union_kw, UnionSpecifierBody body)
+class AnonymousUnionTypeSpecifier : public UnionTypeSpecifier {
+    AnonymousUnionTypeSpecifier(Union union_kw, UnionTypeSpecifierBody body)
         : union_kw_(union_kw), body_(body) {}
 
     const Union& union_kw() const { return union_kw_; }
 
-    const UnionSpecifierBody& body() const { return body_; }
+    const UnionTypeSpecifierBody& body() const { return body_; }
 
-    inline UnionSpecifierKind union_kind() const override {
-        return UnionSpecifierKind::Anonymous;
+    inline UnionTypeSpecifierKind union_kind() const override {
+        return UnionTypeSpecifierKind::Anonymous;
     }
 
     inline Span span() const override {
@@ -189,7 +191,7 @@ class AnonymousUnionSpecifier : public UnionSpecifier {
 
 private:
     const Union union_kw_;
-    const UnionSpecifierBody body_;
+    const UnionTypeSpecifierBody body_;
 };
 
 }  // namespace tinyc

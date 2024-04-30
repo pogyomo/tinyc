@@ -12,15 +12,15 @@
 
 namespace tinyc {
 
-enum class EnumSpecifierKind {
+enum class EnumTypeSpecifierKind {
     Named,
     Anonymous,
 };
 
-class EnumSpecifier : public TypeSpecifier {
+class EnumTypeSpecifier : public TypeSpecifier {
 public:
-    virtual ~EnumSpecifier() {}
-    virtual EnumSpecifierKind enum_kind() const = 0;
+    virtual ~EnumTypeSpecifier() {}
+    virtual EnumTypeSpecifierKind enum_kind() const = 0;
 
     TypeSpecifierKind kind() const override { return TypeSpecifierKind::Enum; }
 };
@@ -114,10 +114,11 @@ private:
     const std::optional<Comma> comma_;
 };
 
-class EnumSpecifierBody : public Node {
+class EnumTypeSpecifierBody : public Node {
 public:
-    EnumSpecifierBody(LCurly lcurly, const std::vector<Enumerator> enumerators,
-                      RCurly rcurly)
+    EnumTypeSpecifierBody(LCurly lcurly,
+                          const std::vector<Enumerator> enumerators,
+                          RCurly rcurly)
         : lcurly_(lcurly), enumerators_(enumerators), rcurly_(rcurly) {}
 
     inline const LCurly& lcurly() const { return lcurly_; }
@@ -154,9 +155,9 @@ private:
     const RCurly rcurly_;
 };
 
-class NamedEnumSpecifierName : public Node {
+class NamedEnumTypeSpecifierName : public Node {
 public:
-    NamedEnumSpecifierName(const std::string& name, Span span)
+    NamedEnumTypeSpecifierName(const std::string& name, Span span)
         : name_(name), span_(span) {}
 
     inline const std::string& name() const { return name_; }
@@ -170,25 +171,25 @@ private:
     const Span span_;
 };
 
-class NamedEnumSpecifier : public EnumSpecifier {
+class NamedEnumTypeSpecifier : public EnumTypeSpecifier {
 public:
-    NamedEnumSpecifier(Enum enum_kw, const NamedEnumSpecifierName& name)
+    NamedEnumTypeSpecifier(Enum enum_kw, const NamedEnumTypeSpecifierName& name)
         : enum_kw_(enum_kw), name_(name), body_(std::nullopt) {}
 
-    NamedEnumSpecifier(Enum enum_kw, const NamedEnumSpecifierName& name,
-                       const EnumSpecifierBody& body)
+    NamedEnumTypeSpecifier(Enum enum_kw, const NamedEnumTypeSpecifierName& name,
+                           const EnumTypeSpecifierBody& body)
         : enum_kw_(enum_kw), name_(name), body_(body) {}
 
     inline const Enum& enum_kw() const { return enum_kw_; }
 
-    inline const NamedEnumSpecifierName& name() const { return name_; }
+    inline const NamedEnumTypeSpecifierName& name() const { return name_; }
 
-    inline const std::optional<EnumSpecifierBody>& body() const {
+    inline const std::optional<EnumTypeSpecifierBody>& body() const {
         return body_;
     }
 
-    inline EnumSpecifierKind enum_kind() const override {
-        return EnumSpecifierKind::Named;
+    inline EnumTypeSpecifierKind enum_kind() const override {
+        return EnumTypeSpecifierKind::Named;
     }
 
     Span span() const override {
@@ -210,21 +211,21 @@ public:
 
 private:
     const Enum enum_kw_;
-    const NamedEnumSpecifierName name_;
-    const std::optional<EnumSpecifierBody> body_;
+    const NamedEnumTypeSpecifierName name_;
+    const std::optional<EnumTypeSpecifierBody> body_;
 };
 
-class AnonymousEnumSpecifier : public EnumSpecifier {
+class AnonymousEnumTypeSpecifier : public EnumTypeSpecifier {
 public:
-    AnonymousEnumSpecifier(Enum enum_kw, EnumSpecifierBody body)
+    AnonymousEnumTypeSpecifier(Enum enum_kw, EnumTypeSpecifierBody body)
         : enum_kw_(enum_kw), body_(body) {}
 
     const Enum& enum_kw() const { return enum_kw_; }
 
-    const EnumSpecifierBody& body() const { return body_; }
+    const EnumTypeSpecifierBody& body() const { return body_; }
 
-    inline EnumSpecifierKind enum_kind() const override {
-        return EnumSpecifierKind::Anonymous;
+    inline EnumTypeSpecifierKind enum_kind() const override {
+        return EnumTypeSpecifierKind::Anonymous;
     }
 
     Span span() const override {
@@ -237,7 +238,7 @@ public:
 
 private:
     const Enum enum_kw_;
-    const EnumSpecifierBody body_;
+    const EnumTypeSpecifierBody body_;
 };
 
 }  // namespace tinyc
