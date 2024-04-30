@@ -7,7 +7,7 @@
 
 #include "../span.h"
 #include "node.h"
-#include "type.h"
+#include "type/type.h"
 
 namespace tinyc {
 

@@ -1,7 +1,11 @@
 #ifndef TINYC_PARSER_TYPE_H_
 #define TINYC_PARSER_TYPE_H_
 
-#include "node.h"
+#include <memory>
+#include <optional>
+#include <vector>
+
+#include "../node.h"
 
 namespace tinyc {
 

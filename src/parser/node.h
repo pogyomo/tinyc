@@ -123,6 +123,30 @@ private:
     const Span span_;
 };
 
+class Comma : public Node {
+public:
+    Comma(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return ","; }
+
+private:
+    const Span span_;
+};
+
+class Assign : public Node {
+public:
+    Assign(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "="; }
+
+private:
+    const Span span_;
+};
+
 class Sizeof : public Node {
 public:
     Sizeof(Span span) : span_(span) {}
@@ -274,6 +298,42 @@ public:
     inline Span span() const override { return span_; }
 
     inline std::string debug() const override { return "return"; }
+
+private:
+    const Span span_;
+};
+
+class Struct : public Node {
+public:
+    Struct(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "struct"; }
+
+private:
+    const Span span_;
+};
+
+class Union : public Node {
+public:
+    Union(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "union"; }
+
+private:
+    const Span span_;
+};
+
+class Enum : public Node {
+public:
+    Enum(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "enum"; }
 
 private:
     const Span span_;
