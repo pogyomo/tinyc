@@ -2,83 +2,25 @@
 #define TINYC_INPUT_INPUT_H_
 
 #include <istream>
-#include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace tinyc {
 
-// A class represent a input from input stream.
+// A class represent a input of this compiler.
 class Input {
 public:
-    // Construct a new `Input` from given `is` input stream.
-    Input(std::istream& is) : row_(0), offset_(0) {
-        std::string line;
-        while (std::getline(is, line, '\n')) {
-            lines_.push_back(line);
-        }
-    }
+    Input(std::istream& is, int id);
 
-    // Returns current peeking character of this input.
-    // It's undefined behavior to call this when `empty()` returns true.
-    inline char ch() const { return eoi() ? '\0' : lines_[row_][offset_]; }
+    // Returns its unique id.
+    inline const int id() const { return id_; }
 
-    // Returns pair of current peeking character's row and offset.
-    inline std::pair<int, int> pos() const { return {row_, offset_}; }
-
-    // Returns current peeking character's row in this input.
-    inline int row() const { return row_; }
-
-    // Returns current peeking character's offset in this input.
-    inline int offset() const { return offset_; }
-
-    // Returns line correspond to given row.
-    inline const std::string& line(int row) { return lines_[row]; }
-
-    // Returns true if no character remain in this input.
-    inline bool eoi() const { return row_ >= lines_.size(); }
-
-    // Advance the position in this input.
-    // Nothing happen if `empty()` returns true.
-    inline void advance() {
-        if (eoi()) {
-            return;
-        }
-        offset_++;
-
-        // Skip empty lines.
-        while (row_ < lines_.size() && offset_ >= lines_[row_].size()) {
-            offset_ = 0;
-            row_++;
-        }
-    }
-
-    // If this input start with `s`, remove these characters and return true.
-    // Otherwise, return false and nothing happen.
-    // `last` will be updated to the position of last character when success.
-    inline bool accept(const std::string& s, std::pair<int, int>& last) {
-        int row = row_;
-        int offset = offset_;
-        std::pair<int, int> last_save = last;
-        for (auto c : s) {
-            if (eoi() || c != ch()) {
-                row_ = row;
-                offset_ = offset;
-                last = last_save;
-                return false;
-            } else {
-                last = pos();
-                advance();
-            }
-        }
-        return true;
-    }
+    // Returns lines which represent this input.
+    inline const std::vector<std::string>& lines() const { return lines_; }
 
 private:
-    int row_;
-    int offset_;
-    std::vector<std::string> lines_;
+    const int id_;
+    const std::vector<std::string> lines_;
 };
 
 }  // namespace tinyc

@@ -1,413 +1,247 @@
 #include "lexer.h"
 
-#include <cctype>
+#include <iostream>
 #include <memory>
 #include <sstream>
-#include <string>
+#include <vector>
 
-#include "../input/cache.h"
-#include "../input/input.h"
+#include "../input/stream.h"
+#include "../span.h"
+#include "error.h"
+#include "stream.h"
 #include "token.h"
 
 namespace tinyc {
 
-// Advance `input` until it reach to non-whitespace character, or advance to end
-// if `input` has only whitespaces.
-void skip_whitespaces(Input& input) {
-    while (!input.eoi()) {
-        if (std::isspace(input.ch())) {
-            input.advance();
+// Advance `is` until it reach to non-whitespace character, or advance to end
+// if `is` has only whitespaces.
+void skip_whitespaces(InputStream& is) {
+    while (!is.eos()) {
+        if (std::isspace(is.ch())) {
+            is.advance();
         } else {
             break;
         }
     }
 }
 
-// Extract a toke from non-empty `input`.
-// It's undefined behavior to call this when `input` is empty.
-std::shared_ptr<Token> token(Input& input, InputCache::cacheid_t id) {
-    auto start = input.pos();
-    auto end = input.pos();
-    if (input.ch() == '&') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '&') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::And,
-                                                 Span(start, end, id));
-        } else if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::AndAssign,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Ampersand,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '|') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '|') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::Or,
-                                                 Span(start, end, id));
-        } else if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::OrAssign,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Vertical,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '^') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::XorAssign,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Hat,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '=') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::EQ,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Assign,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '!') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::EQ,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Not,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '<') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::LE,
-                                                 Span(start, end, id));
-        } else if (!input.eoi() && input.ch() == '<') {
-            end = input.pos();
-            input.advance();
-            if (!input.eoi() && input.ch() == '=') {
-                end = input.pos();
-                input.advance();
-                return std::make_shared<SymbolToken>(TokenKind::LShiftAssign,
-                                                     Span(start, end, id));
-            } else {
-                return std::make_shared<SymbolToken>(TokenKind::LShift,
-                                                     Span(start, end, id));
-            }
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::LT,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '>') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::GE,
-                                                 Span(start, end, id));
-        } else if (!input.eoi() && input.ch() == '>') {
-            end = input.pos();
-            input.advance();
-            if (!input.eoi() && input.ch() == '=') {
-                end = input.pos();
-                input.advance();
-                return std::make_shared<SymbolToken>(TokenKind::RShiftAssign,
-                                                     Span(start, end, id));
-            } else {
-                return std::make_shared<SymbolToken>(TokenKind::RShift,
-                                                     Span(start, end, id));
-            }
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::GT,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '+') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::AddAssign,
-                                                 Span(start, end, id));
-        } else if (!input.eoi() && input.ch() == '+') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::PlusPlus,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Plus,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '-') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::SubAssign,
-                                                 Span(start, end, id));
-        } else if (!input.eoi() && input.ch() == '-') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::MinusMinus,
-                                                 Span(start, end, id));
-        } else if (!input.eoi() && input.ch() == '>') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::Arrow,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Minus,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '*') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::MulAssign,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Star,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '/') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::DivAssign,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Slash,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '%') {
-        input.advance();
-        if (!input.eoi() && input.ch() == '=') {
-            end = input.pos();
-            input.advance();
-            return std::make_shared<SymbolToken>(TokenKind::ModAssign,
-                                                 Span(start, end, id));
-        } else {
-            return std::make_shared<SymbolToken>(TokenKind::Percent,
-                                                 Span(start, end, id));
-        }
-    } else if (input.ch() == '(') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::LParen,
-                                             Span(start, end, id));
-    } else if (input.ch() == ')') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::RParen,
-                                             Span(start, end, id));
-    } else if (input.ch() == '{') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::LCurly,
-                                             Span(start, end, id));
-    } else if (input.ch() == '}') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::RCurly,
-                                             Span(start, end, id));
-    } else if (input.ch() == '[') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::LSquare,
-                                             Span(start, end, id));
-    } else if (input.ch() == ']') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::RSquare,
-                                             Span(start, end, id));
-    } else if (input.ch() == ';') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::Semicolon,
-                                             Span(start, end, id));
-    } else if (input.ch() == ':') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::Colon,
-                                             Span(start, end, id));
-    } else if (input.ch() == ',') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::Comma,
-                                             Span(start, end, id));
-    } else if (input.ch() == ',') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::Tilde,
-                                             Span(start, end, id));
-    } else if (input.ch() == '?') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::Question,
-                                             Span(start, end, id));
-    } else if (input.ch() == '.') {
-        input.advance();
-        return std::make_shared<SymbolToken>(TokenKind::Dot,
-                                             Span(start, end, id));
-    } else if (input.accept("auto", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Auto,
-                                              Span(start, end, id));
-    } else if (input.accept("break", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Break,
-                                              Span(start, end, id));
-    } else if (input.accept("case", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Case,
-                                              Span(start, end, id));
-    } else if (input.accept("char", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Char,
-                                              Span(start, end, id));
-    } else if (input.accept("const", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Const,
-                                              Span(start, end, id));
-    } else if (input.accept("continue", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Continue,
-                                              Span(start, end, id));
-    } else if (input.accept("default", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Default,
-                                              Span(start, end, id));
-    } else if (input.accept("do", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Do,
-                                              Span(start, end, id));
-    } else if (input.accept("double", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Double,
-                                              Span(start, end, id));
-    } else if (input.accept("else", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Else,
-                                              Span(start, end, id));
-    } else if (input.accept("enum", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Enum,
-                                              Span(start, end, id));
-    } else if (input.accept("extern", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Extern,
-                                              Span(start, end, id));
-    } else if (input.accept("float", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Float,
-                                              Span(start, end, id));
-    } else if (input.accept("for", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::For,
-                                              Span(start, end, id));
-    } else if (input.accept("goto", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Goto,
-                                              Span(start, end, id));
-    } else if (input.accept("if", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::If,
-                                              Span(start, end, id));
-    } else if (input.accept("inline", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Inline,
-                                              Span(start, end, id));
-    } else if (input.accept("int", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Int,
-                                              Span(start, end, id));
-    } else if (input.accept("long", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Long,
-                                              Span(start, end, id));
-    } else if (input.accept("register", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Register,
-                                              Span(start, end, id));
-    } else if (input.accept("restrict", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Restrict,
-                                              Span(start, end, id));
-    } else if (input.accept("return", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Return,
-                                              Span(start, end, id));
-    } else if (input.accept("short", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Short,
-                                              Span(start, end, id));
-    } else if (input.accept("signed", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Signed,
-                                              Span(start, end, id));
-    } else if (input.accept("sizeof", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Sizeof,
-                                              Span(start, end, id));
-    } else if (input.accept("static", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Static,
-                                              Span(start, end, id));
-    } else if (input.accept("struct", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Struct,
-                                              Span(start, end, id));
-    } else if (input.accept("switch", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Switch,
-                                              Span(start, end, id));
-    } else if (input.accept("typedef", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Typedef,
-                                              Span(start, end, id));
-    } else if (input.accept("union", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Union,
-                                              Span(start, end, id));
-    } else if (input.accept("unsigned", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Unsigned,
-                                              Span(start, end, id));
-    } else if (input.accept("void", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Void,
-                                              Span(start, end, id));
-    } else if (input.accept("volatile", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::Volatile,
-                                              Span(start, end, id));
-    } else if (input.accept("while", end)) {
-        return std::make_shared<KeywordToken>(TokenKind::While,
-                                              Span(start, end, id));
-    } else if (std::isdigit(input.ch())) {
+// Extract a toke from non-empty `is`.
+// If unknown character found, throw `LexError`.
+std::shared_ptr<Token> token(InputStream& is) {
+    Span span = Span(is.input().id(), is.pos(), is.pos());
+    if (is.accept("&&", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::And, span);
+    } else if (is.accept("&=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::AndAssign, span);
+    } else if (is.accept('&', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Ampersand, span);
+    } else if (is.accept("||", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Or, span);
+    } else if (is.accept("|=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::OrAssign, span);
+    } else if (is.accept('|', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Vertical, span);
+    } else if (is.accept("^=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::XorAssign, span);
+    } else if (is.accept('^', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Hat, span);
+    } else if (is.accept("==", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::EQ, span);
+    } else if (is.accept('=', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Assign, span);
+    } else if (is.accept("!=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::NE, span);
+    } else if (is.accept('!', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Not, span);
+    } else if (is.accept("<<=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::LShiftAssign, span);
+    } else if (is.accept("<<", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::LShift, span);
+    } else if (is.accept("<=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::LE, span);
+    } else if (is.accept('<', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::LT, span);
+    } else if (is.accept(">>=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::RShiftAssign, span);
+    } else if (is.accept(">>", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::RShift, span);
+    } else if (is.accept(">=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::GE, span);
+    } else if (is.accept('>', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::GT, span);
+    } else if (is.accept("++", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::PlusPlus, span);
+    } else if (is.accept("+=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::AddAssign, span);
+    } else if (is.accept('+', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Plus, span);
+    } else if (is.accept("--", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::MinusMinus, span);
+    } else if (is.accept("-=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::SubAssign, span);
+    } else if (is.accept("->", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Arrow, span);
+    } else if (is.accept('-', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Minus, span);
+    } else if (is.accept("*=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::MulAssign, span);
+    } else if (is.accept('*', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Star, span);
+    } else if (is.accept("/=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::DivAssign, span);
+    } else if (is.accept('/', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Slash, span);
+    } else if (is.accept("%=", span)) {
+        return std::make_shared<SymbolToken>(TokenKind::ModAssign, span);
+    } else if (is.accept('%', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Percent, span);
+    } else if (is.accept('(', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::LParen, span);
+    } else if (is.accept(')', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::RParen, span);
+    } else if (is.accept('{', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::LCurly, span);
+    } else if (is.accept('}', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::RCurly, span);
+    } else if (is.accept('[', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::LSquare, span);
+    } else if (is.accept(']', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::RSquare, span);
+    } else if (is.accept(';', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Semicolon, span);
+    } else if (is.accept(':', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Colon, span);
+    } else if (is.accept(',', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Comma, span);
+    } else if (is.accept('~', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Tilde, span);
+    } else if (is.accept('?', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Question, span);
+    } else if (is.accept('.', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Dot, span);
+    } else if (is.accept("auto", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Auto, span);
+    } else if (is.accept("break", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Break, span);
+    } else if (is.accept("case", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Case, span);
+    } else if (is.accept("char", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Char, span);
+    } else if (is.accept("const", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Const, span);
+    } else if (is.accept("continue", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Continue, span);
+    } else if (is.accept("default", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Default, span);
+    } else if (is.accept("do", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Do, span);
+    } else if (is.accept("double", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Double, span);
+    } else if (is.accept("else", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Else, span);
+    } else if (is.accept("enum", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Enum, span);
+    } else if (is.accept("extern", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Extern, span);
+    } else if (is.accept("float", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Float, span);
+    } else if (is.accept("for", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::For, span);
+    } else if (is.accept("goto", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Goto, span);
+    } else if (is.accept("if", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::If, span);
+    } else if (is.accept("inline", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Inline, span);
+    } else if (is.accept("int", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Int, span);
+    } else if (is.accept("long", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Long, span);
+    } else if (is.accept("register", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Register, span);
+    } else if (is.accept("restrict", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Restrict, span);
+    } else if (is.accept("return", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Return, span);
+    } else if (is.accept("short", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Short, span);
+    } else if (is.accept("signed", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Signed, span);
+    } else if (is.accept("sizeof", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Sizeof, span);
+    } else if (is.accept("static", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Static, span);
+    } else if (is.accept("struct", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Struct, span);
+    } else if (is.accept("switch", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Switch, span);
+    } else if (is.accept("typedef", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Typedef, span);
+    } else if (is.accept("union", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Union, span);
+    } else if (is.accept("unsigned", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Unsigned, span);
+    } else if (is.accept("void", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Void, span);
+    } else if (is.accept("volatile", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::Volatile, span);
+    } else if (is.accept("while", span)) {
+        return std::make_shared<KeywordToken>(TokenKind::While, span);
+    } else if (std::isdigit(is.ch())) {
         std::string buf;
-        while (!input.eoi()) {
-            if (std::isdigit(input.ch())) {
-                end = input.pos();
-                buf.push_back(input.ch());
-                input.advance();
+        Position start = is.pos();
+        Position end = is.pos();
+        while (!is.eos()) {
+            if (std::isdigit(is.ch())) {
+                end = is.pos();
+                buf.push_back(is.ch());
+                is.advance();
             } else {
                 break;
             }
         }
         auto value = std::stoll(buf);
         return std::make_shared<ValueToken<long long>>(
-            TokenKind::Integer, value, Span(start, end, id));
-    } else if (std::isalpha(input.ch())) {
+            TokenKind::Integer, value, Span(is.input().id(), start, end));
+    } else if (std::isalpha(is.ch())) {
         std::string buf;
-        while (!input.eoi()) {
-            if (std::isalnum(input.ch()) || input.ch() == '_') {
-                end = input.pos();
-                buf.push_back(input.ch());
-                input.advance();
+        Position start = is.pos();
+        Position end = is.pos();
+        while (!is.eos()) {
+            if (std::isalnum(is.ch()) || is.ch() == '_') {
+                end = is.pos();
+                buf.push_back(is.ch());
+                is.advance();
             } else {
                 break;
             }
         }
         return std::make_shared<ValueToken<std::string>>(
-            TokenKind::Identifier, buf, Span(start, end, id));
+            TokenKind::Identifier, buf, Span(is.input().id(), start, end));
     } else {
         std::stringstream ss;
-        ss << "unexpected character '" << input.ch() << "' found";
-        input.advance();
-        throw LexError(ss.str(), Span(start, end, id));
+        ss << "unexpected character '" << is.ch() << "' found";
+        is.advance();
+        throw LexError(ss.str(), span);
     }
 }
 
-TokenStream lex(InputCache& cache, InputCache::cacheid_t id,
-                std::vector<LexError>& es) {
-    auto input = cache.fetch_input(id);
+TokenStream lex(Context& ctx, std::istream& is, std::vector<LexError>& es) {
+    int id = ctx.input_cache().cache(is);
+    auto input = ctx.input_cache().fetch(id);
+    auto is_ = InputStream(input);
+
     std::vector<std::shared_ptr<Token>> ts;
-    skip_whitespaces(input);
-    while (!input.eoi()) {
+    skip_whitespaces(is_);
+    while (!is_.eos()) {
         try {
-            ts.push_back(token(input, id));
+            ts.push_back(token(is_));
         } catch (LexError e) {
-            es.push_back(e);
+            es.emplace_back(e);
         }
-        skip_whitespaces(input);
+        skip_whitespaces(is_);
     }
-    return TokenStream(ts);
+    return ts;
 }
 
 }  // namespace tinyc

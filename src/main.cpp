@@ -2,36 +2,21 @@
 #include <iostream>
 #include <vector>
 
-#include "input/cache.h"
+#include "context.h"
+#include "lexer/error.h"
 #include "lexer/lexer.h"
-#include "parser/parser.h"
-#include "report/report.h"
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
+    if (argc < 2) {
         return 0;
     }
 
-    tinyc::InputCache cache;
-    tinyc::Reporter report(cache);
-
-    std::ifstream ifs(argv[1]);
-    auto id = cache.cache(ifs, argv[1]);
-
+    tinyc::Context ctx;
+    std::fstream fs(argv[1]);
     std::vector<tinyc::LexError> es;
-    auto ts = tinyc::lex(cache, id, es);
-    if (!es.empty()) {
-        for (auto e : es) {
-            report.report(e);
-        }
-        return 0;
-    }
-
-    try {
-        auto stmt = tinyc::parse_stmt(ts);
-        std::cout << stmt->debug() << std::endl;
-    } catch (tinyc::ParseError e) {
-        report.report(e);
-        return 0;
+    auto ts = tinyc::lex(ctx, fs, es);
+    while (!ts.eos()) {
+        std::cout << ts.token()->debug() << std::endl;
+        ts.advance();
     }
 }

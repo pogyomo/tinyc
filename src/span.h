@@ -2,53 +2,63 @@
 #define TINYC_SPAN_H_
 
 #include <utility>
+#include <vector>
 
-#include "input/cache.h"
-
-namespace tinyc {
-
-// A class represent a range of source code.
-// The range this class represent is inclusive: Span(start, end, id) represent
-// range of [start, end].
-class Span {
+// A class represent the position in source code.
+class Position {
 public:
-    Span(int start_row, int start_offset, int end_row, int end_offset,
-         InputCache::cacheid_t id)
-        : start_({start_row, start_offset}),
-          end_({end_row, end_offset}),
-          id_(id) {}
+    Position() : row_(0), offset_(0) {}
 
-    Span(std::pair<int, int> start, std::pair<int, int> end,
-         InputCache::cacheid_t id)
-        : start_(start), end_(end), id_(id) {}
+    Position(int row, int offset) : row_(row), offset_(offset) {}
 
-    // Returns pair of start row and offset of this span.
-    inline std::pair<int, int> start() const { return start_; }
+    int row() const { return row_; }
 
-    // Returns pair of end row and offset of this span.
-    inline std::pair<int, int> end() const { return end_; }
+    int offset() const { return offset_; }
 
-    // Returns start row of this span.
-    inline int start_row() const { return start_.first; }
+    bool operator<(const Position& rhs) const {
+        return std::make_pair(row_, offset_) <
+               std::make_pair(rhs.row_, rhs.offset_);
+    }
 
-    // Returns start offset of this span.
-    inline int start_offset() const { return start_.second; }
+    bool operator>(const Position& rhs) const {
+        return std::make_pair(row_, offset_) >
+               std::make_pair(rhs.row_, rhs.offset_);
+    }
 
-    // Returns end row of this span.
-    inline int end_row() const { return end_.first; }
+    bool operator<=(const Position& rhs) const { return !(*this > rhs); }
 
-    // Returns end offset of this span.
-    inline int end_offset() const { return end_.second; }
-
-    // Returns cached input id which this span is associated.
-    inline InputCache::cacheid_t id() const { return id_; }
+    bool operator>=(const Position& rhs) const { return !(*this < rhs); }
 
 private:
-    const std::pair<int, int> start_;
-    const std::pair<int, int> end_;
-    const InputCache::cacheid_t id_;
+    int row_;
+    int offset_;
 };
 
-}  // namespace tinyc
+// A non-empty, inclusive range in soruce code.
+class Span {
+public:
+    Span(int id) : id_(id), start_(), end_() {}
+
+    Span(int id, Position start, Position end)
+        : id_(id), start_(start), end_(end) {}
+
+    // Returns a unique id which represent the source code this span was
+    // created.
+    int id() const { return id_; }
+
+    // Returns a start position of this range.
+    Position start() const { return start_; }
+
+    // Returns a end position of this range.
+    Position end() const { return end_; }
+
+private:
+    int id_;
+    Position start_;
+    Position end_;
+};
+
+// Combine given spans into one span.
+Span concat_spans(const std::vector<Span>& spans);
 
 #endif  // TINYC_SPAN_H_

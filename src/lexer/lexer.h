@@ -1,106 +1,18 @@
 #ifndef TINYC_LEXER_LEXER_H_
 #define TINYC_LEXER_LEXER_H_
 
-#include <exception>
-#include <memory>
-#include <stdexcept>
+#include <istream>
 #include <vector>
 
-#include "../input/cache.h"
-#include "../input/input.h"
-#include "../report/report.h"
-#include "../span.h"
-#include "token.h"
+#include "../context.h"
+#include "error.h"
+#include "stream.h"
 
 namespace tinyc {
 
-// A class represent an error happen during lexing.
-class LexError : public Reportable {
-public:
-    // Construct a new `LexError` with message and its span.
-    LexError(const std::string& what, Span span) : what_(what), span_(span) {}
-
-    ReportLevel level() const override { return ReportLevel::Error; }
-
-    std::string situation() const override { return "while lexing input"; }
-
-    std::string what() const override { return what_; }
-
-    Span span() const override { return span_; }
-
-private:
-    const std::string what_;
-    const Span span_;
-};
-
-// A class represent a sequence of token which hold current position at the
-// sequence and can advance/retrest it.
-class TokenStream {
-public:
-    using state_t = int;
-
-    // Construct a new empty `TokenStream`.
-    TokenStream() : pos_(0), ts_() {}
-
-    // Construct a new `TokenStream` with given list of token with initializing
-    // its position to 0.
-    TokenStream(const std::vector<std::shared_ptr<Token>>& ts)
-        : pos_(0), ts_(ts) {}
-
-    // Returns current peeking token in this stream.
-    // It's undefined behavior to call this when `empty()` or `eos()` returns
-    // true.
-    inline const std::shared_ptr<Token>& token() const { return ts_[pos_]; }
-
-    // Returns last token in token stream.
-    // It's undefined behavior to call this when `empty()` returns true.
-    inline const std::shared_ptr<Token>& last() { return ts_.back(); }
-
-    // Returns current state.
-    inline state_t state() const { return pos_; }
-
-    // Set given state to this stream.
-    inline void set_state(state_t state) { pos_ = state; }
-
-    // Advance the position in this stream.
-    // If `empty()` returns true, nothing happen and has no effect.
-    // This returns true if it success to advance the position.
-    inline bool advance() {
-        if (!eos()) {
-            pos_++;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    // Retrest the position in this stream.
-    // If in the start of this stream, nothing happen and has no effect.
-    // This returns true if it success to retrest the position.
-    inline bool retrest() {
-        if (pos_ > 0) {
-            pos_--;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    // Returns true if no token available from this stream.
-    inline bool eos() { return pos_ >= ts_.size(); }
-
-    // Returns true if no token is exist in this stream.
-    inline bool empty() { return ts_.empty(); }
-
-private:
-    int pos_;
-    const std::vector<std::shared_ptr<Token>> ts_;
-};
-
-// Convert input associated with id into token stream.
-// Errors happen during lexing is stored into `errors`.
-TokenStream lex(InputCache& cache, InputCache::cacheid_t id,
-                std::vector<LexError>& es);
+// Convert the characters in `is` into the list of token.
+// If error happne, `es` will contains the errors.
+TokenStream lex(Context& ctx, std::istream& is, std::vector<LexError>& es);
 
 }  // namespace tinyc
 

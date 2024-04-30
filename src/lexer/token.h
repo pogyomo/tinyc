@@ -3,7 +3,6 @@
 
 #include <string>
 
-#include "../input/cache.h"
 #include "../span.h"
 
 namespace tinyc {
@@ -140,4 +139,4 @@ private:
 
 }  // namespace tinyc
 
-#endif  // TINYC_LEXER_TOKEN_H_
+#endif  // TINYC_TOKEN_H_
