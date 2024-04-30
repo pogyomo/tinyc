@@ -1,5 +1,5 @@
-#ifndef TINYC_PARSER_TYPE_UNION_H_
-#define TINYC_PARSER_TYPE_UNION_H_
+#ifndef TINYC_PARSER_TYPE_SPECIFIER_UNION_H_
+#define TINYC_PARSER_TYPE_SPECIFIER_UNION_H_
 
 #include <optional>
 #include <sstream>
@@ -194,4 +194,4 @@ private:
 
 }  // namespace tinyc
 
-#endif  // TINYC_PARSER_TYPE_UNION_H_
+#endif  // TINYC_PARSER_TYPE_SPECIFIER_UNION_H_

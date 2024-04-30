@@ -1,5 +1,5 @@
-#ifndef TINYC_PARSER_TYPE_ENUM_H_
-#define TINYC_PARSER_TYPE_ENUM_H_
+#ifndef TINYC_PARSER_TYPE_SPECIFIER_ENUM_H_
+#define TINYC_PARSER_TYPE_SPECIFIER_ENUM_H_
 
 #include <memory>
 #include <optional>
@@ -242,4 +242,4 @@ private:
 
 }  // namespace tinyc
 
-#endif  // TINYC_PARSER_TYPE_ENUM_H_
+#endif  // TINYC_PARSER_TYPE_SPECIFIER_ENUM_H_
