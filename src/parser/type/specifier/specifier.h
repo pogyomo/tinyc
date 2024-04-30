@@ -9,6 +9,7 @@ enum class TypeSpecifierKind {
     Struct,
     Union,
     Enum,
+    TypedefName,
 };
 
 class TypeSpecifier : public Node {
