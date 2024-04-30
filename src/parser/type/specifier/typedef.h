@@ -4,9 +4,9 @@
 #include "specifier.h"
 namespace tinyc {
 
-class TypedefNameSpecifier : public TypeSpecifier {
+class TypedefNameTypeSpecifier : public TypeSpecifier {
 public:
-    TypedefNameSpecifier(const std::string& name, Span span)
+    TypedefNameTypeSpecifier(const std::string& name, Span span)
         : name_(name), span_(span) {}
 
     inline TypeSpecifierKind kind() const override {
