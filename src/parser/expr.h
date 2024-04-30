@@ -291,45 +291,20 @@ private:
     const AccessExpressionField field_;
 };
 
-class IndexingExpressionLSquare : public Node {
-public:
-    IndexingExpressionLSquare(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "["; }
-
-private:
-    const Span span_;
-};
-
-class IndexingExpressionRSquare : public Node {
-public:
-    IndexingExpressionRSquare(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "]"; }
-
-private:
-    const Span span_;
-};
-
 class IndexingExpression : public Expression {
 public:
-    IndexingExpression(const std::shared_ptr<Expression>& expr,
-                       IndexingExpressionLSquare lsquare,
+    IndexingExpression(const std::shared_ptr<Expression>& expr, LSquare lsquare,
                        const std::shared_ptr<Expression>& index,
-                       IndexingExpressionRSquare rsquare)
+                       RSquare rsquare)
         : expr_(expr), lsquare_(lsquare), index_(index), rsquare_(rsquare) {}
 
     inline const std::shared_ptr<Expression>& expr() const { return expr_; }
 
-    inline const IndexingExpressionLSquare& lsquare() const { return lsquare_; }
+    inline const LSquare& lsquare() const { return lsquare_; }
 
     inline const std::shared_ptr<Expression>& index() const { return index_; }
 
-    inline const IndexingExpressionRSquare& rsquare() const { return rsquare_; }
+    inline const RSquare& rsquare() const { return rsquare_; }
 
     inline ExpressionKind kind() const override {
         return ExpressionKind::Indexing;
@@ -350,41 +325,16 @@ public:
 
 private:
     const std::shared_ptr<Expression> expr_;
-    const IndexingExpressionLSquare lsquare_;
+    const LSquare lsquare_;
     const std::shared_ptr<Expression> index_;
-    const IndexingExpressionRSquare rsquare_;
-};
-
-class CallingExpressionLParen : public Node {
-public:
-    CallingExpressionLParen(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "("; }
-
-private:
-    const Span span_;
-};
-
-class CallingExpressionRParen : public Node {
-public:
-    CallingExpressionRParen(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return ")"; }
-
-private:
-    const Span span_;
+    const RSquare rsquare_;
 };
 
 class CallingExpression : public Expression {
 public:
-    CallingExpression(const std::shared_ptr<Expression>& expr,
-                      CallingExpressionLParen lparen,
+    CallingExpression(const std::shared_ptr<Expression>& expr, LParen lparen,
                       const std::vector<std::shared_ptr<Expression>>& params,
-                      CallingExpressionRParen rparen)
+                      RParen rparen)
         : expr_(expr), lparen_(lparen), params_(params), rparen_(rparen) {}
 
     inline const std::shared_ptr<Expression>& expr() const { return expr_; }
@@ -393,9 +343,9 @@ public:
         return params_;
     }
 
-    inline const CallingExpressionLParen& lparen() const { return lparen_; }
+    inline const LParen& lparen() const { return lparen_; }
 
-    inline const CallingExpressionRParen& rparen() const { return rparen_; }
+    inline const RParen& rparen() const { return rparen_; }
 
     inline ExpressionKind kind() const override {
         return ExpressionKind::Calling;
@@ -414,54 +364,29 @@ public:
 
     std::string debug() const override {
         if (params_.size() == 0) {
-            return expr_->debug() + "()";
+            return expr_->debug() + lparen_.debug() + rparen_.debug();
         }
         std::stringstream ss;
-        ss << expr_->debug() + "(" << params_[0]->debug();
+        ss << expr_->debug() + lparen_.debug() << params_[0]->debug();
         for (int i = 1; i < params_.size(); i++) {
             ss << ", " << params_[i]->debug();
         }
-        ss << ")";
+        ss << rparen_.debug();
         return ss.str();
     }
 
 private:
     const std::shared_ptr<Expression> expr_;
-    const CallingExpressionLParen lparen_;
+    const LParen lparen_;
     const std::vector<std::shared_ptr<Expression>> params_;
-    const CallingExpressionRParen rparen_;
-};
-
-class ConditionalExpressionExclamationOp : public Node {
-public:
-    ConditionalExpressionExclamationOp(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "?"; }
-
-private:
-    Span span_;
-};
-
-class ConditionalExpressionColonOp : public Node {
-public:
-    ConditionalExpressionColonOp(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return ":"; }
-
-private:
-    Span span_;
+    const RParen rparen_;
 };
 
 class ConditionalExpression : public Expression {
 public:
     ConditionalExpression(const std::shared_ptr<Expression>& cond,
-                          ConditionalExpressionExclamationOp exclamation,
-                          const std::shared_ptr<Expression>& then,
-                          ConditionalExpressionColonOp colon,
+                          Exclamation exclamation,
+                          const std::shared_ptr<Expression>& then, Colon colon,
                           const std::shared_ptr<Expression>& otherwise)
         : cond_(cond),
           exclamation_(exclamation),
@@ -471,13 +396,11 @@ public:
 
     inline const std::shared_ptr<Expression>& cond() const { return cond_; }
 
-    inline const ConditionalExpressionExclamationOp& exclamation() const {
-        return exclamation_;
-    }
+    inline const Exclamation& exclamation() const { return exclamation_; }
 
     inline const std::shared_ptr<Expression>& then() const { return then_; }
 
-    inline const ConditionalExpressionColonOp& colon() const { return colon_; }
+    inline const Colon& colon() const { return colon_; }
 
     inline const std::shared_ptr<Expression>& otherwise() const {
         return otherwise_;
@@ -502,33 +425,19 @@ public:
 
 private:
     const std::shared_ptr<Expression> cond_;
-    const ConditionalExpressionExclamationOp exclamation_;
+    const Exclamation exclamation_;
     const std::shared_ptr<Expression> then_;
-    const ConditionalExpressionColonOp colon_;
+    const Colon colon_;
     const std::shared_ptr<Expression> otherwise_;
-};
-
-class SizeofExprExpressionSizeofKeyword : public Node {
-public:
-    SizeofExprExpressionSizeofKeyword(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "sizeof"; }
-
-private:
-    const Span span_;
 };
 
 class SizeofExprExpression : public Expression {
 public:
-    SizeofExprExpression(SizeofExprExpressionSizeofKeyword sizeof_keyword,
+    SizeofExprExpression(Sizeof sizeof_keyword,
                          std::shared_ptr<Expression> expr)
         : sizeof_keyword_(sizeof_keyword), expr_(expr) {}
 
-    inline const SizeofExprExpressionSizeofKeyword& sizeof_keyword() const {
-        return sizeof_keyword_;
-    }
+    inline const Sizeof& sizeof_keyword() const { return sizeof_keyword_; }
 
     inline const std::shared_ptr<Expression>& expr() const { return expr_; };
 
@@ -545,66 +454,26 @@ public:
     }
 
 private:
-    const SizeofExprExpressionSizeofKeyword sizeof_keyword_;
+    const Sizeof sizeof_keyword_;
     const std::shared_ptr<Expression> expr_;
-};
-
-class SizeofTypeExpressionSizeofKeyword : public Node {
-public:
-    SizeofTypeExpressionSizeofKeyword(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "sizeof"; }
-
-private:
-    const Span span_;
-};
-
-class SizeofTypeExpressionLParen : public Node {
-public:
-    SizeofTypeExpressionLParen(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "("; }
-
-private:
-    const Span span_;
-};
-
-class SizeofTypeExpressionRParen : public Node {
-public:
-    SizeofTypeExpressionRParen(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return ")"; }
-
-private:
-    const Span span_;
 };
 
 class SizeofTypeExpression : public Expression {
 public:
-    SizeofTypeExpression(SizeofTypeExpressionSizeofKeyword sizeof_keyword,
-                         SizeofTypeExpressionLParen lparen,
-                         std::shared_ptr<Type> type,
-                         SizeofTypeExpressionRParen rparen)
+    SizeofTypeExpression(Sizeof sizeof_keyword, LParen lparen,
+                         std::shared_ptr<Type> type, RParen rparen)
         : sizeof_keyword_(sizeof_keyword),
           lparen_(lparen),
           type_(type),
           rparen_(rparen) {}
 
-    inline const SizeofTypeExpressionSizeofKeyword& sizeof_keyword() const {
-        return sizeof_keyword_;
-    }
+    inline const Sizeof& sizeof_keyword() const { return sizeof_keyword_; }
 
-    inline const SizeofTypeExpressionLParen& lparen() const { return lparen_; }
+    inline const LParen& lparen() const { return lparen_; }
 
     inline const std::shared_ptr<Type>& type() const { return type_; };
 
-    inline const SizeofTypeExpressionRParen& rparen() const { return rparen_; }
+    inline const RParen& rparen() const { return rparen_; }
 
     inline ExpressionKind kind() const override {
         return ExpressionKind::SizeofType;
@@ -624,49 +493,23 @@ public:
     }
 
 private:
-    const SizeofTypeExpressionSizeofKeyword sizeof_keyword_;
-    const SizeofTypeExpressionLParen lparen_;
+    const Sizeof sizeof_keyword_;
+    const LParen lparen_;
     const std::shared_ptr<Type> type_;
-    const SizeofTypeExpressionRParen rparen_;
-};
-
-class CastExpressionLParen : public Node {
-public:
-    CastExpressionLParen(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "("; }
-
-private:
-    const Span span_;
-};
-
-class CastExpressionRParen : public Node {
-public:
-    CastExpressionRParen(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return ")"; }
-
-private:
-    const Span span_;
+    const RParen rparen_;
 };
 
 class CastExpression : public Expression {
 public:
-    CastExpression(CastExpressionLParen lparen,
-                   const std::shared_ptr<Type> type,
-                   CastExpressionRParen rparen,
-                   const std::shared_ptr<Expression> expr)
+    CastExpression(LParen lparen, const std::shared_ptr<Type> type,
+                   RParen rparen, const std::shared_ptr<Expression> expr)
         : lparen_(lparen), type_(type), rparen_(rparen), expr_(expr) {}
 
-    inline const CastExpressionLParen& lparen() const { return lparen_; }
+    inline const LParen& lparen() const { return lparen_; }
 
     inline const std::shared_ptr<Type>& type() const { return type_; }
 
-    inline const CastExpressionRParen& rparen() const { return rparen_; }
+    inline const RParen& rparen() const { return rparen_; }
 
     inline const std::shared_ptr<Expression>& expr() const { return expr_; }
 
@@ -686,9 +529,9 @@ public:
     }
 
 private:
-    const CastExpressionLParen lparen_;
+    const LParen lparen_;
     const std::shared_ptr<Type> type_;
-    const CastExpressionRParen rparen_;
+    const RParen rparen_;
     const std::shared_ptr<Expression> expr_;
 };
 
@@ -732,42 +575,17 @@ private:
     const Span span_;
 };
 
-class SurroundedExpressionLParen : public Node {
-public:
-    SurroundedExpressionLParen(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return "("; }
-
-private:
-    const Span span_;
-};
-
-class SurroundedExpressionRParen : public Node {
-public:
-    SurroundedExpressionRParen(Span span) : span_(span) {}
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return ")"; }
-
-private:
-    const Span span_;
-};
-
 class SurroundedExpression : public Expression {
 public:
-    SurroundedExpression(SurroundedExpressionLParen lparen,
-                         const std::shared_ptr<Expression>& expr,
-                         SurroundedExpressionRParen rparen)
+    SurroundedExpression(LParen lparen, const std::shared_ptr<Expression>& expr,
+                         RParen rparen)
         : lparen_(lparen), expr_(expr), rparen_(rparen) {}
 
-    const SurroundedExpressionLParen& lparen() const { return lparen_; }
+    const LParen& lparen() const { return lparen_; }
 
     const std::shared_ptr<Expression>& expr() const { return expr_; }
 
-    const SurroundedExpressionRParen& rparen() const { return rparen_; }
+    const RParen& rparen() const { return rparen_; }
 
     inline ExpressionKind kind() const override {
         return ExpressionKind::Surrounded;
@@ -782,9 +600,9 @@ public:
     }
 
 private:
-    const SurroundedExpressionLParen lparen_;
+    const LParen lparen_;
     const std::shared_ptr<Expression> expr_;
-    const SurroundedExpressionRParen rparen_;
+    const RParen rparen_;
 };
 
 }  // namespace tinyc
