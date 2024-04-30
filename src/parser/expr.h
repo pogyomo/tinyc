@@ -353,12 +353,12 @@ public:
 
     Span span() const override {
         std::vector<Span> spans;
-        spans.push_back(expr_->span());
-        spans.push_back(lparen_.span());
+        spans.emplace_back(expr_->span());
+        spans.emplace_back(lparen_.span());
         for (const auto param : params_) {
-            spans.push_back(param->span());
+            spans.emplace_back(param->span());
         }
-        spans.push_back(rparen_.span());
+        spans.emplace_back(rparen_.span());
         return concat_spans(spans);
     }
 
