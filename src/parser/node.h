@@ -111,6 +111,18 @@ private:
     const Span span_;
 };
 
+class Semicolon : public Node {
+public:
+    Semicolon(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return ";"; }
+
+private:
+    const Span span_;
+};
+
 class Sizeof : public Node {
 public:
     Sizeof(Span span) : span_(span) {}
@@ -118,6 +130,150 @@ public:
     inline Span span() const override { return span_; }
 
     inline std::string debug() const override { return "sizeof"; }
+
+private:
+    const Span span_;
+};
+
+class Case : public Node {
+public:
+    Case(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "case"; }
+
+private:
+    const Span span_;
+};
+
+class Default : public Node {
+public:
+    Default(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "default"; }
+
+private:
+    const Span span_;
+};
+
+class If : public Node {
+public:
+    If(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "if"; }
+
+private:
+    const Span span_;
+};
+
+class Else : public Node {
+public:
+    Else(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "else"; }
+
+private:
+    const Span span_;
+};
+
+class Switch : public Node {
+public:
+    Switch(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "switch"; }
+
+private:
+    const Span span_;
+};
+
+class While : public Node {
+public:
+    While(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "while"; }
+
+private:
+    const Span span_;
+};
+
+class Do : public Node {
+public:
+    Do(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "do"; }
+
+private:
+    const Span span_;
+};
+
+class For : public Node {
+public:
+    For(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "for"; }
+
+private:
+    const Span span_;
+};
+
+class Goto : public Node {
+public:
+    Goto(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "goto"; }
+
+private:
+    const Span span_;
+};
+
+class Continue : public Node {
+public:
+    Continue(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "continue"; }
+
+private:
+    const Span span_;
+};
+
+class Break : public Node {
+public:
+    Break(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "break"; }
+
+private:
+    const Span span_;
+};
+
+class Return : public Node {
+public:
+    Return(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "return"; }
 
 private:
     const Span span_;
