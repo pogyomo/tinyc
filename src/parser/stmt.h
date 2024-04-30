@@ -15,7 +15,6 @@ enum class StatementKind {
     Labeled,
     Case,
     Default,
-    Empty,
     Expression,
     Block,
     If,
@@ -150,29 +149,18 @@ private:
     const std::shared_ptr<Statement> stmt_;
 };
 
-class EmptyStatement : public Statement {
-public:
-    EmptyStatement(Semicolon semicolon) : semicolon_(semicolon) {}
-
-    inline const Semicolon& semicolon() const { return semicolon_; }
-
-    inline StatementKind kind() const override { return StatementKind::Empty; }
-
-    inline Span span() const override { return semicolon_.span(); }
-
-    inline std::string debug() const override { return semicolon_.debug(); }
-
-private:
-    const Semicolon semicolon_;
-};
-
 class ExpressionStatement : public Statement {
 public:
+    ExpressionStatement(Semicolon semicolon)
+        : expr_(std::nullopt), semicolon_(semicolon) {}
+
     ExpressionStatement(const std::shared_ptr<Expression>& expr,
                         Semicolon semicolon)
         : expr_(expr), semicolon_(semicolon) {}
 
-    inline const std::shared_ptr<Expression>& expr() const { return expr_; }
+    inline const std::optional<std::shared_ptr<Expression>>& expr() const {
+        return expr_;
+    }
 
     inline const Semicolon& semicolon() const { return semicolon_; }
 
@@ -180,16 +168,24 @@ public:
         return StatementKind::Expression;
     }
 
-    inline Span span() const override {
-        return concat_spans({expr_->span(), semicolon_.span()});
+    Span span() const override {
+        if (expr_.has_value()) {
+            return concat_spans({expr_.value()->span(), semicolon_.span()});
+        } else {
+            return semicolon_.span();
+        }
     }
 
-    inline std::string debug() const override {
-        return expr_->debug() + semicolon_.debug();
+    std::string debug() const override {
+        if (expr_.has_value()) {
+            return expr_.value()->debug() + semicolon_.debug();
+        } else {
+            return semicolon_.debug();
+        }
     }
 
 private:
-    const std::shared_ptr<Expression> expr_;
+    const std::optional<std::shared_ptr<Expression>> expr_;
     const Semicolon semicolon_;
 };
 
