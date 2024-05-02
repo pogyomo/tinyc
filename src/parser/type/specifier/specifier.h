@@ -6,6 +6,7 @@
 namespace tinyc {
 
 enum class TypeSpecifierKind {
+    Builtin,
     Struct,
     Union,
     Enum,
