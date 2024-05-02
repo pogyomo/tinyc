@@ -13,35 +13,38 @@
 namespace tinyc {
 
 class Type : public Node {
+public:
     // If `specifiers` is empty, throw `runtime_error` exception.
-    Type(const std::vector<TypeSpecifier>& specifiers,
-         const std::vector<TypeQuantifier>& quantifiers)
+    Type(const std::vector<std::shared_ptr<TypeSpecifier>>& specifiers,
+         const std::vector<std::shared_ptr<TypeQuantifier>>& quantifiers)
         : specifiers_(specifiers), quantifiers_(quantifiers) {
         if (specifiers.empty()) {
             throw std::runtime_error("type must have at least one specifier");
         }
     }
 
-    const std::vector<TypeSpecifier>& specifiers() const { return specifiers_; }
+    const std::vector<std::shared_ptr<TypeSpecifier>>& specifiers() const {
+        return specifiers_;
+    }
 
-    const std::vector<TypeQuantifier>& quantifiers() const {
+    const std::vector<std::shared_ptr<TypeQuantifier>>& quantifiers() const {
         return quantifiers_;
     }
 
     Span span() const override {
         std::vector<Span> spans;
         for (const auto& specifier : specifiers_) {
-            spans.emplace_back(specifier.span());
+            spans.emplace_back(specifier->span());
         }
         for (const auto& quantifier : quantifiers_) {
-            spans.emplace_back(quantifier.span());
+            spans.emplace_back(quantifier->span());
         }
         return concat_spans(spans);
     }
 
 private:
-    const std::vector<TypeSpecifier> specifiers_;
-    const std::vector<TypeQuantifier> quantifiers_;
+    const std::vector<std::shared_ptr<TypeSpecifier>> specifiers_;
+    const std::vector<std::shared_ptr<TypeQuantifier>> quantifiers_;
 };
 
 }  // namespace tinyc
