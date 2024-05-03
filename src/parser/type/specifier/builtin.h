@@ -11,6 +11,7 @@
 namespace tinyc {
 
 enum class BuiltinTypeSpecifierKind {
+    Void,
     Signed,
     Unsigned,
     Char,
@@ -38,6 +39,8 @@ public:
 
     std::string debug() const override {
         switch (kind_) {
+            case BuiltinTypeSpecifierKind::Void:
+                return "void";
             case BuiltinTypeSpecifierKind::Signed:
                 return "signed";
             case BuiltinTypeSpecifierKind::Unsigned:
