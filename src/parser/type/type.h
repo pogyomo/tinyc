@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -40,6 +41,16 @@ public:
             spans.emplace_back(quantifier->span());
         }
         return concat_spans(spans);
+    }
+
+    std::string debug() const override {
+        std::stringstream ss;
+        ss << specifiers_[0]->debug();
+        for (int i = 1; i < specifiers_.size(); i++)
+            ss << " " << specifiers_[i]->debug();
+        for (const auto& quantifier : quantifiers_)
+            ss << " " << quantifier->debug();
+        return ss.str();
     }
 
 private:
