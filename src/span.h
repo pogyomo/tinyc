@@ -4,6 +4,8 @@
 #include <utility>
 #include <vector>
 
+namespace tinyc {
+
 // A class represent the position in source code.
 class Position {
 public:
@@ -60,5 +62,7 @@ private:
 
 // Combine given spans into one span.
 Span concat_spans(const std::vector<Span>& spans);
+
+}  // namespace tinyc
 
 #endif  // TINYC_SPAN_H_
