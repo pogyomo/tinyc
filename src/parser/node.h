@@ -147,6 +147,18 @@ private:
     const Span span_;
 };
 
+class Star : public Node {
+public:
+    Star(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "*"; }
+
+private:
+    const Span span_;
+};
+
 class Sizeof : public Node {
 public:
     Sizeof(Span span) : span_(span) {}
