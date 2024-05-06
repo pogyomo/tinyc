@@ -44,12 +44,15 @@ private:
 class VariableDeclaration : public Declaration {
 public:
     VariableDeclaration(const std::shared_ptr<Type>& type,
-                        const VariableDeclarationName& name)
-        : type_(type), name_(name) {}
+                        const VariableDeclarationName& name,
+                        Semicolon semicolon)
+        : type_(type), name_(name), semicolon_(semicolon) {}
 
     const std::shared_ptr<Type>& type() const { return type_; }
 
     const VariableDeclarationName& name() const { return name_; }
+
+    const Semicolon& semicolon() const { return semicolon_; }
 
     inline DeclarationKind kind() const override {
         return DeclarationKind::Variable;
@@ -64,6 +67,7 @@ public:
 private:
     const std::shared_ptr<Type> type_;
     const VariableDeclarationName name_;
+    const Semicolon semicolon_;
 };
 
 class FunctionDeclarationName : public Node {
