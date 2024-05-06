@@ -6,7 +6,7 @@
 namespace tinyc {
 
 // A class represent an error which occure while lexing.
-class LexError : Reportable {
+class LexError : public Reportable {
 public:
     LexError(const std::string& what, Span span) : what_(what), span_(span) {}
 

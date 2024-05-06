@@ -139,9 +139,9 @@ private:
 class InfixExpression : public Expression {
 public:
     InfixExpression(const std::shared_ptr<Expression>& lhs,
-                    const std::shared_ptr<Expression>& rhs,
-                    InfixExpressionOp op)
-        : lhs_(lhs), rhs_(rhs), op_(op) {}
+                    InfixExpressionOp op,
+                    const std::shared_ptr<Expression>& rhs)
+        : lhs_(lhs), op_(op), rhs_(rhs) {}
 
     inline const std::shared_ptr<Expression>& lhs() const { return lhs_; }
 

@@ -1,22 +1,31 @@
 #include <fstream>
 #include <iostream>
-#include <vector>
 
 #include "context.h"
-#include "lexer/error.h"
-#include "lexer/lexer.h"
+#include "parser/error.h"
+#include "parser/parser.h"
+#include "report/report.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     if (argc < 2) {
         return 0;
     }
 
     tinyc::Context ctx;
     std::fstream fs(argv[1]);
-    std::vector<tinyc::LexError> es;
-    auto ts = tinyc::lex(ctx, fs, es);
-    while (!ts.eos()) {
-        std::cout << ts.token()->debug() << std::endl;
-        ts.advance();
+    std::vector<tinyc::ParseError> es;
+    auto prog = parse(ctx, fs, es);
+    if (es.empty()) {
+        if (prog.decls().empty()) {
+            std::cout << "result is empty" << std::endl;
+        } else {
+            for (const auto& decl : prog.decls()) {
+                std::cout << decl->debug() << std::endl;
+            }
+        }
+    } else {
+        for (auto& e : es) {
+            tinyc::report(ctx, e);
+        }
     }
 }

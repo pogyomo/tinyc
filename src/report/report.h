@@ -7,7 +7,7 @@
 namespace tinyc {
 
 // Report the `Reportable` to stderr.
-void report(Context& ctx, Reportable& r);
+void report(Context& ctx, const Reportable& r);
 
 }  // namespace tinyc
 

@@ -34,7 +34,11 @@ class ConcreteType : public Type {
 public:
     ConcreteType(const std::vector<std::shared_ptr<TypeSpecifier>>& specifiers,
                  const std::vector<std::shared_ptr<TypeQuantifier>> quantifiers)
-        : specifiers_(specifiers), quantifiers_(quantifiers) {}
+        : specifiers_(specifiers), quantifiers_(quantifiers) {
+        if (specifiers.empty()) {
+            throw std::runtime_error("`specifiers` must not be empty");
+        }
+    }
 
     inline const std::vector<std::shared_ptr<TypeSpecifier>>& specifiers()
         const {
