@@ -74,18 +74,17 @@ private:
 
 class PointerType : public Type {
 public:
-    PointerType(Star star, const std::shared_ptr<Type>& of)
-        : parens_(std::nullopt), star_(star), of_(of) {}
-
-    PointerType(LParen lparen, Star star, RParen rparen,
+    PointerType(Star star,
+                const std::vector<std::shared_ptr<TypeQuantifier>>& quantifiers,
                 const std::shared_ptr<Type>& of)
-        : parens_({lparen, rparen}), star_(star), of_(of) {}
-
-    inline const std::optional<std::pair<LParen, RParen>>& parens() const {
-        return parens_;
-    }
+        : star_(star), quantifiers_(quantifiers), of_(of) {}
 
     inline const Star& star() const { return star_; }
+
+    inline const std::vector<std::shared_ptr<TypeQuantifier>>& quantifiers()
+        const {
+        return quantifiers_;
+    }
 
     inline const std::shared_ptr<Type>& of() const { return of_; }
 
@@ -98,8 +97,8 @@ public:
     inline std::string debug() const override { return "todo"; }
 
 private:
-    const std::optional<std::pair<LParen, RParen>> parens_;
     const Star star_;
+    const std::vector<std::shared_ptr<TypeQuantifier>> quantifiers_;
     const std::shared_ptr<Type> of_;
 };
 
