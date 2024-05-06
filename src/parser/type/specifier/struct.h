@@ -5,8 +5,8 @@
 #include <sstream>
 
 #include "../../../span.h"
+#include "../../decl.h"
 #include "../../node.h"
-#include "../type.h"
 #include "specifier.h"
 
 namespace tinyc {
@@ -24,55 +24,16 @@ public:
     TypeSpecifierKind kind() const override { return TypeSpecifierKind::Enum; }
 };
 
-class StructTypeSpecifierDeclIdent : public Node {
-public:
-    StructTypeSpecifierDeclIdent(const std::string& name, Span span)
-        : name_(name), span_(span) {}
-
-    inline const std::string& name() const { return name_; }
-
-    inline Span span() const override { return span_; }
-
-    inline std::string debug() const override { return name_; }
-
-private:
-    const std::string name_;
-    const Span span_;
-};
-
-class StructTypeSpecifierDecl : public Node {
-public:
-    StructTypeSpecifierDecl(const std::shared_ptr<Type> type,
-                            const StructTypeSpecifierDeclIdent& ident)
-        : type_(type), ident_(ident) {}
-
-    inline const std::shared_ptr<Type>& type() const { return type_; }
-
-    inline const StructTypeSpecifierDeclIdent& ident() const { return ident_; }
-
-    inline Span span() const override {
-        return concat_spans({type_->span(), ident_.span()});
-    }
-
-    inline std::string debug() const override {
-        return type_->debug() + " " + ident_.debug();
-    }
-
-private:
-    const std::shared_ptr<Type> type_;
-    const StructTypeSpecifierDeclIdent ident_;
-};
-
 class StructTypeSpecifierBody : public Node {
 public:
     StructTypeSpecifierBody(LCurly lcurly,
-                            const std::vector<StructTypeSpecifierDecl> decls,
+                            const std::vector<VariableDeclaration> decls,
                             RCurly rcurly)
         : lcurly_(lcurly), decls_(decls), rcurly_(rcurly) {}
 
     inline const LCurly& lcurly() const { return lcurly_; }
 
-    inline const std::vector<StructTypeSpecifierDecl>& decls() const {
+    inline const std::vector<VariableDeclaration>& decls() const {
         return decls_;
     }
 
@@ -100,7 +61,7 @@ public:
 
 private:
     const LCurly lcurly_;
-    const std::vector<StructTypeSpecifierDecl> decls_;
+    const std::vector<VariableDeclaration> decls_;
     const RCurly rcurly_;
 };
 
