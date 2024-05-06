@@ -11,7 +11,7 @@ Span FunctionDeclaration::span() const {
     spans.emplace_back(lparen_.span());
     for (const auto& arg : args_) spans.emplace_back(arg.span());
     spans.emplace_back(rparen_.span());
-    spans.emplace_back(body_->span());
+    if (body_.has_value()) spans.emplace_back(body_.value()->span());
     return concat_spans(spans);
 }
 

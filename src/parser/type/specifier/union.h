@@ -131,6 +131,7 @@ private:
 };
 
 class AnonymousUnionTypeSpecifier : public UnionTypeSpecifier {
+public:
     AnonymousUnionTypeSpecifier(Union union_kw, UnionTypeSpecifierBody body)
         : union_kw_(union_kw), body_(body) {}
 

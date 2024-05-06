@@ -131,6 +131,7 @@ private:
 };
 
 class AnonymousStructTypeSpecifier : public StructTypeSpecifier {
+public:
     AnonymousStructTypeSpecifier(Struct struct_kw, StructTypeSpecifierBody body)
         : struct_kw_(struct_kw), body_(body) {}
 
