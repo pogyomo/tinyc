@@ -14,4 +14,13 @@ Span ArrayType::span() const {
     return concat_spans(spans);
 }
 
+std::string ArrayType::debug() const {
+    if (size_.has_value()) {
+        return "(" + of_->debug() + ")" + lsquare_.debug() +
+               size_.value()->debug() + rsquare_.debug();
+    } else {
+        return "(" + of_->debug() + ")" + lsquare_.debug() + rsquare_.debug();
+    }
+}
+
 }  // namespace tinyc

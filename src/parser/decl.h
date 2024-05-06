@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -69,7 +70,14 @@ public:
         return concat_spans(spans);
     }
 
-    inline std::string debug() const override { return "todo"; }
+    inline std::string debug() const override {
+        if (name_.has_value()) {
+            return type_->debug() + " " + name_.value().debug() +
+                   semicolon_.debug();
+        } else {
+            return type_->debug() + semicolon_.debug();
+        }
+    }
 
 private:
     const std::shared_ptr<Type> type_;
@@ -219,7 +227,7 @@ public:
 
     Span span() const override;
 
-    inline std::string debug() const override { return "todo"; }
+    inline std::string debug() const override;
 
 private:
     const std::shared_ptr<Type> ret_type_;

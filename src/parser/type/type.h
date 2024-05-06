@@ -98,7 +98,16 @@ public:
         return concat_spans({star_.span(), of_->span()});
     }
 
-    inline std::string debug() const override { return "todo"; }
+    std::string debug() const override {
+        std::stringstream ss;
+        ss << of_->debug() + " ";
+        ss << star_.debug();
+        if (!quantifiers_.empty()) {
+            for (const auto& quantifier : quantifiers_)
+                ss << quantifier->debug() + " ";
+        }
+        return ss.str();
+    }
 
 private:
     const Star star_;
@@ -129,7 +138,7 @@ public:
 
     Span span() const override;
 
-    inline std::string debug() const override { return "todo"; }
+    std::string debug() const override;
 
 private:
     const std::shared_ptr<Type> of_;
@@ -165,7 +174,19 @@ public:
         return concat_spans(spans);
     }
 
-    inline std::string debug() const override { return "todo"; }
+    inline std::string debug() const override {
+        std::stringstream ss;
+        ss << ret_type_->debug() << " " << lparen_.debug();
+        if (args_.empty()) {
+            ss << rparen_.debug();
+        } else {
+            ss << args_[0]->debug();
+            for (int i = 1; i < args_.size(); i++)
+                ss << ", " << args_[i]->debug();
+            ss << rparen_.debug();
+        }
+        return ss.str();
+    }
 
 private:
     const std::shared_ptr<Type> ret_type_;

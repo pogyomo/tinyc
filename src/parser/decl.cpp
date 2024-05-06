@@ -15,4 +15,17 @@ Span FunctionDeclaration::span() const {
     return concat_spans(spans);
 }
 
+std::string FunctionDeclaration::debug() const {
+    std::stringstream ss;
+    ss << ret_type_->debug() << " " << name_.debug() << lparen_.debug();
+    if (!args_.empty()) {
+        ss << args_[0].debug();
+        for (int i = 1; i < args_.size(); i++) ss << ", " << args_[i].debug();
+    }
+    ss << rparen_.debug() << " ";
+    if (body_.has_value()) ss << body_.value()->debug();
+    if (semicolon_.has_value()) ss << semicolon_->debug();
+    return ss.str();
+}
+
 }  // namespace tinyc
