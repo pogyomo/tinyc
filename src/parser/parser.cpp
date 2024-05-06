@@ -33,7 +33,7 @@ void check(TokenStream& ts, TokenKind kind, const std::string& msg) {
     check(ts);
     if (ts.token()->kind() == kind) return;
     if (ts.retrest())
-        throw ParseError("expected " + msg + "after this", ts.token()->span());
+        throw ParseError("expected " + msg + " after this", ts.token()->span());
     else
         throw ParseError("expected this to be " + msg, ts.token()->span());
 }
@@ -284,6 +284,9 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     }
 }
 
+// FIXME: This implementation is broken:
+//        * can't distinguish int *a[10] and int (*a)[10]
+//        * can't parse int (*a)(int, int)
 std::shared_ptr<VariableDeclaration> parse_var_decl(TokenStream& ts) {
     auto [type, name] = parse_var_decl_type(ts);
     check(ts, TokenKind::Semicolon, ";");
@@ -386,9 +389,17 @@ parse_var_decl_direct_declarator(std::shared_ptr<Type>& of, TokenStream& ts) {
     check(ts);
     if (ts.token()->kind() == TokenKind::Identifier) {
         auto tk = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
+        VariableDeclarationName name(tk->value(), tk->span());
         ts.advance();
-        return {of, VariableDeclarationName(tk->value(), tk->span())};
+
+        if (!ts.eos() && ts.token()->kind() == TokenKind::LSquare) {
+            while (!ts.eos() && ts.token()->kind() == TokenKind::LSquare)
+                of = parse_array_type(of, ts);
+        }
+        return {of, name};
     } else if (ts.token()->kind() == TokenKind::LParen) {
+        ts.advance();
+
         auto [type, name] = parse_var_decl_declarator(of, ts);
         of = type;
 
@@ -509,6 +520,8 @@ parse_fun_decl_direct_declarator(std::shared_ptr<Type>& of, TokenStream& ts) {
             }
         }
     } else if (ts.token()->kind() == TokenKind::LParen) {
+        ts.advance();
+
         auto [ret_type, name, lparen, args, rparen] =
             parse_fun_decl_declarator(of, ts);
         of = ret_type;
@@ -552,7 +565,7 @@ std::shared_ptr<PointerType> parse_pointer_type(const std::shared_ptr<Type>& of,
 
 std::shared_ptr<ArrayType> parse_array_type(const std::shared_ptr<Type>& of,
                                             TokenStream& ts) {
-    check(ts, TokenKind::Star, "[");
+    check(ts, TokenKind::LSquare, "[");
     LSquare lsquare(ts.token()->span());
     ts.advance();
 
