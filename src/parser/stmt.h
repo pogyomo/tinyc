@@ -4,8 +4,10 @@
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <variant>
 #include <vector>
 
+#include "decl.h"
 #include "expr.h"
 #include "node.h"
 
@@ -189,17 +191,67 @@ private:
     const Semicolon semicolon_;
 };
 
+enum class BlockStatementItemKind {
+    Statement,
+    Declaration,
+};
+
+class BlockStatementItem : public Node {
+public:
+    virtual ~BlockStatementItem() {}
+    virtual BlockStatementItemKind kind() const = 0;
+};
+
+class BlockStatementStatementItem : public BlockStatementItem {
+public:
+    BlockStatementStatementItem(const std::shared_ptr<Statement>& stmt)
+        : stmt_(stmt) {}
+
+    inline const std::shared_ptr<Statement>& stmt() const { return stmt_; }
+
+    inline BlockStatementItemKind kind() const override {
+        return BlockStatementItemKind::Statement;
+    }
+
+    inline Span span() const override { return stmt_->span(); }
+
+    inline std::string debug() const override { return stmt_->debug(); }
+
+private:
+    const std::shared_ptr<Statement> stmt_;
+};
+
+class BlockStatementDeclarationItem : public BlockStatementItem {
+public:
+    BlockStatementDeclarationItem(const std::shared_ptr<Declaration>& decl)
+        : decl_(decl) {}
+
+    inline const std::shared_ptr<Declaration>& decl() const { return decl_; }
+
+    inline BlockStatementItemKind kind() const override {
+        return BlockStatementItemKind::Declaration;
+    }
+
+    inline Span span() const override { return decl_->span(); }
+
+    inline std::string debug() const override { return decl_->debug(); }
+
+private:
+    const std::shared_ptr<Declaration> decl_;
+};
+
 class BlockStatement : public Statement {
 public:
-    BlockStatement(LCurly lcurly,
-                   const std::vector<std::shared_ptr<Statement>>& stmts,
-                   RCurly rcurly)
-        : lcurly_(lcurly), stmts_(stmts), rcurly_(rcurly) {}
+    BlockStatement(
+        LCurly lcurly,
+        const std::vector<std::shared_ptr<BlockStatementItem>>& items,
+        RCurly rcurly)
+        : lcurly_(lcurly), items_(items), rcurly_(rcurly) {}
 
     const LCurly& lcurly() const { return lcurly_; };
 
-    const std::vector<std::shared_ptr<Statement>>& stmts() const {
-        return stmts_;
+    const std::vector<std::shared_ptr<BlockStatementItem>>& items() const {
+        return items_;
     }
 
     const RCurly& rcurly() const { return rcurly_; }
@@ -209,8 +261,8 @@ public:
     Span span() const override {
         std::vector<Span> spans;
         spans.emplace_back(lcurly_.span());
-        for (const auto& stmt : stmts_) {
-            spans.emplace_back(stmt->span());
+        for (const auto& item : items_) {
+            spans.emplace_back(item->span());
         }
         spans.emplace_back(rcurly_.span());
         return concat_spans(spans);
@@ -219,8 +271,8 @@ public:
     std::string debug() const override {
         std::stringstream ss;
         ss << lcurly_.debug();
-        for (const auto& stmt : stmts_) {
-            ss << " " << stmt->debug();
+        for (const auto& item : items_) {
+            ss << " " << item->debug();
         }
         ss << " " << rcurly_.debug();
         return ss.str();
@@ -228,7 +280,7 @@ public:
 
 private:
     const LCurly lcurly_;
-    const std::vector<std::shared_ptr<Statement>> stmts_;
+    const std::vector<std::shared_ptr<BlockStatementItem>> items_;
     const RCurly rcurly_;
 };
 
