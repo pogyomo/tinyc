@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 
+#include "../lexer/lexer.h"
 #include "decl.h"
 #include "error.h"
 #include "node.h"
@@ -267,7 +268,13 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
 
 // ==================== declaration parser ====================
 
-std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {}
+std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
+    try {
+        return parse_fun_decl(ts);
+    } catch (ParseError e) {
+        return parse_var_decl(ts);
+    }
+}
 
 std::shared_ptr<VariableDeclaration> parse_var_decl(TokenStream& ts) {}
 
@@ -280,5 +287,22 @@ std::shared_ptr<Statement> parse_stmt(TokenStream& ts) {}
 // ==================== expression parser ====================
 
 std::shared_ptr<Expression> parse_expr(TokenStream& ts) {}
+
+// ==================== program parser ====================
+
+Program parse(Context& ctx, std::istream& is, std::vector<ParseError>& es) {
+    std::vector<LexError> les;
+    auto ts = lex(ctx, is, les);
+    for (const auto le : les) {
+        // TODO: Better way to treant lex error?
+        es.emplace_back(le.what(), le.span());
+    }
+
+    std::vector<std::shared_ptr<Declaration>> decls;
+    while (!ts.eos()) {
+        decls.emplace_back(parse_decl(ts));
+    }
+    return decls;
+}
 
 }  // namespace tinyc
