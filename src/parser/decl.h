@@ -43,6 +43,9 @@ private:
 
 class VariableDeclaration : public Declaration {
 public:
+    VariableDeclaration(const std::shared_ptr<Type>& type, Semicolon semicolon)
+        : type_(type), name_(std::nullopt), semicolon_(semicolon) {}
+
     VariableDeclaration(const std::shared_ptr<Type>& type,
                         const VariableDeclarationName& name,
                         Semicolon semicolon)
@@ -50,7 +53,7 @@ public:
 
     const std::shared_ptr<Type>& type() const { return type_; }
 
-    const VariableDeclarationName& name() const { return name_; }
+    const std::optional<VariableDeclarationName>& name() const { return name_; }
 
     const Semicolon& semicolon() const { return semicolon_; }
 
@@ -59,14 +62,18 @@ public:
     }
 
     inline Span span() const override {
-        return concat_spans({type_->span(), name_.span()});
+        std::vector<Span> spans;
+        spans.emplace_back(type_->span());
+        if (name_.has_value()) spans.emplace_back(name_->span());
+        spans.emplace_back(semicolon_.span());
+        return concat_spans(spans);
     }
 
     inline std::string debug() const override { return "todo"; }
 
 private:
     const std::shared_ptr<Type> type_;
-    const VariableDeclarationName name_;
+    const std::optional<VariableDeclarationName> name_;
     const Semicolon semicolon_;
 };
 
