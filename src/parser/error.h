@@ -13,7 +13,9 @@ public:
         return ReportableLevel::Error;
     }
 
-    inline std::string context() const override { return "while lexing input"; }
+    inline std::string context() const override {
+        return "while parsing input";
+    }
 
     inline std::string what() const override { return what_; }
 
