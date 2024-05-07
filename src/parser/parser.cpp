@@ -203,7 +203,7 @@ std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts) {
         LCurly lcurly(ts.token()->span());
         ts.advance();
 
-        std::vector<VariableDeclaration> decls;
+        std::vector<VariableDeclarations> decls;
         while (true) {
             check(ts);
             if (ts.token()->kind() == TokenKind::RCurly) {
@@ -247,7 +247,7 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
         LCurly lcurly(ts.token()->span());
         ts.advance();
 
-        std::vector<VariableDeclaration> decls;
+        std::vector<VariableDeclarations> decls;
         while (true) {
             check(ts);
             if (ts.token()->kind() == TokenKind::RCurly) {
@@ -276,6 +276,11 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
 
 // ==================== declaration parser ====================
 
+// FIXME: This implementation is broken:
+//        * can't distinguish int *a[10]; and int (*a)[10];
+//        * can't parse int (*a)(int, int);
+//        * can't parse int a = 1, b = 2; and recognize it as
+//        int a = (1, b = 2);
 std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     auto state = ts.get_state();
     try {
@@ -286,50 +291,39 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     }
 }
 
-// TODO: parse int a = 10; (with initializer)
-// TODO: parse int a, b, c; and int a = 1, b = 2, c = 3;
-// FIXME: This implementation is broken:
-//        * can't distinguish int *a[10] and int (*a)[10]
-//        * can't parse int (*a)(int, int)
-std::shared_ptr<VariableDeclaration> parse_var_decl(TokenStream& ts) {
-    auto [type, name] = parse_var_decl_type(ts);
-    check(ts, TokenKind::Semicolon, ";");
-    Semicolon semicolon(ts.token()->span());
-    ts.advance();
-    if (name.has_value()) {
-        return std::make_shared<VariableDeclaration>(type, name.value(),
-                                                     semicolon);
-    } else {
-        return std::make_shared<VariableDeclaration>(type, semicolon);
-    }
-}
+std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts) {
+    auto concrete = parse_var_decl_concrete(ts);
 
-std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts) {
-    auto [ret_type, name, lparen, args, rparen] = parse_fun_decl_type(ts);
-    check(ts);
-    if (ts.token()->kind() == TokenKind::Semicolon) {
-        Semicolon semicolon(ts.token()->span());
-        return std::make_shared<FunctionDeclaration>(ret_type, name, lparen,
-                                                     args, rparen, semicolon);
-    } else if (ts.token()->kind() == TokenKind::LCurly) {
-        auto body = parse_block_stmt(ts);
-        if (!ts.eos() && ts.token()->kind() == TokenKind::Semicolon) {
-            Semicolon semicolon(ts.token()->span());
-            return std::make_shared<FunctionDeclaration>(
-                ret_type, name, lparen, args, rparen, body, semicolon);
+    std::vector<VariableDeclaration> decls;
+    while (true) {
+        auto [type, name] = parse_var_decl_ptr(ts, concrete);
+        if (!name.has_value())
+            throw ParseError("variable declaration without its name",
+                             type->span());
+
+        if (!ts.eos() && ts.token()->kind() == TokenKind::Assign) {
+            Assign assign(ts.token()->span());
+            ts.advance();
+            auto expr = parse_expr(ts);
+            VariableDeclarationInitializer initializer(assign, expr);
+
+            decls.emplace_back(
+                VariableDeclaration(type, name.value(), initializer));
         } else {
-            return std::make_shared<FunctionDeclaration>(ret_type, name, lparen,
-                                                         args, rparen, body);
+            decls.emplace_back(VariableDeclaration(type, name.value()));
         }
-    } else {
-        throw ParseError("expected ; or {", ts.token()->span());
-    }
-}
 
-std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>
-parse_var_decl_type(TokenStream& ts) {
-    std::shared_ptr<Type> type = parse_var_decl_concrete(ts);
-    return parse_var_decl_declarator(type, ts);
+        if (!ts.eos() && ts.token()->kind() == TokenKind::Comma) {
+            ts.advance();
+        } else if (!ts.eos() && ts.token()->kind() == TokenKind::Semicolon) {
+            Semicolon semicolon(ts.token()->span());
+            ts.advance();
+            return std::make_shared<VariableDeclarations>(decls, semicolon);
+        } else {
+            ts.retrest();
+            throw ParseError("expected , or ; after this", ts.token()->span());
+        }
+    }
 }
 
 std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts) {
@@ -368,7 +362,9 @@ std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts) {
         } else if (ts.token()->kind() == TokenKind::Identifier) {
             ts.advance();
             check(ts);
-            if (ts.token()->kind() == TokenKind::Semicolon) {
+            if (ts.token()->kind() == TokenKind::Semicolon ||
+                ts.token()->kind() == TokenKind::Assign ||
+                ts.token()->kind() == TokenKind::Comma) {
                 ts.retrest();
                 if (specifiers.empty()) {
                     throw ParseError("no specifiers found", ts.token()->span());
@@ -387,54 +383,68 @@ std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts) {
     }
 }
 
+// TODO: parse more complex type like a[10], (*a)[10], (*a)(int, float)
 std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>
-parse_var_decl_declarator(std::shared_ptr<Type>& of, TokenStream& ts) {
-    while (!ts.eos() && ts.token()->kind() == TokenKind::Star)
-        of = parse_pointer_type(of, ts);
-    return parse_var_decl_direct_declarator(of, ts);
+parse_var_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
+    std::shared_ptr<Type> type = concrete;
+
+    while (true) {
+        if (!ts.eos() && ts.token()->kind() == TokenKind::Star) {
+            Star star(ts.token()->span());
+            ts.advance();
+
+            std::vector<std::shared_ptr<TypeQuantifier>> quantifiers;
+            while (true) {
+                if (!ts.eos() && (ts.token()->kind() == TokenKind::Const ||
+                                  ts.token()->kind() == TokenKind::Volatile)) {
+                    quantifiers.emplace_back(parse_type_quantifier(ts));
+                } else {
+                    break;
+                }
+            }
+
+            type = std::make_shared<PointerType>(star, quantifiers, type);
+        } else {
+            break;
+        }
+    }
+
+    std::optional<VariableDeclarationName> name;
+    if (!ts.eos() && ts.token()->kind() == TokenKind::Identifier) {
+        auto id = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
+        name.emplace(id->value(), id->span());
+        ts.advance();
+    }
+
+    return {type, name};
 }
 
-std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>
-parse_var_decl_direct_declarator(std::shared_ptr<Type>& of, TokenStream& ts) {
+std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts) {
+    auto concrete = parse_fun_decl_concrete(ts);
+    auto [ret_type, name, lparen, args, rparen] =
+        parse_fun_decl_ptr(ts, concrete);
+
     check(ts);
-    if (ts.token()->kind() == TokenKind::Identifier) {
-        auto tk = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
-        VariableDeclarationName name(tk->value(), tk->span());
+    if (ts.token()->kind() == TokenKind::Semicolon) {
+        Semicolon semicolon(ts.token()->span());
         ts.advance();
-
-        if (!ts.eos() && ts.token()->kind() == TokenKind::LSquare) {
-            while (!ts.eos() && ts.token()->kind() == TokenKind::LSquare)
-                of = parse_array_type(of, ts);
-        }
-        return {of, name};
-    } else if (ts.token()->kind() == TokenKind::LParen) {
-        ts.advance();
-
-        auto [type, name] = parse_var_decl_declarator(of, ts);
-        of = type;
-
-        check(ts, TokenKind::RParen, ")");
-        ts.advance();
-
-        if (!ts.eos() && ts.token()->kind() == TokenKind::LSquare) {
-            while (!ts.eos() && ts.token()->kind() == TokenKind::LSquare)
-                of = parse_array_type(of, ts);
-            return {of, name};
-        } else if (!ts.eos() && ts.token()->kind() == TokenKind::LParen) {
-            return {parse_func_type(of, ts), name};
+        return std::make_shared<FunctionDeclaration>(ret_type, name, lparen,
+                                                     args, rparen, semicolon);
+    } else if (ts.token()->kind() == TokenKind::LCurly) {
+        auto body = parse_block_stmt(ts);
+        if (!ts.eos() && ts.token()->kind() == TokenKind::Semicolon) {
+            Semicolon semicolon(ts.token()->span());
+            ts.advance();
+            return std::make_shared<FunctionDeclaration>(
+                ret_type, name, lparen, args, rparen, body, semicolon);
         } else {
-            return {of, name};
+            return std::make_shared<FunctionDeclaration>(ret_type, name, lparen,
+                                                         args, rparen, body);
         }
     } else {
-        throw ParseError("expected identifier or (", ts.token()->span());
+        ts.retrest();
+        throw ParseError("expected ; or { after this", ts.token()->span());
     }
-}
-
-std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
-           std::vector<FunctionDeclarationArg>, RParen>
-parse_fun_decl_type(TokenStream& ts) {
-    std::shared_ptr<Type> type = parse_fun_decl_concrete(ts);
-    return parse_fun_decl_declarator(type, ts);
 }
 
 std::shared_ptr<ConcreteType> parse_fun_decl_concrete(TokenStream& ts) {
@@ -492,143 +502,70 @@ std::shared_ptr<ConcreteType> parse_fun_decl_concrete(TokenStream& ts) {
     }
 }
 
+// TODO: parse more complex type like (*a(int, int))(int, int)
 std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
            std::vector<FunctionDeclarationArg>, RParen>
-parse_fun_decl_declarator(std::shared_ptr<Type>& of, TokenStream& ts) {
-    while (!ts.eos() && ts.token()->kind() == TokenKind::Star)
-        of = parse_pointer_type(of, ts);
-    return parse_fun_decl_direct_declarator(of, ts);
-}
+parse_fun_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
+    std::shared_ptr<Type> type = concrete;
 
-std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
-           std::vector<FunctionDeclarationArg>, RParen>
-parse_fun_decl_direct_declarator(std::shared_ptr<Type>& of, TokenStream& ts) {
-    check(ts);
-    if (ts.token()->kind() == TokenKind::Identifier) {
-        auto tk = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
-        FunctionDeclarationName name(tk->value(), tk->span());
-        ts.advance();
-
-        check(ts, TokenKind::LParen, "(");
-        LParen lparen(ts.token()->span());
-        ts.advance();
-
-        std::vector<FunctionDeclarationArg> args;
-        while (true) {
-            check(ts);
-            if (ts.token()->kind() == TokenKind::RParen) {
-                RParen rparen(ts.token()->span());
-                ts.advance();
-                return {of, name, lparen, args, rparen};
-            }
-
-            auto [type, name] = parse_var_decl_type(ts);
-            args.emplace_back(
-                type, FunctionDeclarationArgName(name->name(), name->span()));
-
-            check(ts);
-            if (ts.token()->kind() == TokenKind::Comma) {
-                ts.advance();
-            } else if (ts.token()->kind() == TokenKind::RParen) {
-                continue;
-            } else {
-                throw ParseError("expected , or )", ts.token()->span());
-            }
-        }
-    } else if (ts.token()->kind() == TokenKind::LParen) {
-        ts.advance();
-
-        auto [ret_type, name, lparen, args, rparen] =
-            parse_fun_decl_declarator(of, ts);
-        of = ret_type;
-
-        check(ts, TokenKind::RParen, ")");
-        ts.advance();
-
-        if (!ts.eos() && ts.token()->kind() == TokenKind::LSquare) {
-            while (!ts.eos() && ts.token()->kind() == TokenKind::LSquare)
-                of = parse_array_type(of, ts);
-            return {of, name, lparen, args, rparen};
-        } else if (!ts.eos() && ts.token()->kind() == TokenKind::LParen) {
-            return {parse_func_type(of, ts), name, lparen, args, rparen};
-        } else {
-            return {of, name, lparen, args, rparen};
-        }
-    } else {
-        throw ParseError("expected identifier or (", ts.token()->span());
-    }
-}
-
-std::shared_ptr<PointerType> parse_pointer_type(const std::shared_ptr<Type>& of,
-                                                TokenStream& ts) {
-    check(ts, TokenKind::Star, "*");
-    Star star(ts.token()->span());
-    ts.advance();
-
-    std::vector<std::shared_ptr<TypeQuantifier>> quantifiers;
     while (true) {
-        check(ts);
-        if (ts.token()->kind() == TokenKind::Const ||
-            ts.token()->kind() == TokenKind::Volatile) {
-            quantifiers.emplace_back(parse_type_quantifier(ts));
+        if (!ts.eos() && ts.token()->kind() == TokenKind::Star) {
+            Star star(ts.token()->span());
+            ts.advance();
+
+            std::vector<std::shared_ptr<TypeQuantifier>> quantifiers;
+            while (true) {
+                if (!ts.eos() && (ts.token()->kind() == TokenKind::Const ||
+                                  ts.token()->kind() == TokenKind::Volatile)) {
+                    quantifiers.emplace_back(parse_type_quantifier(ts));
+                } else {
+                    break;
+                }
+            }
+
+            type = std::make_shared<PointerType>(star, quantifiers, type);
         } else {
             break;
         }
     }
 
-    return std::make_shared<PointerType>(star, quantifiers, of);
-}
-
-std::shared_ptr<ArrayType> parse_array_type(const std::shared_ptr<Type>& of,
-                                            TokenStream& ts) {
-    check(ts, TokenKind::LSquare, "[");
-    LSquare lsquare(ts.token()->span());
+    check(ts, TokenKind::Identifier, "identifier");
+    auto id = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
+    FunctionDeclarationName name(id->value(), id->span());
     ts.advance();
 
-    check(ts);
-    if (ts.token()->kind() == TokenKind::RSquare) {
-        RSquare rsquare(ts.token()->span());
-        ts.advance();
-        return std::make_shared<ArrayType>(of, lsquare, rsquare);
-    } else {
-        auto size = parse_expr(ts);
-        check(ts, TokenKind::RSquare, "]");
-        RSquare rsquare(ts.token()->span());
-        ts.advance();
-        return std::make_shared<ArrayType>(of, lsquare, size, rsquare);
-    }
-}
-
-std::shared_ptr<FunctionType> parse_func_type(const std::shared_ptr<Type>& of,
-                                              TokenStream& ts) {
+    check(ts, TokenKind::LParen, "(");
     LParen lparen(ts.token()->span());
     ts.advance();
 
-    std::vector<std::shared_ptr<Type>> args;
+    std::vector<FunctionDeclarationArg> args;
     while (true) {
-        check(ts);
-        if (ts.token()->kind() == TokenKind::RParen) {
+        if (!ts.eos() && ts.token()->kind() == TokenKind::RParen) {
             RParen rparen(ts.token()->span());
             ts.advance();
-            return std::make_shared<FunctionType>(of, lparen, args, rparen);
+            return {type, name, lparen, args, rparen};
         }
 
-        auto [arg, name] = parse_var_decl_type(ts);
-        args.emplace_back(arg);
+        auto concrete_ = parse_var_decl_concrete(ts);
+        auto [type_, name_] = parse_var_decl_ptr(ts, concrete_);
+        if (name_.has_value())
+            args.emplace_back(type_, FunctionDeclarationArgName(name_->name(),
+                                                                name_->span()));
+        else
+            args.emplace_back(type_);
 
-        check(ts);
-        if (ts.token()->kind() == TokenKind::Comma) {
-            ts.advance();
-        } else if (ts.token()->kind() == TokenKind::RParen) {
+        if (!ts.eos() && ts.token()->kind() == TokenKind::RParen) {
             continue;
+        } else if (!ts.eos() && ts.token()->kind() == TokenKind::Comma) {
+            ts.advance();
         } else {
-            throw ParseError("expected , or )", ts.token()->span());
+            ts.retrest();
+            throw ParseError("expected ) or , after this", ts.token()->span());
         }
     }
 }
 
 // ==================== statement parser ====================
-//
 
 std::shared_ptr<Statement> parse_stmt(TokenStream& ts) {
     check(ts);
@@ -1286,8 +1223,8 @@ std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
         LParen lparen(ts.token()->span());
         ts.advance();
 
-        auto [type, name] = parse_var_decl_type(ts);
-        std::cout << "here" << std::endl;
+        auto concrete = parse_var_decl_concrete(ts);
+        auto [type, name] = parse_var_decl_ptr(ts, concrete);
 
         check(ts, TokenKind::RParen, ")");
         RParen rparen(ts.token()->span());
@@ -1358,7 +1295,8 @@ std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
             LParen lparen(ts.token()->span());
             ts.advance();
 
-            auto [type, name] = parse_var_decl_type(ts);
+            auto concrete = parse_var_decl_concrete(ts);
+            auto [type, name] = parse_var_decl_ptr(ts, concrete);
 
             check(ts, TokenKind::RParen, ")");
             RParen rparen(ts.token()->span());

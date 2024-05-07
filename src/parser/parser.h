@@ -3,6 +3,9 @@
 
 #include <istream>
 #include <memory>
+#include <optional>
+#include <utility>
+#include <vector>
 
 #include "../context.h"
 #include "../lexer/stream.h"
@@ -32,40 +35,17 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts);
 // ==================== declaration parser ====================
 
 std::shared_ptr<Declaration> parse_decl(TokenStream& ts);
-std::shared_ptr<VariableDeclaration> parse_var_decl(TokenStream& ts);
-std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
 
-std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>
-parse_var_decl_type(TokenStream& ts);
-
+std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts);
 std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts);
-
 std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>
-parse_var_decl_declarator(std::shared_ptr<Type>& of, TokenStream& ts);
+parse_var_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete);
 
-std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>
-parse_var_decl_direct_declarator(std::shared_ptr<Type>& of, TokenStream& ts);
-
-std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
-           std::vector<FunctionDeclarationArg>, RParen>
-parse_fun_decl_type(TokenStream& ts);
-
+std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
 std::shared_ptr<ConcreteType> parse_fun_decl_concrete(TokenStream& ts);
-
 std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
            std::vector<FunctionDeclarationArg>, RParen>
-parse_fun_decl_declarator(std::shared_ptr<Type>& of, TokenStream& ts);
-
-std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
-           std::vector<FunctionDeclarationArg>, RParen>
-parse_fun_decl_direct_declarator(std::shared_ptr<Type>& of, TokenStream& ts);
-
-std::shared_ptr<PointerType> parse_pointer_type(const std::shared_ptr<Type>& of,
-                                                TokenStream& ts);
-std::shared_ptr<ArrayType> parse_array_type(const std::shared_ptr<Type>& of,
-                                            TokenStream& ts);
-std::shared_ptr<FunctionType> parse_func_type(const std::shared_ptr<Type>& of,
-                                              TokenStream& ts);
+parse_fun_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete);
 
 // ==================== statement parser ====================
 

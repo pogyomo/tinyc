@@ -27,13 +27,13 @@ public:
 class StructTypeSpecifierBody : public Node {
 public:
     StructTypeSpecifierBody(LCurly lcurly,
-                            const std::vector<VariableDeclaration> decls,
+                            const std::vector<VariableDeclarations> decls,
                             RCurly rcurly)
         : lcurly_(lcurly), decls_(decls), rcurly_(rcurly) {}
 
     inline const LCurly& lcurly() const { return lcurly_; }
 
-    inline const std::vector<VariableDeclaration>& decls() const {
+    inline const std::vector<VariableDeclarations>& decls() const {
         return decls_;
     }
 
@@ -61,7 +61,7 @@ public:
 
 private:
     const LCurly lcurly_;
-    const std::vector<VariableDeclaration> decls_;
+    const std::vector<VariableDeclarations> decls_;
     const RCurly rcurly_;
 };
 
