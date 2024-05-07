@@ -2,7 +2,7 @@
 #define TINYC_CONTEXT_H_
 
 #include "input/cache.h"
-#include "preprocess/macro.h"
+#include "preprocessor/macro.h"
 
 namespace tinyc {
 

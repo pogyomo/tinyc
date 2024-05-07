@@ -1,5 +1,5 @@
-#ifndef TINYC_PREPROCESS_MACRO_H_
-#define TINYC_PREPROCESS_MACRO_H_
+#ifndef TINYC_PREPROCESSOR_MACRO_H_
+#define TINYC_PREPROCESSOR_MACRO_H_
 
 #include <map>
 #include <memory>

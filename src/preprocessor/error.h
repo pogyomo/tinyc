@@ -1,5 +1,5 @@
-#ifndef TINYC_PREPROCESS_ERROR_H_
-#define TINYC_PREPROCESS_ERROR_H_
+#ifndef TINYC_PREPROCESSOR_ERROR_H_
+#define TINYC_PREPROCESSOR_ERROR_H_
 
 #include "../report/reportable.h"
 

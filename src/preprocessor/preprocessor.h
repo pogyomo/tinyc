@@ -1,5 +1,5 @@
-#ifndef TINYC_PREPROCESS_PREPROCESS_H_
-#define TINYC_PREPROCESS_PREPROCESS_H_
+#ifndef TINYC_PREPROCESSOR_PREPROCESSOR_H_
+#define TINYC_PREPROCESSOR_PREPROCESSOR_H_
 
 #include "../context.h"
 #include "../lexer/stream.h"
