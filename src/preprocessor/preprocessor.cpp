@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -83,10 +84,61 @@ std::pair<std::string, std::shared_ptr<Macro>> parse_macro(TokenStream& ts,
     }
 }
 
+std::vector<std::vector<std::shared_ptr<Token>>> parse_fun_args(TokenStream& ts,
+                                                                Span start) {
+    if (ts.eos() || ts.token()->kind() != TokenKind::LParen) return {};
+    ts.advance();
+
+    int unclosing_paren = 1;
+    std::vector<std::vector<std::shared_ptr<Token>>> args;
+    args.push_back({});
+    while (true) {
+        if (ts.eos()) {
+            ts.retrest();
+            throw PreProcessError("unclosing function macro",
+                                  concat_spans({start, ts.token()->span()}));
+        } else if (ts.token()->kind() == TokenKind::LParen) {
+            unclosing_paren++;
+            args.back().push_back(ts.token());
+            ts.advance();
+        } else if (ts.token()->kind() == TokenKind::RParen) {
+            if (unclosing_paren == 1) {
+                ts.advance();
+                return args;
+            } else {
+                unclosing_paren--;
+                args.back().push_back(ts.token());
+                ts.advance();
+            }
+        } else if (ts.token()->kind() == TokenKind::Comma) {
+            args.push_back({});
+            ts.advance();
+        } else {
+            args.back().push_back(ts.token());
+            ts.advance();
+        }
+    }
+}
+
 TokenStream preprocess(Context& ctx, TokenStream&& ts) {
     std::vector<std::shared_ptr<Token>> res;
     while (!ts.eos()) {
-        if (ts.token()->kind() != TokenKind::Sharp) {
+        if (ts.token()->kind() == TokenKind::Identifier) {
+            auto id =
+                std::static_pointer_cast<ValueToken<std::string>>(ts.token());
+            try {
+                auto macro = ctx.macro_table().get_macro(id->value());
+                ts.advance();
+                auto args = parse_fun_args(ts, id->span());
+                auto expanded = macro->expand(args);
+                res.insert(res.end(), expanded.begin(), expanded.end());
+                continue;
+            } catch (std::out_of_range e) {
+                res.push_back(ts.token());
+                ts.advance();
+                continue;
+            }
+        } else if (ts.token()->kind() != TokenKind::Sharp) {
             res.push_back(ts.token());
             ts.advance();
             continue;

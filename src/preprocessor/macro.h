@@ -71,6 +71,7 @@ public:
         for (const auto& tk : body_) {
             if (tk->kind() != TokenKind::Identifier) {
                 res.emplace_back(tk);
+                continue;
             }
             bool replaced = false;
             for (int i = 0; i < params_.size(); i++) {
