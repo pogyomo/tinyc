@@ -15,6 +15,7 @@ std::vector<std::string> collect_lines(std::istream& is) {
     return res;
 }
 
-Input::Input(std::istream& is, int id) : id_(id), lines_(collect_lines(is)) {}
+Input::Input(std::istream& is, int id, const std::string& name)
+    : id_(id), name_(name), lines_(collect_lines(is)) {}
 
 }  // namespace tinyc

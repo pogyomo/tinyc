@@ -273,8 +273,9 @@ std::shared_ptr<Token> token(InputStream& is) {
     }
 }
 
-TokenStream lex(Context& ctx, std::istream& is, std::vector<LexError>& es) {
-    int id = ctx.input_cache().cache(is);
+TokenStream lex(Context& ctx, std::istream& is, const std::string& name,
+                std::vector<LexError>& es) {
+    int id = ctx.input_cache().cache(is, name);
     auto input = ctx.input_cache().fetch(id);
     auto is_ = InputStream(input);
 

@@ -39,7 +39,7 @@ void report(Context& ctx, const Reportable& r) {
     auto span = r.span();
     auto level = r.level();
     auto input = ctx.input_cache().fetch(span.id());
-    auto name = "todo";
+    auto name = input.name();
     if (span.start().row() == span.end().row()) {
         auto [info, info_len] = gen_info(name, span.start(), level, true);
 

@@ -12,7 +12,8 @@ namespace tinyc {
 
 // Convert the characters in `is` into the list of token.
 // If error happne, `es` will contains the errors.
-TokenStream lex(Context& ctx, std::istream& is, std::vector<LexError>& es);
+TokenStream lex(Context& ctx, std::istream& is, const std::string& name,
+                std::vector<LexError>& es);
 
 }  // namespace tinyc
 

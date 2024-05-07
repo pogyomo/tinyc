@@ -2,14 +2,15 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 #include "input.h"
 
 namespace tinyc {
 
-int InputCache::cache(std::istream& is) {
+int InputCache::cache(std::istream& is, const std::string& name) {
     int id = cached_.size();
-    cached_.push_back(Input(is, id));
+    cached_.push_back(Input(is, id, name));
     return id;
 }
 

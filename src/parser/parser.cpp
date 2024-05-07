@@ -1483,9 +1483,10 @@ std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts) {
 
 // ==================== program parser ====================
 
-Program parse(Context& ctx, std::istream& is, std::vector<ParseError>& es) {
+Program parse(Context& ctx, std::istream& is, const std::string& name,
+              std::vector<ParseError>& es) {
     std::vector<LexError> les;
-    auto ts = lex(ctx, is, les);
+    auto ts = lex(ctx, is, name, les);
     for (const auto le : les) {
         // TODO: Better way to treant lex error?
         es.emplace_back(le.what(), le.span());

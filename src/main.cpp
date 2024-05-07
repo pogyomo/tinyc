@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     tinyc::Context ctx;
     std::fstream fs(argv[1]);
     std::vector<tinyc::ParseError> es;
-    auto prog = parse(ctx, fs, es);
+    auto prog = parse(ctx, fs, argv[1], es);
     if (es.empty()) {
         if (prog.decls().empty()) {
             std::cout << "result is empty" << std::endl;
