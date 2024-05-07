@@ -18,13 +18,6 @@ const std::shared_ptr<Token>& TokenStream::last() const {
     }
 }
 
-void TokenStream::pop_state() {
-    if (!states_.empty()) {
-        pos_ = states_.top();
-        states_.pop();
-    }
-}
-
 bool TokenStream::advance() {
     if (!eos()) {
         pos_++;

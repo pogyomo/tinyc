@@ -2,7 +2,6 @@
 #define TINYC_LEXER_STREAM_H_
 
 #include <memory>
-#include <stack>
 #include <stdexcept>
 #include <vector>
 
@@ -12,6 +11,8 @@ namespace tinyc {
 
 class TokenStream {
 public:
+    using state_t = int;
+
     TokenStream() : pos_(0), ts_() {}
 
     TokenStream(const std::vector<std::shared_ptr<Token>>& ts)
@@ -33,12 +34,11 @@ public:
     // exception.
     const std::shared_ptr<Token>& last() const;
 
-    // Push current state of this stream into state stack.
-    inline void push_state() { states_.push(pos_); }
+    // Get internal state to be used in `set_state`.
+    inline state_t get_state() { return pos_; }
 
-    // Pop state of this stream from stack and set current state to this.
-    // If state stack is empty, nothing happen.
-    void pop_state();
+    // Set internal state to `state`.
+    inline void set_state(state_t state) { pos_ = state; }
 
     // Advance the position in this stream.
     // If `empty()` returns true, nothing happen and has no effect.
@@ -52,7 +52,6 @@ public:
 
 private:
     int pos_;
-    std::stack<int> states_;
     const std::vector<std::shared_ptr<Token>> ts_;
 };
 

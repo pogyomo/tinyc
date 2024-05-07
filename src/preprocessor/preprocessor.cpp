@@ -23,10 +23,10 @@ std::vector<std::shared_ptr<Token>> parse_macro_body(TokenStream& ts) {
 }
 
 std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts) {
-    ts.push_state();
+    auto state = ts.get_state();
 
     if (ts.eos() || ts.token()->kind() != TokenKind::LParen) {
-        ts.pop_state();
+        ts.set_state(state);
         return std::nullopt;
     }
     ts.advance();
@@ -34,7 +34,7 @@ std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts) {
     std::vector<std::string> params;
     while (true) {
         if (ts.eos()) {
-            ts.pop_state();
+            ts.set_state(state);
             return std::nullopt;
         } else if (ts.token()->kind() == TokenKind::RParen) {
             ts.advance();
@@ -42,7 +42,7 @@ std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts) {
         }
 
         if (ts.token()->kind() != TokenKind::Identifier) {
-            ts.pop_state();
+            ts.set_state(state);
             return std::nullopt;
         }
         auto id = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
@@ -50,14 +50,14 @@ std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts) {
         ts.advance();
 
         if (ts.eos()) {
-            ts.pop_state();
+            ts.set_state(state);
             return std::nullopt;
         } else if (ts.token()->kind() == TokenKind::RParen) {
             continue;
         } else if (ts.token()->kind() == TokenKind::Comma) {
             ts.advance();
         } else {
-            ts.pop_state();
+            ts.set_state(state);
             return std::nullopt;
         }
     }

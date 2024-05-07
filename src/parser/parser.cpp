@@ -1,6 +1,7 @@
 #include "parser.h"
 
 #include <iostream>
+#include <istream>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -276,11 +277,11 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
 // ==================== declaration parser ====================
 
 std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
-    ts.push_state();
+    auto state = ts.get_state();
     try {
         return parse_fun_decl(ts);
     } catch (ParseError e) {
-        ts.pop_state();
+        ts.set_state(state);
         return parse_var_decl(ts);
     }
 }
@@ -367,12 +368,18 @@ std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts) {
             check(ts);
             if (ts.token()->kind() == TokenKind::Semicolon) {
                 ts.retrest();
+                if (specifiers.empty()) {
+                    throw ParseError("no specifiers found", ts.token()->span());
+                }
                 return std::make_shared<ConcreteType>(specifiers, quantifiers);
             } else {
                 ts.retrest();
                 specifiers.emplace_back(parse_type_specifier(ts));
             }
         } else {
+            if (specifiers.empty()) {
+                throw ParseError("no specifiers found", ts.token()->span());
+            }
             return std::make_shared<ConcreteType>(specifiers, quantifiers);
         }
     }
@@ -466,12 +473,18 @@ std::shared_ptr<ConcreteType> parse_fun_decl_concrete(TokenStream& ts) {
             check(ts);
             if (ts.token()->kind() == TokenKind::LParen) {
                 ts.retrest();
+                if (specifiers.empty()) {
+                    throw ParseError("no specifiers found", ts.token()->span());
+                }
                 return std::make_shared<ConcreteType>(specifiers, quantifiers);
             } else {
                 ts.retrest();
                 specifiers.emplace_back(parse_type_specifier(ts));
             }
         } else {
+            if (specifiers.empty()) {
+                throw ParseError("no specifiers found", ts.token()->span());
+            }
             return std::make_shared<ConcreteType>(specifiers, quantifiers);
         }
     }
@@ -983,22 +996,13 @@ std::shared_ptr<Expression> parse_expr(TokenStream& ts) {
 }
 
 std::shared_ptr<Expression> parse_assign_expr(TokenStream& ts) {
-    ts.push_state();
+    auto state = ts.get_state();
 
     std::shared_ptr<Expression> lhs;
-    try {
-        lhs = parse_unary_expr(ts);
-    } catch (ParseError e) {
-        ts.pop_state();
-        return parse_cond_expr(ts);
-    }
-
-    if (ts.eos()) {
-        ts.pop_state();
-        return parse_cond_expr(ts);
-    }
     InfixExpressionOpKind kind;
     try {
+        lhs = parse_unary_expr(ts);
+        check(ts);
         switch (ts.token()->kind()) {
             case TokenKind::Assign:
                 kind = InfixExpressionOpKind::Assign;
@@ -1038,9 +1042,10 @@ std::shared_ptr<Expression> parse_assign_expr(TokenStream& ts) {
                                  ts.token()->span());
         }
     } catch (ParseError e) {
-        ts.pop_state();
+        ts.set_state(state);
         return parse_cond_expr(ts);
     }
+
     InfixExpressionOp op(kind, ts.token()->span());
     ts.advance();
 
@@ -1271,7 +1276,7 @@ std::shared_ptr<Expression> parse_multiplicative_expr(TokenStream& ts) {
 
 std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
     check(ts);
-    ts.push_state();
+    auto state = ts.get_state();
     try {
         if (ts.token()->kind() != TokenKind::LParen) {
             return parse_unary_expr(ts);
@@ -1280,6 +1285,7 @@ std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
         ts.advance();
 
         auto [type, name] = parse_var_decl_type(ts);
+        std::cout << "here" << std::endl;
 
         check(ts, TokenKind::RParen, ")");
         RParen rparen(ts.token()->span());
@@ -1289,7 +1295,7 @@ std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
 
         return std::make_shared<CastExpression>(lparen, type, rparen, expr);
     } catch (ParseError e) {
-        ts.pop_state();
+        ts.set_state(state);
         return parse_unary_expr(ts);
     }
 }
@@ -1339,12 +1345,12 @@ std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
     } else if (ts.token()->kind() == TokenKind::Sizeof) {
         Sizeof sizeof_kw(ts.token()->span());
         ts.advance();
-        ts.push_state();
+        auto state = ts.get_state();
         try {
             auto expr = parse_unary_expr(ts);
             return std::make_shared<SizeofExprExpression>(sizeof_kw, expr);
         } catch (ParseError e) {
-            ts.pop_state();
+            ts.set_state(state);
 
             check(ts, TokenKind::LParen, "(");
             LParen lparen(ts.token()->span());
