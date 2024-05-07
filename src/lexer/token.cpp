@@ -70,6 +70,8 @@ std::string SymbolToken::debug() const {
             return "!";
         case TokenKind::Question:
             return "?";
+        case TokenKind::Sharp:
+            return "#";
         case TokenKind::Dot:
             return ".";
         case TokenKind::Arrow:
@@ -191,6 +193,8 @@ std::string ValueToken<std::string>::debug() const {
     switch (kind()) {
         case TokenKind::Identifier:
             return value_;
+        case TokenKind::String:
+            return "\"" + value_ + "\"";
         default:
             return "unknown value token";
     }

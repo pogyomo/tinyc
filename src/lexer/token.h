@@ -41,6 +41,7 @@ enum class TokenKind {
     Tilde,         // ~
     Not,           // !
     Question,      // ?
+    Sharp,         // #
     Dot,           // .
     Arrow,         // ->
     Assign,        // =
@@ -94,6 +95,7 @@ enum class TokenKind {
     // Literals
     Integer,     // 10, -2, ...
     Identifier,  // ident, Ident_20, ...
+    String,      // "hello world!"
 };
 
 // A base class of token which hold its kind and span in source code.
@@ -124,7 +126,7 @@ public:
     std::string debug() const override;
 };
 
-// A class for literal like 10, ident, etc.
+// A class for literal like 10, ident, "str", etc.
 template <class T>
 class ValueToken : public Token {
 public:

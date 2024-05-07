@@ -164,6 +164,8 @@ std::shared_ptr<Token> token(InputStream& is) {
         return std::make_shared<SymbolToken>(TokenKind::Tilde, span);
     } else if (is.accept('?', span)) {
         return std::make_shared<SymbolToken>(TokenKind::Question, span);
+    } else if (is.accept('#', span)) {
+        return std::make_shared<SymbolToken>(TokenKind::Sharp, span);
     } else if (is.accept('.', span)) {
         return std::make_shared<SymbolToken>(TokenKind::Dot, span);
     } else if (is.accept("auto", span)) {
@@ -234,6 +236,26 @@ std::shared_ptr<Token> token(InputStream& is) {
         return std::make_shared<KeywordToken>(TokenKind::Volatile, span);
     } else if (is.accept("while", span)) {
         return std::make_shared<KeywordToken>(TokenKind::While, span);
+    } else if (is.accept('"')) {
+        std::string s;
+        Position start = is.pos();
+        Position end = is.pos();
+        while (true) {
+            if (is.eos()) {
+                throw LexError("unclosing string literal",
+                               Span(is.input().id(), start, end));
+            }
+            if (is.ch() == '"') {
+                is.advance();
+                break;
+            } else {
+                s.push_back(is.ch());
+                end = is.pos();
+                is.advance();
+            }
+        }
+        return std::make_shared<ValueToken<std::string>>(
+            TokenKind::String, s, Span(is.input().id(), start, end));
     } else if (std::isdigit(is.ch())) {
         std::string buf;
         Position start = is.pos();
