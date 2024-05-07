@@ -6,7 +6,7 @@
 
 namespace tinyc {
 
-TokenStream preprocess(Context& ctx, TokenStream& ts);
+TokenStream preprocess(Context& ctx, TokenStream&& ts);
 
 }  // namespace tinyc
 

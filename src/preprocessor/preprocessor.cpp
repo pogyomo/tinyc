@@ -83,7 +83,7 @@ std::pair<std::string, std::shared_ptr<Macro>> parse_macro(TokenStream& ts,
     }
 }
 
-TokenStream preprocess(Context& ctx, TokenStream& ts) {
+TokenStream preprocess(Context& ctx, TokenStream&& ts) {
     std::vector<std::shared_ptr<Token>> res;
     while (!ts.eos()) {
         if (ts.token()->kind() != TokenKind::Sharp) {

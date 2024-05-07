@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "../lexer/lexer.h"
+#include "../preprocessor/preprocessor.h"
 #include "decl.h"
 #include "error.h"
 #include "node.h"
@@ -1486,7 +1487,7 @@ std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts) {
 Program parse(Context& ctx, std::istream& is, const std::string& name,
               std::vector<ParseError>& es) {
     std::vector<LexError> les;
-    auto ts = lex(ctx, is, name, les);
+    auto ts = preprocess(ctx, lex(ctx, is, name, les));
     for (const auto le : les) {
         // TODO: Better way to treant lex error?
         es.emplace_back(le.what(), le.span());
