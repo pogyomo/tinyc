@@ -286,6 +286,8 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     }
 }
 
+// TODO: parse int a = 10; (with initializer)
+// TODO: parse int a, b, c; and int a = 1, b = 2, c = 3;
 // FIXME: This implementation is broken:
 //        * can't distinguish int *a[10] and int (*a)[10]
 //        * can't parse int (*a)(int, int)

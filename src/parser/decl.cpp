@@ -4,6 +4,14 @@
 
 namespace tinyc {
 
+Span VariableDeclarationInitializer::span() const {
+    return concat_spans({assign_.span(), expr_->span()});
+}
+
+std::string VariableDeclarationInitializer::debug() const {
+    return assign_.debug() + " " + expr_->debug();
+}
+
 Span FunctionDeclaration::span() const {
     std::vector<Span> spans;
     spans.emplace_back(ret_type_->span());

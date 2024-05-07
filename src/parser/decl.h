@@ -42,46 +42,93 @@ private:
     const Span span_;
 };
 
+class VariableDeclarationInitializer : public Node {
+public:
+    inline const Assign& assign() const { return assign_; }
+
+    inline const std::shared_ptr<Expression>& expr() const { return expr_; }
+
+    Span span() const override;
+
+    std::string debug() const override;
+
+private:
+    const Assign assign_;
+    const std::shared_ptr<Expression> expr_;
+};
+
 class VariableDeclaration : public Declaration {
 public:
     VariableDeclaration(const std::shared_ptr<Type>& type, Semicolon semicolon)
-        : type_(type), name_(std::nullopt), semicolon_(semicolon) {}
+        : type_(type),
+          name_(std::nullopt),
+          initializer_(std::nullopt),
+          semicolon_(semicolon) {}
 
     VariableDeclaration(const std::shared_ptr<Type>& type,
                         const VariableDeclarationName& name,
                         Semicolon semicolon)
-        : type_(type), name_(name), semicolon_(semicolon) {}
+        : type_(type),
+          name_(name),
+          initializer_(std::nullopt),
+          semicolon_(semicolon) {}
 
-    const std::shared_ptr<Type>& type() const { return type_; }
+    VariableDeclaration(const std::shared_ptr<Type>& type,
+                        const VariableDeclarationInitializer& initializer,
+                        Semicolon semicolon)
+        : type_(type),
+          name_(std::nullopt),
+          initializer_(initializer),
+          semicolon_(semicolon) {}
 
-    const std::optional<VariableDeclarationName>& name() const { return name_; }
+    VariableDeclaration(const std::shared_ptr<Type>& type,
+                        const VariableDeclarationName& name,
+                        const VariableDeclarationInitializer& initializer,
+                        Semicolon semicolon)
+        : type_(type),
+          name_(name),
+          initializer_(initializer),
+          semicolon_(semicolon) {}
 
-    const Semicolon& semicolon() const { return semicolon_; }
+    inline const std::shared_ptr<Type>& type() const { return type_; }
+
+    inline const std::optional<VariableDeclarationName>& name() const {
+        return name_;
+    }
+
+    inline const std::optional<VariableDeclarationInitializer> initializer()
+        const {
+        return initializer_;
+    }
+
+    inline const Semicolon& semicolon() const { return semicolon_; }
 
     inline DeclarationKind kind() const override {
         return DeclarationKind::Variable;
     }
 
-    inline Span span() const override {
+    Span span() const override {
         std::vector<Span> spans;
         spans.emplace_back(type_->span());
         if (name_.has_value()) spans.emplace_back(name_->span());
+        if (initializer_.has_value()) spans.emplace_back(initializer_->span());
         spans.emplace_back(semicolon_.span());
         return concat_spans(spans);
     }
 
-    inline std::string debug() const override {
-        if (name_.has_value()) {
-            return type_->debug() + " " + name_.value().debug() +
-                   semicolon_.debug();
-        } else {
-            return type_->debug() + semicolon_.debug();
-        }
+    std::string debug() const override {
+        std::stringstream ss;
+        ss << type_->debug();
+        if (name_.has_value()) ss << " " << name_->debug();
+        if (initializer_.has_value()) ss << " " << initializer_->debug();
+        ss << semicolon_.debug();
+        return ss.str();
     }
 
 private:
     const std::shared_ptr<Type> type_;
     const std::optional<VariableDeclarationName> name_;
+    const std::optional<VariableDeclarationInitializer> initializer_;
     const Semicolon semicolon_;
 };
 
