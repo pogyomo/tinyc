@@ -15,13 +15,60 @@ namespace tinyc {
 
 // Advance `is` until it reach to non-whitespace character, or advance to end
 // if `is` has only whitespaces.
-void skip_whitespaces(InputStream& is) {
+// Returns true if it consume whitespaces.
+bool skip_whitespaces(InputStream& is) {
+    bool skipped = false;
     while (!is.eos()) {
         if (std::isspace(is.ch())) {
+            skipped = true;
             is.advance();
         } else {
             break;
         }
+    }
+    return skipped;
+}
+
+// Advance `is` to next line or eos if `is` start with `//`.
+// Returns true if it consume comment.
+bool skip_oneline_comment(InputStream& is) {
+    int row = is.pos().row();
+    if (is.accept("//")) {
+        while (!is.eos() && is.pos().row() == row) {
+            is.advance();
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// Advance `is` to consume the characters between `/*` and `*/`.
+// Returns true if it consume comment.
+bool skip_multiline_comment(InputStream& is) {
+    if (is.accept("/*")) {
+        while (!is.accept("*/")) {
+            is.advance();
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// Skip comments and whitespaces.
+void skips(InputStream& is) {
+    while (true) {
+        if (skip_whitespaces(is)) {
+            continue;
+        }
+        if (skip_oneline_comment(is)) {
+            continue;
+        }
+        if (skip_multiline_comment(is)) {
+            continue;
+        }
+        break;
     }
 }
 
@@ -232,14 +279,14 @@ TokenStream lex(Context& ctx, std::istream& is, std::vector<LexError>& es) {
     auto is_ = InputStream(input);
 
     std::vector<std::shared_ptr<Token>> ts;
-    skip_whitespaces(is_);
+    skips(is_);
     while (!is_.eos()) {
         try {
             ts.push_back(token(is_));
         } catch (LexError e) {
             es.emplace_back(e);
         }
-        skip_whitespaces(is_);
+        skips(is_);
     }
     return ts;
 }

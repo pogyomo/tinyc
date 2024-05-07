@@ -39,6 +39,11 @@ bool InputStream::accept(char c, Span& span) {
     return true;
 }
 
+bool InputStream::accept(char c) {
+    Span span(0);
+    return accept(c, span);
+}
+
 bool InputStream::accept(const std::string& s, Span& span) {
     int row = row_;
     int offset = offset_;
@@ -55,6 +60,11 @@ bool InputStream::accept(const std::string& s, Span& span) {
     }
     span = Span(input_.id(), start, end);
     return true;
+}
+
+bool InputStream::accept(const std::string& s) {
+    Span span(0);
+    return accept(s, span);
 }
 
 }  // namespace tinyc

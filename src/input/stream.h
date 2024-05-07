@@ -35,9 +35,17 @@ public:
     // returns true and set `span` to the span of accepted character.
     bool accept(char c, Span& span);
 
+    // If first character this stream peeking is `c`, advance this stream, then
+    // returns true.
+    bool accept(char c);
+
     // If first characters this stream peeking is `s`, advance this stream, then
     // returns true and set `span` to the span of accepted characters.
     bool accept(const std::string& s, Span& span);
+
+    // If first characters this stream peeking is `s`, advance this stream, then
+    // returns true
+    bool accept(const std::string& s);
 
 private:
     int row_;
