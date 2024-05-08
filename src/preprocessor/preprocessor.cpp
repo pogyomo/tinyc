@@ -124,6 +124,9 @@ std::vector<std::vector<std::shared_ptr<Token>>> parse_fun_args(TokenStream& ts,
     }
 }
 
+// TODO: This preprocessor can't recognize nested macro call like
+//       * ADD(1, ADD(2, 3))
+//       * ADD(1, add(2, 3))
 TokenStream preprocess(Context& ctx, TokenStream&& ts) {
     int waiting_if = 0;
     std::vector<std::shared_ptr<Token>> res;
