@@ -15,6 +15,30 @@ namespace tinyc {
 
 class BlockStatement;
 
+enum class StorageClassSpecifierKind {
+    Auto,
+    Register,
+    Static,
+    Extern,
+    Typedef,
+};
+
+class StorageClassSpecifier : public Node {
+public:
+    StorageClassSpecifier(StorageClassSpecifierKind kind, Span span)
+        : kind_(kind), span_(span) {}
+
+    inline const StorageClassSpecifierKind& kind() const { return kind_; }
+
+    inline Span span() const override { return span_; }
+
+    std::string debug() const override;
+
+private:
+    const StorageClassSpecifierKind kind_;
+    const Span span_;
+};
+
 enum class DeclarationKind {
     Variables,
     Function,
@@ -74,14 +98,26 @@ public:
 
 class NamedVariableDeclaration : public VariableDeclaration {
 public:
-    NamedVariableDeclaration(const std::shared_ptr<Type>& type,
-                             const VariableDeclarationName& name)
-        : type_(type), name_(name), initializer_(std::nullopt) {}
+    NamedVariableDeclaration(
+        const std::vector<StorageClassSpecifier> class_specifiers,
+        const std::shared_ptr<Type>& type, const VariableDeclarationName& name)
+        : class_specifiers_(class_specifiers),
+          type_(type),
+          name_(name),
+          initializer_(std::nullopt) {}
 
-    NamedVariableDeclaration(const std::shared_ptr<Type>& type,
-                             const VariableDeclarationName& name,
-                             const VariableDeclarationInitializer& initializer)
-        : type_(type), name_(name), initializer_(initializer) {}
+    NamedVariableDeclaration(
+        const std::vector<StorageClassSpecifier> class_specifiers,
+        const std::shared_ptr<Type>& type, const VariableDeclarationName& name,
+        const VariableDeclarationInitializer& initializer)
+        : class_specifiers_(class_specifiers),
+          type_(type),
+          name_(name),
+          initializer_(initializer) {}
+
+    inline const std::vector<StorageClassSpecifier>& class_specifiers() const {
+        return class_specifiers_;
+    }
 
     inline const std::shared_ptr<Type>& type() const { return type_; }
 
@@ -98,6 +134,7 @@ public:
 
     Span span() const override {
         std::vector<Span> spans;
+        for (const auto& cs : class_specifiers_) spans.emplace_back(cs.span());
         spans.emplace_back(type_->span());
         spans.emplace_back(name_.span());
         if (initializer_.has_value()) spans.emplace_back(initializer_->span());
@@ -106,12 +143,14 @@ public:
 
     std::string debug() const override {
         std::stringstream ss;
+        for (const auto& cs : class_specifiers_) ss << cs.debug() << " ";
         ss << type_->debug() << " " << name_.debug();
         if (initializer_.has_value()) ss << " " << initializer_->debug();
         return ss.str();
     }
 
 private:
+    const std::vector<StorageClassSpecifier> class_specifiers_;
     const std::shared_ptr<Type> type_;
     const VariableDeclarationName name_;
     const std::optional<VariableDeclarationInitializer> initializer_;
@@ -119,8 +158,14 @@ private:
 
 class AnonymousVariableDeclaration : public VariableDeclaration {
 public:
-    AnonymousVariableDeclaration(const std::shared_ptr<Type>& type)
-        : type_(type) {}
+    AnonymousVariableDeclaration(
+        const std::vector<StorageClassSpecifier>& class_specifiers,
+        const std::shared_ptr<Type>& type)
+        : class_specifiers_(class_specifiers), type_(type) {}
+
+    inline const std::vector<StorageClassSpecifier>& class_specifiers() const {
+        return class_specifiers_;
+    }
 
     inline const std::shared_ptr<Type>& type() const { return type_; }
 
@@ -128,11 +173,22 @@ public:
         return VariableDeclarationKind::Anonymous;
     }
 
-    inline Span span() const override { return type_->span(); }
+    inline Span span() const override {
+        std::vector<Span> spans;
+        for (const auto& cs : class_specifiers_) spans.emplace_back(cs.span());
+        spans.emplace_back(type_->span());
+        return concat_spans(spans);
+    }
 
-    inline std::string debug() const override { return type_->debug(); }
+    std::string debug() const override {
+        std::stringstream ss;
+        for (const auto& cs : class_specifiers_) ss << cs.debug() << " ";
+        ss << type_->debug();
+        return ss.str();
+    }
 
 private:
+    const std::vector<StorageClassSpecifier> class_specifiers_;
     const std::shared_ptr<Type> type_;
 };
 
@@ -244,12 +300,13 @@ private:
 
 class FunctionDeclaration : public Declaration {
 public:
-    FunctionDeclaration(const std::shared_ptr<Type>& ret_type,
-                        const FunctionDeclarationName& name,
-                        const LParen lparen,
-                        const std::vector<FunctionDeclarationArg>& args,
-                        const RParen rparen)
-        : ret_type_(ret_type),
+    FunctionDeclaration(
+        const std::vector<StorageClassSpecifier> class_specifiers,
+        const std::shared_ptr<Type>& ret_type,
+        const FunctionDeclarationName& name, const LParen lparen,
+        const std::vector<FunctionDeclarationArg>& args, const RParen rparen)
+        : class_specifiers_(class_specifiers),
+          ret_type_(ret_type),
           name_(name),
           lparen_(lparen),
           args_(args),
@@ -257,13 +314,14 @@ public:
           body_(std::nullopt),
           semicolon_(std::nullopt) {}
 
-    FunctionDeclaration(const std::shared_ptr<Type>& ret_type,
-                        const FunctionDeclarationName& name,
-                        const LParen lparen,
-                        const std::vector<FunctionDeclarationArg>& args,
-                        const RParen rparen,
-                        const std::shared_ptr<BlockStatement> body)
-        : ret_type_(ret_type),
+    FunctionDeclaration(
+        const std::vector<StorageClassSpecifier> class_specifiers,
+        const std::shared_ptr<Type>& ret_type,
+        const FunctionDeclarationName& name, const LParen lparen,
+        const std::vector<FunctionDeclarationArg>& args, const RParen rparen,
+        const std::shared_ptr<BlockStatement> body)
+        : class_specifiers_(class_specifiers),
+          ret_type_(ret_type),
           name_(name),
           lparen_(lparen),
           args_(args),
@@ -271,12 +329,14 @@ public:
           body_(body),
           semicolon_(std::nullopt) {}
 
-    FunctionDeclaration(const std::shared_ptr<Type>& ret_type,
-                        const FunctionDeclarationName& name,
-                        const LParen lparen,
-                        const std::vector<FunctionDeclarationArg>& args,
-                        const RParen rparen, const Semicolon semicolon)
-        : ret_type_(ret_type),
+    FunctionDeclaration(
+        const std::vector<StorageClassSpecifier> class_specifiers,
+        const std::shared_ptr<Type>& ret_type,
+        const FunctionDeclarationName& name, const LParen lparen,
+        const std::vector<FunctionDeclarationArg>& args, const RParen rparen,
+        const Semicolon semicolon)
+        : class_specifiers_(class_specifiers),
+          ret_type_(ret_type),
           name_(name),
           lparen_(lparen),
           args_(args),
@@ -284,20 +344,24 @@ public:
           body_(std::nullopt),
           semicolon_(semicolon) {}
 
-    FunctionDeclaration(const std::shared_ptr<Type>& ret_type,
-                        const FunctionDeclarationName& name,
-                        const LParen lparen,
-                        const std::vector<FunctionDeclarationArg>& args,
-                        const RParen rparen,
-                        const std::shared_ptr<BlockStatement> body,
-                        const Semicolon semicolon)
-        : ret_type_(ret_type),
+    FunctionDeclaration(
+        const std::vector<StorageClassSpecifier> class_specifiers,
+        const std::shared_ptr<Type>& ret_type,
+        const FunctionDeclarationName& name, const LParen lparen,
+        const std::vector<FunctionDeclarationArg>& args, const RParen rparen,
+        const std::shared_ptr<BlockStatement> body, const Semicolon semicolon)
+        : class_specifiers_(class_specifiers),
+          ret_type_(ret_type),
           name_(name),
           lparen_(lparen),
           args_(args),
           rparen_(rparen),
           body_(body),
           semicolon_(semicolon) {}
+
+    inline const std::vector<StorageClassSpecifier>& class_specifiers() const {
+        return class_specifiers_;
+    }
 
     inline const std::shared_ptr<Type>& ret_type() const { return ret_type_; }
 
@@ -324,6 +388,7 @@ public:
     inline std::string debug() const override;
 
 private:
+    const std::vector<StorageClassSpecifier> class_specifiers_;
     const std::shared_ptr<Type> ret_type_;
     const FunctionDeclarationName name_;
     const LParen lparen_;

@@ -4,6 +4,7 @@
 #include <istream>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -294,8 +295,35 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     }
 }
 
+StorageClassSpecifier parse_class_specifier(TokenStream& ts) {
+    check(ts);
+    auto kind = ts.token()->kind();
+    auto span = ts.token()->span();
+    if (kind == TokenKind::Auto) {
+        ts.advance();
+        return StorageClassSpecifier(StorageClassSpecifierKind::Auto, span);
+    } else if (kind == TokenKind::Register) {
+        ts.advance();
+        return StorageClassSpecifier(StorageClassSpecifierKind::Register, span);
+    } else if (kind == TokenKind::Static) {
+        ts.advance();
+        return StorageClassSpecifier(StorageClassSpecifierKind::Static, span);
+    } else if (kind == TokenKind::Extern) {
+        ts.advance();
+        return StorageClassSpecifier(StorageClassSpecifierKind::Extern, span);
+    } else if (kind == TokenKind::Typedef) {
+        ts.advance();
+        return StorageClassSpecifier(StorageClassSpecifierKind::Typedef, span);
+    } else {
+        std::stringstream ss;
+        ss << "expected this to be one of ";
+        ss << "auto, register, static, extern or typedef";
+        throw ParseError(ss.str(), span);
+    }
+}
+
 std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts) {
-    auto concrete = parse_var_decl_concrete(ts);
+    auto [cs, concrete] = parse_var_decl_concrete(ts);
 
     std::vector<std::shared_ptr<VariableDeclaration>> decls;
     while (true) {
@@ -309,14 +337,14 @@ std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts) {
             VariableDeclarationInitializer initializer(assign, expr);
 
             decls.emplace_back(std::make_shared<NamedVariableDeclaration>(
-                type, name.value(), initializer));
+                cs, type, name.value(), initializer));
         } else {
             if (name.has_value())
                 decls.emplace_back(std::make_shared<NamedVariableDeclaration>(
-                    type, name.value()));
+                    cs, type, name.value()));
             else
                 decls.emplace_back(
-                    std::make_shared<AnonymousVariableDeclaration>(type));
+                    std::make_shared<AnonymousVariableDeclaration>(cs, type));
         }
 
         if (!ts.eos() && ts.token()->kind() == TokenKind::Comma) {
@@ -332,39 +360,27 @@ std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts) {
+std::pair<std::vector<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
+parse_var_decl_concrete(TokenStream& ts) {
+    std::vector<StorageClassSpecifier> class_specifiers;
     std::vector<std::shared_ptr<TypeSpecifier>> specifiers;
     std::vector<std::shared_ptr<TypeQuantifier>> quantifiers;
     while (true) {
         check(ts);
-        if (ts.token()->kind() == TokenKind::Void) {
+        auto kind = ts.token()->kind();
+        if (kind == TokenKind::Void || kind == TokenKind::Signed ||
+            kind == TokenKind::Unsigned || kind == TokenKind::Char ||
+            kind == TokenKind::Short || kind == TokenKind::Int ||
+            kind == TokenKind::Long || kind == TokenKind::Float ||
+            kind == TokenKind::Double || kind == TokenKind::Enum ||
+            kind == TokenKind::Union || kind == TokenKind::Struct) {
             specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Signed) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Unsigned) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Char) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Short) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Int) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Long) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Float) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Double) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Enum) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Union) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Struct) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Const) {
+        } else if (kind == TokenKind::Const || kind == TokenKind::Volatile) {
             quantifiers.emplace_back(parse_type_quantifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Volatile) {
-            quantifiers.emplace_back(parse_type_quantifier(ts));
+        } else if (kind == TokenKind::Auto || kind == TokenKind::Register ||
+                   kind == TokenKind::Static || kind == TokenKind::Extern ||
+                   kind == TokenKind::Typedef) {
+            class_specifiers.emplace_back(parse_class_specifier(ts));
         } else if (ts.token()->kind() == TokenKind::Identifier) {
             ts.advance();
             check(ts);
@@ -375,7 +391,9 @@ std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts) {
                 if (specifiers.empty()) {
                     throw ParseError("no specifiers found", ts.token()->span());
                 }
-                return std::make_shared<ConcreteType>(specifiers, quantifiers);
+                auto concrete =
+                    std::make_shared<ConcreteType>(specifiers, quantifiers);
+                return {class_specifiers, concrete};
             } else {
                 ts.retrest();
                 specifiers.emplace_back(parse_type_specifier(ts));
@@ -384,7 +402,9 @@ std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts) {
             if (specifiers.empty()) {
                 throw ParseError("no specifiers found", ts.token()->span());
             }
-            return std::make_shared<ConcreteType>(specifiers, quantifiers);
+            auto concrete =
+                std::make_shared<ConcreteType>(specifiers, quantifiers);
+            return {class_specifiers, concrete};
         }
     }
 }
@@ -426,7 +446,7 @@ parse_var_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
 }
 
 std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts) {
-    auto concrete = parse_fun_decl_concrete(ts);
+    auto [cs, concrete] = parse_fun_decl_concrete(ts);
     auto [ret_type, name, lparen, args, rparen] =
         parse_fun_decl_ptr(ts, concrete);
 
@@ -434,7 +454,7 @@ std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts) {
     if (ts.token()->kind() == TokenKind::Semicolon) {
         Semicolon semicolon(ts.token()->span());
         ts.advance();
-        return std::make_shared<FunctionDeclaration>(ret_type, name, lparen,
+        return std::make_shared<FunctionDeclaration>(cs, ret_type, name, lparen,
                                                      args, rparen, semicolon);
     } else if (ts.token()->kind() == TokenKind::LCurly) {
         auto body = parse_block_stmt(ts);
@@ -442,10 +462,10 @@ std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts) {
             Semicolon semicolon(ts.token()->span());
             ts.advance();
             return std::make_shared<FunctionDeclaration>(
-                ret_type, name, lparen, args, rparen, body, semicolon);
+                cs, ret_type, name, lparen, args, rparen, body, semicolon);
         } else {
-            return std::make_shared<FunctionDeclaration>(ret_type, name, lparen,
-                                                         args, rparen, body);
+            return std::make_shared<FunctionDeclaration>(
+                cs, ret_type, name, lparen, args, rparen, body);
         }
     } else {
         ts.retrest();
@@ -453,39 +473,27 @@ std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<ConcreteType> parse_fun_decl_concrete(TokenStream& ts) {
+std::pair<std::vector<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
+parse_fun_decl_concrete(TokenStream& ts) {
+    std::vector<StorageClassSpecifier> class_specifiers;
     std::vector<std::shared_ptr<TypeSpecifier>> specifiers;
     std::vector<std::shared_ptr<TypeQuantifier>> quantifiers;
     while (true) {
         check(ts);
-        if (ts.token()->kind() == TokenKind::Void) {
+        auto kind = ts.token()->kind();
+        if (kind == TokenKind::Void || kind == TokenKind::Signed ||
+            kind == TokenKind::Unsigned || kind == TokenKind::Char ||
+            kind == TokenKind::Short || kind == TokenKind::Int ||
+            kind == TokenKind::Long || kind == TokenKind::Float ||
+            kind == TokenKind::Double || kind == TokenKind::Enum ||
+            kind == TokenKind::Union || kind == TokenKind::Struct) {
             specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Signed) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Unsigned) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Char) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Short) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Int) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Long) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Float) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Double) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Enum) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Union) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Struct) {
-            specifiers.emplace_back(parse_type_specifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Const) {
+        } else if (kind == TokenKind::Const || kind == TokenKind::Volatile) {
             quantifiers.emplace_back(parse_type_quantifier(ts));
-        } else if (ts.token()->kind() == TokenKind::Volatile) {
-            quantifiers.emplace_back(parse_type_quantifier(ts));
+        } else if (kind == TokenKind::Auto || kind == TokenKind::Register ||
+                   kind == TokenKind::Static || kind == TokenKind::Extern ||
+                   kind == TokenKind::Typedef) {
+            class_specifiers.emplace_back(parse_class_specifier(ts));
         } else if (ts.token()->kind() == TokenKind::Identifier) {
             ts.advance();
             check(ts);
@@ -494,7 +502,9 @@ std::shared_ptr<ConcreteType> parse_fun_decl_concrete(TokenStream& ts) {
                 if (specifiers.empty()) {
                     throw ParseError("no specifiers found", ts.token()->span());
                 }
-                return std::make_shared<ConcreteType>(specifiers, quantifiers);
+                auto concrete =
+                    std::make_shared<ConcreteType>(specifiers, quantifiers);
+                return {class_specifiers, concrete};
             } else {
                 ts.retrest();
                 specifiers.emplace_back(parse_type_specifier(ts));
@@ -503,7 +513,9 @@ std::shared_ptr<ConcreteType> parse_fun_decl_concrete(TokenStream& ts) {
             if (specifiers.empty()) {
                 throw ParseError("no specifiers found", ts.token()->span());
             }
-            return std::make_shared<ConcreteType>(specifiers, quantifiers);
+            auto concrete =
+                std::make_shared<ConcreteType>(specifiers, quantifiers);
+            return {class_specifiers, concrete};
         }
     }
 }
@@ -552,7 +564,7 @@ parse_fun_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
             return {type, name, lparen, args, rparen};
         }
 
-        auto concrete_ = parse_var_decl_concrete(ts);
+        auto [cs, concrete_] = parse_var_decl_concrete(ts);
         auto [type_, name_] = parse_var_decl_ptr(ts, concrete_);
         if (name_.has_value())
             args.emplace_back(type_, FunctionDeclarationArgName(name_->name(),
@@ -1229,7 +1241,7 @@ std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
         LParen lparen(ts.token()->span());
         ts.advance();
 
-        auto concrete = parse_var_decl_concrete(ts);
+        auto [cs, concrete] = parse_var_decl_concrete(ts);
         auto [type, name] = parse_var_decl_ptr(ts, concrete);
 
         check(ts, TokenKind::RParen, ")");
@@ -1301,7 +1313,7 @@ std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
             LParen lparen(ts.token()->span());
             ts.advance();
 
-            auto concrete = parse_var_decl_concrete(ts);
+            auto [cs, concrete] = parse_var_decl_concrete(ts);
             auto [type, name] = parse_var_decl_ptr(ts, concrete);
 
             check(ts, TokenKind::RParen, ")");

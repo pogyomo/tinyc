@@ -36,13 +36,17 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts);
 
 std::shared_ptr<Declaration> parse_decl(TokenStream& ts);
 
+StorageClassSpecifier parse_class_specifier(TokenStream& ts);
+
 std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts);
-std::shared_ptr<ConcreteType> parse_var_decl_concrete(TokenStream& ts);
+std::pair<std::vector<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
+parse_var_decl_concrete(TokenStream& ts);
 std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>
 parse_var_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete);
 
 std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
-std::shared_ptr<ConcreteType> parse_fun_decl_concrete(TokenStream& ts);
+std::pair<std::vector<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
+parse_fun_decl_concrete(TokenStream& ts);
 std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
            std::vector<FunctionDeclarationArg>, RParen>
 parse_fun_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete);

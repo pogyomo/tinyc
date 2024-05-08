@@ -4,6 +4,23 @@
 
 namespace tinyc {
 
+std::string StorageClassSpecifier::debug() const {
+    switch (kind_) {
+        case StorageClassSpecifierKind::Auto:
+            return "auto";
+        case StorageClassSpecifierKind::Register:
+            return "register";
+        case StorageClassSpecifierKind::Static:
+            return "static";
+        case StorageClassSpecifierKind::Extern:
+            return "extern";
+        case StorageClassSpecifierKind::Typedef:
+            return "typedef";
+        default:
+            return "";
+    }
+}
+
 Span VariableDeclarationInitializer::span() const {
     return concat_spans({assign_.span(), expr_->span()});
 }
@@ -14,6 +31,7 @@ std::string VariableDeclarationInitializer::debug() const {
 
 Span FunctionDeclaration::span() const {
     std::vector<Span> spans;
+    for (const auto& cs : class_specifiers_) spans.emplace_back(cs.span());
     spans.emplace_back(ret_type_->span());
     spans.emplace_back(name_.span());
     spans.emplace_back(lparen_.span());
@@ -25,6 +43,7 @@ Span FunctionDeclaration::span() const {
 
 std::string FunctionDeclaration::debug() const {
     std::stringstream ss;
+    for (const auto& cs : class_specifiers_) ss << cs.debug() << " ";
     ss << ret_type_->debug() << " " << name_.debug() << lparen_.debug();
     if (!args_.empty()) {
         ss << args_[0].debug();
