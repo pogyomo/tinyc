@@ -308,25 +308,18 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
 std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     auto [cs, concrete] = parse_decl_concrete(ts);
     auto state = ts.get_state();
-    auto ptr = parse_decl_ptr(ts, concrete);
-    if (ptr.index() == 0) {
+    auto body = parse_decl_body(ts, concrete);
+    if (body.is_variable()) {
         ts.set_state(state);
         std::vector<std::shared_ptr<VariableDeclaration>> decls;
         while (true) {
-            auto ptr = parse_decl_ptr(ts, concrete);
-            if (ptr.index() != 0) {
-                std::vector<Span> spans;
-                spans.emplace_back(std::get<0>(std::get<1>(ptr))->span());
-                spans.emplace_back(std::get<1>(std::get<1>(ptr)).span());
-                spans.emplace_back(std::get<2>(std::get<1>(ptr)).span());
-                for (const auto& arg : std::get<3>(std::get<1>(ptr))) {
-                    spans.emplace_back(arg.span());
-                }
-                spans.emplace_back(std::get<4>(std::get<1>(ptr)).span());
+            auto body = parse_decl_body(ts, concrete);
+            if (body.is_function()) {
                 throw ParseError("expected variable, but function found",
-                                 concat_spans(spans));
+                                 body.span());
             }
-            auto [type, name] = std::get<0>(ptr);
+            auto type = body.type();
+            auto name = body.variable();
 
             if (name.has_value() && !ts.eos() &&
                 ts.token()->kind() == TokenKind::Assign) {
@@ -362,7 +355,8 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
             }
         }
     } else {
-        auto [ret_type, name, lparen, args, rparen] = std::get<1>(ptr);
+        auto ret_type = body.type();
+        auto [name, lparen, args, rparen] = body.function();
         check(ts);
         if (ts.token()->kind() == TokenKind::Semicolon) {
             Semicolon semicolon(ts.token()->span());
@@ -482,11 +476,8 @@ parse_decl_concrete(TokenStream& ts) {
     }
 }
 
-std::variant<
-    std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>,
-    std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
-               std::vector<FunctionDeclarationParam>, RParen>>
-parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
+VariableOrFunctionDeclBody parse_decl_body(
+    TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
     std::shared_ptr<Type> type = concrete;
 
     while (true) {
@@ -511,13 +502,13 @@ parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
     }
 
     if (ts.eos() || ts.token()->kind() != TokenKind::Identifier) {
-        return std::make_pair(type, std::nullopt);
+        return VariableOrFunctionDeclBody(type, std::nullopt);
     }
     auto id = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
     ts.advance();
     if (ts.eos() || ts.token()->kind() != TokenKind::LParen) {
-        return std::make_pair(type,
-                              VariableDeclarationName(id->value(), id->span()));
+        VariableDeclarationName name(id->value(), id->span());
+        return VariableOrFunctionDeclBody(type, name);
     }
     FunctionDeclarationName name(id->value(), id->span());
 
@@ -529,11 +520,12 @@ parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
         if (!ts.eos() && ts.token()->kind() == TokenKind::RParen) {
             RParen rparen(ts.token()->span());
             ts.advance();
-            return std::make_tuple(type, name, lparen, params, rparen);
+            return VariableOrFunctionDeclBody(
+                type, std::make_tuple(name, lparen, params, rparen));
         }
 
         auto [cs, concrete] = parse_decl_concrete(ts);
-        auto ptr = parse_decl_ptr(ts, concrete);
+        auto body = parse_decl_body(ts, concrete);
 
         if (!cs.empty()) {
             std::vector<Span> spans;
@@ -543,19 +535,12 @@ parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
             throw ParseError("class specifier in function param is not allowed",
                              concat_spans(spans));
         }
-        if (ptr.index() != 0) {
-            std::vector<Span> spans;
-            spans.emplace_back(std::get<0>(std::get<1>(ptr))->span());
-            spans.emplace_back(std::get<1>(std::get<1>(ptr)).span());
-            spans.emplace_back(std::get<2>(std::get<1>(ptr)).span());
-            for (const auto& arg : std::get<3>(std::get<1>(ptr))) {
-                spans.emplace_back(arg.span());
-            }
-            spans.emplace_back(std::get<4>(std::get<1>(ptr)).span());
+        if (body.is_function()) {
             throw ParseError("expected variable, but got function",
-                             concat_spans(spans));
+                             body.span());
         }
-        auto [type_, name_] = std::get<0>(ptr);
+        auto type_ = body.type();
+        auto name_ = body.variable();
 
         if (name_.has_value())
             params.emplace_back(type_, FunctionDeclarationArgName(
@@ -1237,20 +1222,12 @@ std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
         ts.advance();
 
         auto [cs_, concrete] = parse_decl_concrete(ts);
-        auto ptr = parse_decl_ptr(ts, concrete);
-        if (ptr.index() != 0) {
-            std::vector<Span> spans;
-            spans.emplace_back(std::get<0>(std::get<1>(ptr))->span());
-            spans.emplace_back(std::get<1>(std::get<1>(ptr)).span());
-            spans.emplace_back(std::get<2>(std::get<1>(ptr)).span());
-            for (const auto& arg : std::get<3>(std::get<1>(ptr))) {
-                spans.emplace_back(arg.span());
-            }
-            spans.emplace_back(std::get<4>(std::get<1>(ptr)).span());
+        auto body = parse_decl_body(ts, concrete);
+        if (body.is_function()) {
             throw ParseError("expected variable, but got function",
-                             concat_spans(spans));
+                             body.span());
         }
-        auto [type, _] = std::get<0>(ptr);
+        auto type = body.type();
 
         check(ts, TokenKind::RParen, ")");
         RParen rparen(ts.token()->span());
@@ -1330,7 +1307,7 @@ std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
             ts.advance();
 
             auto [cs, concrete] = parse_decl_concrete(ts);
-            auto ptr = parse_decl_ptr(ts, concrete);
+            auto body = parse_decl_body(ts, concrete);
             if (!cs.empty()) {
                 std::vector<Span> spans;
                 for (const auto c : cs) {
@@ -1340,19 +1317,11 @@ std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
                     "class specifier in function param is not allowed",
                     concat_spans(spans));
             }
-            if (ptr.index() != 0) {
-                std::vector<Span> spans;
-                spans.emplace_back(std::get<0>(std::get<1>(ptr))->span());
-                spans.emplace_back(std::get<1>(std::get<1>(ptr)).span());
-                spans.emplace_back(std::get<2>(std::get<1>(ptr)).span());
-                for (const auto& arg : std::get<3>(std::get<1>(ptr))) {
-                    spans.emplace_back(arg.span());
-                }
-                spans.emplace_back(std::get<4>(std::get<1>(ptr)).span());
+            if (body.is_function()) {
                 throw ParseError("expected variable, but got function",
-                                 concat_spans(spans));
+                                 body.span());
             }
-            auto [type, _] = std::get<0>(ptr);
+            auto type = body.type();
 
             check(ts, TokenKind::RParen, ")");
             RParen rparen(ts.token()->span());

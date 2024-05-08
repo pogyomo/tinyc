@@ -4,6 +4,8 @@
 #include <istream>
 #include <memory>
 #include <optional>
+#include <sstream>
+#include <stdexcept>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -35,6 +37,91 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts);
 
 // ==================== declaration parser ====================
 
+class VariableOrFunctionDeclBody : public Node {
+public:
+    using Variable = std::optional<VariableDeclarationName>;
+    using Function = std::tuple<FunctionDeclarationName, LParen,
+                                std::vector<FunctionDeclarationParam>, RParen>;
+
+    VariableOrFunctionDeclBody(const std::shared_ptr<Type> type,
+                               const Variable& variable)
+        : type_(type), vs_(variable) {}
+
+    VariableOrFunctionDeclBody(const std::shared_ptr<Type> type,
+                               const Function& function)
+        : type_(type), vs_(function) {}
+
+    inline bool is_variable() const { return vs_.index() == 0; }
+
+    inline bool is_function() const { return vs_.index() == 1; }
+
+    inline const std::shared_ptr<Type>& type() const { return type_; }
+
+    const Variable& variable() const {
+        if (!is_variable()) {
+            throw std::out_of_range("tried to get `Variable` but it is not");
+        } else {
+            return std::get<0>(vs_);
+        }
+    }
+
+    const Function& function() const {
+        if (!is_function()) {
+            throw std::out_of_range("tried to get `Function` but it is not");
+        } else {
+            return std::get<1>(vs_);
+        }
+    }
+
+    Span span() const override {
+        if (is_variable()) {
+            auto name = variable();
+            if (name.has_value()) {
+                return concat_spans({type_->span(), name->span()});
+            } else {
+                return type_->span();
+            }
+        } else {
+            auto [name, lparen, params, rparen] = function();
+            std::vector<Span> spans;
+            spans.emplace_back(type_->span());
+            spans.emplace_back(name.span());
+            spans.emplace_back(lparen.span());
+            for (const auto& param : params) spans.emplace_back(param.span());
+            spans.emplace_back(rparen.span());
+            return concat_spans(spans);
+        }
+    }
+
+    std::string debug() const override {
+        if (is_variable()) {
+            auto name = variable();
+            if (name.has_value()) {
+                return type_->debug() + " " + name->debug();
+            } else {
+                return type_->debug();
+            }
+        } else {
+            auto [name, lparen, params, rparen] = function();
+            std::stringstream ss;
+            ss << type_->debug();
+            ss << " " << name.debug();
+            ss << lparen.debug();
+            if (!params.empty()) {
+                ss << params[0].debug();
+                for (int i = 1; i < params.size(); i++)
+                    ss << ", " << params[i].debug();
+            }
+            ss << rparen.debug();
+            return ss.str();
+        }
+    }
+
+private:
+    const std::shared_ptr<Type> type_;
+    const std::variant<Variable, Function> vs_;
+};
+
 std::shared_ptr<Declaration> parse_decl(TokenStream& ts);
 std::shared_ptr<VariablesDeclaration> parse_var_decl(TokenStream& ts);
 std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
@@ -42,11 +129,8 @@ std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
 StorageClassSpecifier parse_class_specifier(TokenStream& ts);
 std::pair<std::vector<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
 parse_decl_concrete(TokenStream& ts);
-std::variant<
-    std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>,
-    std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
-               std::vector<FunctionDeclarationParam>, RParen>>
-parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete);
+VariableOrFunctionDeclBody parse_decl_body(
+    TokenStream& ts, std::shared_ptr<ConcreteType>& concrete);
 
 // ==================== statement parser ====================
 

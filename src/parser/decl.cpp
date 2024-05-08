@@ -50,8 +50,8 @@ std::string FunctionDeclaration::debug() const {
         for (int i = 1; i < params_.size(); i++)
             ss << ", " << params_[i].debug();
     }
-    ss << rparen_.debug() << " ";
-    if (body_.has_value()) ss << body_.value()->debug();
+    ss << rparen_.debug();
+    if (body_.has_value()) ss << " " << body_.value()->debug();
     if (semicolon_.has_value()) ss << semicolon_->debug();
     return ss.str();
 }
