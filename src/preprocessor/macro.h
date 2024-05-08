@@ -111,12 +111,13 @@ class MacroTable {
 public:
     MacroTable() : macros_() {}
 
-    void add_macro(const std::string& name, std::shared_ptr<Macro>& macro) {
-        macros_.insert({name, macro});
+    inline const bool has_macro(const std::string& name) {
+        return macros_.find(name) != macros_.end();
     }
 
-    const bool has_macro(const std::string& name) {
-        return macros_.find(name) != macros_.end();
+    inline void add_macro(const std::string& name,
+                          std::shared_ptr<Macro>& macro) {
+        macros_.insert({name, macro});
     }
 
     const std::shared_ptr<Macro>& get_macro(const std::string& name) {
@@ -128,6 +129,8 @@ public:
             throw std::out_of_range(ss.str());
         }
     }
+
+    inline void del_macro(const std::string& name) { macros_.erase(name); }
 
 private:
     std::map<std::string, std::shared_ptr<Macro>> macros_;
