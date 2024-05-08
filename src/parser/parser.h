@@ -36,7 +36,7 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts);
 // ==================== declaration parser ====================
 
 std::shared_ptr<Declaration> parse_decl(TokenStream& ts);
-std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts);
+std::shared_ptr<VariablesDeclaration> parse_var_decl(TokenStream& ts);
 std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
 
 StorageClassSpecifier parse_class_specifier(TokenStream& ts);

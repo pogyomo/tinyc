@@ -210,7 +210,7 @@ std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts) {
         LCurly lcurly(ts.token()->span());
         ts.advance();
 
-        std::vector<VariableDeclarations> decls;
+        std::vector<VariablesDeclaration> decls;
         while (true) {
             check(ts);
             if (ts.token()->kind() == TokenKind::RCurly) {
@@ -262,7 +262,7 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
         LCurly lcurly(ts.token()->span());
         ts.advance();
 
-        std::vector<VariableDeclarations> decls;
+        std::vector<VariablesDeclaration> decls;
         while (true) {
             check(ts);
             if (ts.token()->kind() == TokenKind::RCurly) {
@@ -353,7 +353,7 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
                        ts.token()->kind() == TokenKind::Semicolon) {
                 Semicolon semicolon(ts.token()->span());
                 ts.advance();
-                return std::make_shared<VariableDeclarations>(decls, semicolon);
+                return std::make_shared<VariablesDeclaration>(decls, semicolon);
             } else {
                 ts.retrest();
                 throw ParseError("expected , or ; after this",
@@ -386,10 +386,10 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts) {
+std::shared_ptr<VariablesDeclaration> parse_var_decl(TokenStream& ts) {
     auto decl = parse_decl(ts);
     if (decl->kind() == DeclarationKind::Variables) {
-        return std::static_pointer_cast<VariableDeclarations>(decl);
+        return std::static_pointer_cast<VariablesDeclaration>(decl);
     } else {
         throw ParseError("expected variables, but got function", decl->span());
     }

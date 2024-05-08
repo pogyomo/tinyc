@@ -204,9 +204,9 @@ private:
     const std::shared_ptr<Type> type_;
 };
 
-class VariableDeclarations : public Declaration {
+class VariablesDeclaration : public Declaration {
 public:
-    VariableDeclarations(
+    VariablesDeclaration(
         const std::vector<std::shared_ptr<VariableDeclaration>>& decls,
         Semicolon semicolon)
         : decls_(decls), semicolon_(semicolon) {}
