@@ -286,6 +286,8 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     try {
         return parse_fun_decl(ts);
     } catch (ParseError e) {
+        // TODO: Don't catch error when parser parse ty ident(args) correctly
+        //       and failed to parse its body.
         ts.set_state(state);
         return parse_var_decl(ts);
     }
