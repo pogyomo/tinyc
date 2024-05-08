@@ -172,8 +172,10 @@ std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts);
 
 // ==================== program parser ====================
 
-Program parse(Context& ctx, std::istream& is, const std::string& name,
-              std::vector<ParseError>& es);
+// Parse given input stream and return program.
+// If error happen, report error and return nullopt.
+std::optional<Program> parse(Context& ctx, std::istream& is,
+                             const std::string& name);
 
 }  // namespace tinyc
 

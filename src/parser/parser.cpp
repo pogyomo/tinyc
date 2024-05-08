@@ -10,8 +10,7 @@
 #include <vector>
 
 #include "../lexer/lexer.h"
-#include "../preprocessor/error.h"
-#include "../preprocessor/preprocessor.h"
+#include "../report/report.h"
 #include "decl.h"
 #include "error.h"
 #include "node.h"
@@ -1458,30 +1457,22 @@ std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts) {
 
 // ==================== program parser ====================
 
-Program parse(Context& ctx, std::istream& is, const std::string& name,
-              std::vector<ParseError>& es) {
-    try {
-        std::vector<LexError> les;
-        auto ts = preprocess(ctx, lex(ctx, is, name, les));
-        for (const auto le : les) {
-            // TODO: Better way to treant lex error?
-            es.emplace_back(le.what(), le.span());
-        }
-
-        std::vector<std::shared_ptr<Declaration>> decls;
-        while (!ts.eos()) {
-            try {
-                decls.emplace_back(parse_decl(ts));
-            } catch (ParseError e) {
-                es.emplace_back(e);
-                return decls;
-            }
-        }
-        return decls;
-    } catch (PreProcessError e) {
-        es.emplace_back(e.what(), e.span());
-        return std::vector<std::shared_ptr<Declaration>>();
+std::optional<Program> parse(Context& ctx, std::istream& is,
+                             const std::string& name) {
+    auto ts = lex(ctx, is, name);
+    if (!ts.has_value()) {
+        return std::nullopt;
     }
+    std::vector<std::shared_ptr<Declaration>> decls;
+    while (!ts->eos()) {
+        try {
+            decls.emplace_back(parse_decl(ts.value()));
+        } catch (ParseError e) {
+            report(ctx, e);
+            return std::nullopt;
+        }
+    }
+    return decls;
 }
 
 }  // namespace tinyc

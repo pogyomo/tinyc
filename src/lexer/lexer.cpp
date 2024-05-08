@@ -2,10 +2,13 @@
 
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <vector>
 
 #include "../input/stream.h"
+#include "../preprocessor/preprocessor.h"
+#include "../report/report.h"
 #include "../span.h"
 #include "error.h"
 #include "stream.h"
@@ -73,7 +76,7 @@ void skips(InputStream& is) {
 }
 
 // Extract a toke from non-empty `is`.
-// If unknown character found, throw `LexError`.
+// If unknown character found, throw `LexError` and skip the character.
 std::shared_ptr<Token> token(InputStream& is) {
     Span span = Span(is.input().id(), is.pos(), is.pos());
     if (is.accept("&&", span)) {
@@ -303,23 +306,30 @@ std::shared_ptr<Token> token(InputStream& is) {
     }
 }
 
-TokenStream lex(Context& ctx, std::istream& is, const std::string& name,
-                std::vector<LexError>& es) {
+std::optional<TokenStream> lex(Context& ctx, std::istream& is,
+                               const std::string& name) {
     int id = ctx.input_cache().cache(is, name);
     auto input = ctx.input_cache().fetch(id);
     auto is_ = InputStream(input);
 
+    bool has_error = false;
     std::vector<std::shared_ptr<Token>> ts;
     skips(is_);
     while (!is_.eos()) {
         try {
             ts.push_back(token(is_));
         } catch (LexError e) {
-            es.emplace_back(e);
+            report(ctx, e);
+            has_error = true;
         }
         skips(is_);
     }
-    return ts;
+
+    if (has_error) {
+        return std::nullopt;
+    } else {
+        return preprocess(ctx, ts);
+    }
 }
 
 }  // namespace tinyc
