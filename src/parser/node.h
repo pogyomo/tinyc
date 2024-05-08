@@ -351,6 +351,18 @@ private:
     const Span span_;
 };
 
+class Typedef : public Node {
+public:
+    Typedef(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "typedef"; }
+
+private:
+    const Span span_;
+};
+
 }  // namespace tinyc
 
 #endif  // TINYC_PARSER_NODE_H_

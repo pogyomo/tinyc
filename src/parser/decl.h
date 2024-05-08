@@ -61,15 +61,26 @@ private:
     const std::shared_ptr<Expression> expr_;
 };
 
+enum class VariableDeclarationKind {
+    Named,
+    Anonymous,
+};
+
 class VariableDeclaration : public Node {
 public:
-    VariableDeclaration(const std::shared_ptr<Type>& type,
-                        const VariableDeclarationName& name)
+    virtual ~VariableDeclaration() {}
+    virtual VariableDeclarationKind kind() const = 0;
+};
+
+class NamedVariableDeclaration : public VariableDeclaration {
+public:
+    NamedVariableDeclaration(const std::shared_ptr<Type>& type,
+                             const VariableDeclarationName& name)
         : type_(type), name_(name), initializer_(std::nullopt) {}
 
-    VariableDeclaration(const std::shared_ptr<Type>& type,
-                        const VariableDeclarationName& name,
-                        const VariableDeclarationInitializer& initializer)
+    NamedVariableDeclaration(const std::shared_ptr<Type>& type,
+                             const VariableDeclarationName& name,
+                             const VariableDeclarationInitializer& initializer)
         : type_(type), name_(name), initializer_(initializer) {}
 
     inline const std::shared_ptr<Type>& type() const { return type_; }
@@ -79,6 +90,10 @@ public:
     inline const std::optional<VariableDeclarationInitializer> initializer()
         const {
         return initializer_;
+    }
+
+    inline VariableDeclarationKind kind() const override {
+        return VariableDeclarationKind::Named;
     }
 
     Span span() const override {
@@ -102,13 +117,34 @@ private:
     const std::optional<VariableDeclarationInitializer> initializer_;
 };
 
+class AnonymousVariableDeclaration : public VariableDeclaration {
+public:
+    AnonymousVariableDeclaration(const std::shared_ptr<Type>& type)
+        : type_(type) {}
+
+    inline const std::shared_ptr<Type>& type() const { return type_; }
+
+    inline VariableDeclarationKind kind() const override {
+        return VariableDeclarationKind::Anonymous;
+    }
+
+    inline Span span() const override { return type_->span(); }
+
+    inline std::string debug() const override { return type_->debug(); }
+
+private:
+    const std::shared_ptr<Type> type_;
+};
+
 class VariableDeclarations : public Declaration {
 public:
-    VariableDeclarations(const std::vector<VariableDeclaration>& decls,
-                         Semicolon semicolon)
+    VariableDeclarations(
+        const std::vector<std::shared_ptr<VariableDeclaration>>& decls,
+        Semicolon semicolon)
         : decls_(decls), semicolon_(semicolon) {}
 
-    inline const std::vector<VariableDeclaration>& decls() const {
+    inline const std::vector<std::shared_ptr<VariableDeclaration>>& decls()
+        const {
         return decls_;
     }
 
@@ -120,7 +156,7 @@ public:
 
     Span span() const override {
         std::vector<Span> spans;
-        for (const auto& decl : decls_) spans.emplace_back(decl.span());
+        for (const auto& decl : decls_) spans.emplace_back(decl->span());
         spans.emplace_back(semicolon_.span());
         return concat_spans(spans);
     }
@@ -128,16 +164,16 @@ public:
     std::string debug() const override {
         std::stringstream ss;
         if (!decls_.empty()) {
-            ss << decls_[0].debug();
+            ss << decls_[0]->debug();
             for (int i = 1; i < decls_.size(); i++)
-                ss << ", " << decls_[i].debug();
+                ss << ", " << decls_[i]->debug();
         }
         ss << semicolon_.debug();
         return ss.str();
     }
 
 private:
-    const std::vector<VariableDeclaration> decls_;
+    const std::vector<std::shared_ptr<VariableDeclaration>> decls_;
     const Semicolon semicolon_;
 };
 

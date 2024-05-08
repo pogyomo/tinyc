@@ -165,6 +165,7 @@ std::shared_ptr<EnumTypeSpecifier> parse_enum(TokenStream& ts) {
             check(ts);
             if (ts.token()->kind() == TokenKind::Comma) {
                 Comma comma(ts.token()->span());
+                ts.advance();
                 if (init.has_value()) {
                     enumerators.emplace_back(
                         Enumerator(ident, init.value(), comma));
@@ -296,23 +297,26 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
 std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts) {
     auto concrete = parse_var_decl_concrete(ts);
 
-    std::vector<VariableDeclaration> decls;
+    std::vector<std::shared_ptr<VariableDeclaration>> decls;
     while (true) {
         auto [type, name] = parse_var_decl_ptr(ts, concrete);
-        if (!name.has_value())
-            throw ParseError("variable declaration without its name",
-                             type->span());
 
-        if (!ts.eos() && ts.token()->kind() == TokenKind::Assign) {
+        if (name.has_value() && !ts.eos() &&
+            ts.token()->kind() == TokenKind::Assign) {
             Assign assign(ts.token()->span());
             ts.advance();
             auto expr = parse_assign_expr(ts);
             VariableDeclarationInitializer initializer(assign, expr);
 
-            decls.emplace_back(
-                VariableDeclaration(type, name.value(), initializer));
+            decls.emplace_back(std::make_shared<NamedVariableDeclaration>(
+                type, name.value(), initializer));
         } else {
-            decls.emplace_back(VariableDeclaration(type, name.value()));
+            if (name.has_value())
+                decls.emplace_back(std::make_shared<NamedVariableDeclaration>(
+                    type, name.value()));
+            else
+                decls.emplace_back(
+                    std::make_shared<AnonymousVariableDeclaration>(type));
         }
 
         if (!ts.eos() && ts.token()->kind() == TokenKind::Comma) {
