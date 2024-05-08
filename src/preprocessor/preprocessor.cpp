@@ -1,5 +1,6 @@
 #include "preprocessor.h"
 
+#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <optional>
@@ -267,14 +268,15 @@ TokenStream preprocess(Context& ctx, TokenStream&& ts) {
                 throw PreProcessError("expected path string after include",
                                       ts.token()->span());
             }
-            auto path =
+            auto path_s =
                 std::static_pointer_cast<ValueToken<std::string>>(ts.token())
                     ->value();
+            std::filesystem::path path(path_s);
             ts.advance();
 
             std::fstream fs(path);
             std::vector<LexError> es;  // TODO: manage this `es`
-            auto included = preprocess(ctx, lex(ctx, fs, path, es));
+            auto included = preprocess(ctx, lex(ctx, fs, path.filename(), es));
             while (!included.eos()) {
                 res.push_back(included.token());
                 included.advance();
