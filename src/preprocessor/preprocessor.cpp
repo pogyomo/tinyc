@@ -5,7 +5,6 @@
 #include <memory>
 #include <optional>
 #include <sstream>
-#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -25,8 +24,8 @@ std::vector<std::shared_ptr<Token>> parse_macro_body(TokenStream& ts, int row) {
     return body;
 }
 
-std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts,
-                                                         int row) {
+std::optional<std::vector<std::string>> parse_macro_params(TokenStream& ts,
+                                                           int row) {
     auto state = ts.get_state();
 
     if (ts.eos() || ts.token()->kind() != TokenKind::LParen) {
@@ -79,7 +78,7 @@ std::pair<std::string, std::shared_ptr<Macro>> parse_macro(TokenStream& ts,
     int row = id->span().start().row();
     ts.advance();
 
-    auto params = parse_fun_params(ts, row);
+    auto params = parse_macro_params(ts, row);
     auto body = parse_macro_body(ts, row);
     if (params.has_value()) {
         return {name,
@@ -89,8 +88,8 @@ std::pair<std::string, std::shared_ptr<Macro>> parse_macro(TokenStream& ts,
     }
 }
 
-std::vector<std::vector<std::shared_ptr<Token>>> parse_fun_args(TokenStream& ts,
-                                                                Span start) {
+std::vector<std::vector<std::shared_ptr<Token>>> parse_macro_args(
+    TokenStream& ts, Span start) {
     if (ts.eos() || ts.token()->kind() != TokenKind::LParen) return {};
     ts.advance();
 
@@ -116,7 +115,11 @@ std::vector<std::vector<std::shared_ptr<Token>>> parse_fun_args(TokenStream& ts,
                 ts.advance();
             }
         } else if (ts.token()->kind() == TokenKind::Comma) {
-            args.push_back({});
+            if (unclosing_paren == 1) {
+                args.push_back({});
+            } else {
+                args.back().push_back(ts.token());
+            }
             ts.advance();
         } else {
             args.back().push_back(ts.token());
@@ -125,9 +128,6 @@ std::vector<std::vector<std::shared_ptr<Token>>> parse_fun_args(TokenStream& ts,
     }
 }
 
-// TODO: This preprocessor can't recognize nested macro call like
-//       * ADD(1, ADD(2, 3))
-//       * ADD(1, add(2, 3))
 std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
     int waiting_if = 0;
     std::vector<std::shared_ptr<Token>> res;
@@ -145,9 +145,15 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             ts.advance();
 
             try {
-                auto args = parse_fun_args(ts, id->span());
-                auto expanded = macro->expand(args);
-                res.insert(res.end(), expanded.begin(), expanded.end());
+                auto args = parse_macro_args(ts, id->span());
+                auto expanded = preprocess(ctx, macro->expand(args));
+                if (!expanded.has_value()) {
+                    return std::nullopt;
+                }
+                while (!expanded->eos()) {
+                    res.push_back(expanded->token());
+                    expanded->advance();
+                }
                 continue;
             } catch (PreProcessError e) {
                 report(ctx, e);
