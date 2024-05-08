@@ -150,15 +150,19 @@ private:
 class FunctionType : public Type {
 public:
     FunctionType(const std::shared_ptr<Type>& ret_type, LParen lparen,
-                 const std::vector<std::shared_ptr<Type>>& args, RParen rparen)
-        : ret_type_(ret_type), lparen_(lparen), args_(args), rparen_(rparen) {}
+                 const std::vector<std::shared_ptr<Type>>& params,
+                 RParen rparen)
+        : ret_type_(ret_type),
+          lparen_(lparen),
+          params_(params),
+          rparen_(rparen) {}
 
     inline const std::shared_ptr<Type>& ret_type() const { return ret_type_; }
 
     inline const LParen& lparen() const { return lparen_; }
 
     inline const std::vector<std::shared_ptr<Type>>& args() const {
-        return args_;
+        return params_;
     }
 
     inline const RParen& rparen() const { return rparen_; }
@@ -169,7 +173,7 @@ public:
         std::vector<Span> spans;
         spans.emplace_back(ret_type_->span());
         spans.emplace_back(lparen_.span());
-        for (const auto& arg : args_) spans.emplace_back(arg->span());
+        for (const auto& param : params_) spans.emplace_back(param->span());
         spans.emplace_back(rparen_.span());
         return concat_spans(spans);
     }
@@ -177,12 +181,12 @@ public:
     inline std::string debug() const override {
         std::stringstream ss;
         ss << ret_type_->debug() << " " << lparen_.debug();
-        if (args_.empty()) {
+        if (params_.empty()) {
             ss << rparen_.debug();
         } else {
-            ss << args_[0]->debug();
-            for (int i = 1; i < args_.size(); i++)
-                ss << ", " << args_[i]->debug();
+            ss << params_[0]->debug();
+            for (int i = 1; i < params_.size(); i++)
+                ss << ", " << params_[i]->debug();
             ss << rparen_.debug();
         }
         return ss.str();
@@ -191,7 +195,7 @@ public:
 private:
     const std::shared_ptr<Type> ret_type_;
     const LParen lparen_;
-    const std::vector<std::shared_ptr<Type>> args_;
+    const std::vector<std::shared_ptr<Type>> params_;
     const RParen rparen_;
 };
 
