@@ -277,12 +277,12 @@ private:
     const Span span_;
 };
 
-class FunctionDeclarationArg : public Node {
+class FunctionDeclarationParam : public Node {
 public:
-    FunctionDeclarationArg(const std::shared_ptr<Type>& type) : type_(type) {}
+    FunctionDeclarationParam(const std::shared_ptr<Type>& type) : type_(type) {}
 
-    FunctionDeclarationArg(const std::shared_ptr<Type>& type,
-                           const FunctionDeclarationArgName& name)
+    FunctionDeclarationParam(const std::shared_ptr<Type>& type,
+                             const FunctionDeclarationArgName& name)
         : type_(type), name_(name) {}
 
     inline const std::shared_ptr<Type>& type() const { return type_; }
@@ -316,12 +316,12 @@ public:
         const std::vector<StorageClassSpecifier> class_specifiers,
         const std::shared_ptr<Type>& ret_type,
         const FunctionDeclarationName& name, const LParen lparen,
-        const std::vector<FunctionDeclarationArg>& args, const RParen rparen)
+        const std::vector<FunctionDeclarationParam>& args, const RParen rparen)
         : class_specifiers_(class_specifiers),
           ret_type_(ret_type),
           name_(name),
           lparen_(lparen),
-          args_(args),
+          params_(args),
           rparen_(rparen),
           body_(std::nullopt),
           semicolon_(std::nullopt) {}
@@ -330,13 +330,13 @@ public:
         const std::vector<StorageClassSpecifier> class_specifiers,
         const std::shared_ptr<Type>& ret_type,
         const FunctionDeclarationName& name, const LParen lparen,
-        const std::vector<FunctionDeclarationArg>& args, const RParen rparen,
+        const std::vector<FunctionDeclarationParam>& args, const RParen rparen,
         const std::shared_ptr<BlockStatement> body)
         : class_specifiers_(class_specifiers),
           ret_type_(ret_type),
           name_(name),
           lparen_(lparen),
-          args_(args),
+          params_(args),
           rparen_(rparen),
           body_(body),
           semicolon_(std::nullopt) {}
@@ -345,13 +345,13 @@ public:
         const std::vector<StorageClassSpecifier> class_specifiers,
         const std::shared_ptr<Type>& ret_type,
         const FunctionDeclarationName& name, const LParen lparen,
-        const std::vector<FunctionDeclarationArg>& args, const RParen rparen,
+        const std::vector<FunctionDeclarationParam>& args, const RParen rparen,
         const Semicolon semicolon)
         : class_specifiers_(class_specifiers),
           ret_type_(ret_type),
           name_(name),
           lparen_(lparen),
-          args_(args),
+          params_(args),
           rparen_(rparen),
           body_(std::nullopt),
           semicolon_(semicolon) {}
@@ -360,13 +360,13 @@ public:
         const std::vector<StorageClassSpecifier> class_specifiers,
         const std::shared_ptr<Type>& ret_type,
         const FunctionDeclarationName& name, const LParen lparen,
-        const std::vector<FunctionDeclarationArg>& args, const RParen rparen,
+        const std::vector<FunctionDeclarationParam>& args, const RParen rparen,
         const std::shared_ptr<BlockStatement> body, const Semicolon semicolon)
         : class_specifiers_(class_specifiers),
           ret_type_(ret_type),
           name_(name),
           lparen_(lparen),
-          args_(args),
+          params_(args),
           rparen_(rparen),
           body_(body),
           semicolon_(semicolon) {}
@@ -379,8 +379,8 @@ public:
 
     inline const FunctionDeclarationName& name() const { return name_; }
 
-    inline const std::vector<FunctionDeclarationArg>& args() const {
-        return args_;
+    inline const std::vector<FunctionDeclarationParam>& params() const {
+        return params_;
     }
 
     inline const std::optional<std::shared_ptr<BlockStatement>>& body() const {
@@ -404,7 +404,7 @@ private:
     const std::shared_ptr<Type> ret_type_;
     const FunctionDeclarationName name_;
     const LParen lparen_;
-    const std::vector<FunctionDeclarationArg> args_;
+    const std::vector<FunctionDeclarationParam> params_;
     const RParen rparen_;
     const std::optional<std::shared_ptr<BlockStatement>> body_;
     const std::optional<Semicolon> semicolon_;

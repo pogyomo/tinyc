@@ -484,7 +484,7 @@ parse_decl_concrete(TokenStream& ts) {
 std::variant<
     std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>,
     std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
-               std::vector<FunctionDeclarationArg>, RParen>>
+               std::vector<FunctionDeclarationParam>, RParen>>
 parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
     std::shared_ptr<Type> type = concrete;
 
@@ -523,12 +523,12 @@ parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
     LParen lparen(ts.token()->span());
     ts.advance();
 
-    std::vector<FunctionDeclarationArg> args;
+    std::vector<FunctionDeclarationParam> params;
     while (true) {
         if (!ts.eos() && ts.token()->kind() == TokenKind::RParen) {
             RParen rparen(ts.token()->span());
             ts.advance();
-            return std::make_tuple(type, name, lparen, args, rparen);
+            return std::make_tuple(type, name, lparen, params, rparen);
         }
 
         auto [cs, concrete] = parse_decl_concrete(ts);
@@ -557,10 +557,10 @@ parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete) {
         auto [type_, name_] = std::get<0>(ptr);
 
         if (name_.has_value())
-            args.emplace_back(type_, FunctionDeclarationArgName(name_->name(),
-                                                                name_->span()));
+            params.emplace_back(type_, FunctionDeclarationArgName(
+                                           name_->name(), name_->span()));
         else
-            args.emplace_back(type_);
+            params.emplace_back(type_);
 
         if (!ts.eos() && ts.token()->kind() == TokenKind::RParen) {
             continue;

@@ -45,7 +45,7 @@ parse_decl_concrete(TokenStream& ts);
 std::variant<
     std::pair<std::shared_ptr<Type>, std::optional<VariableDeclarationName>>,
     std::tuple<std::shared_ptr<Type>, FunctionDeclarationName, LParen,
-               std::vector<FunctionDeclarationArg>, RParen>>
+               std::vector<FunctionDeclarationParam>, RParen>>
 parse_decl_ptr(TokenStream& ts, std::shared_ptr<ConcreteType>& concrete);
 
 // ==================== statement parser ====================
