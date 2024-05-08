@@ -1,9 +1,11 @@
 #include "lexer.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "../input/stream.h"
@@ -172,11 +174,13 @@ std::shared_ptr<Token> token(InputStream& is) {
     } else if (is.accept('.', span)) {
         return std::make_shared<SymbolToken>(TokenKind::Dot, span);
     } else if (is.accept('"')) {
+        int row = is.pos().row();
+
         std::string s;
         Position start = is.pos();
         Position end = is.pos();
         while (true) {
-            if (is.eos()) {
+            if (is.eos() || is.pos().row() != row) {
                 throw LexError("unclosing string literal",
                                Span(is.input().id(), start, end));
             }
@@ -191,6 +195,51 @@ std::shared_ptr<Token> token(InputStream& is) {
         }
         return std::make_shared<ValueToken<std::string>>(
             TokenKind::String, s, Span(is.input().id(), start, end));
+    } else if (is.accept("0x", span)) {
+        int row = span.start().row();
+
+        std::string buf;
+        Position end = is.pos();
+        while (!is.eos() && is.pos().row() == row) {
+            if ('0' <= is.ch() && is.ch() <= '9' ||
+                'a' <= is.ch() && is.ch() <= 'f' ||
+                'A' <= is.ch() && is.ch() <= 'F') {
+                end = is.pos();
+                buf.push_back(is.ch());
+                is.advance();
+            } else {
+                break;
+            }
+        }
+
+        long long value = std::stoll(buf, nullptr, 16);
+        return std::make_shared<ValueToken<long long>>(
+            TokenKind::Integer, value,
+            Span(is.input().id(), span.start(), end));
+    } else if (is.accept('0', span)) {
+        int row = span.start().row();
+
+        std::string buf;
+        Position end = is.pos();
+        while (!is.eos() && is.pos().row() == row) {
+            if ('0' <= is.ch() && is.ch() <= '7') {
+                end = is.pos();
+                buf.push_back(is.ch());
+                is.advance();
+            } else {
+                break;
+            }
+        }
+
+        if (buf.empty()) {
+            return std::make_shared<ValueToken<long long>>(TokenKind::Integer,
+                                                           0, span);
+        } else {
+            long long value = std::stoll(buf, nullptr, 8);
+            return std::make_shared<ValueToken<long long>>(
+                TokenKind::Integer, value,
+                Span(is.input().id(), span.start(), end));
+        }
     } else if (std::isdigit(is.ch())) {
         int row = is.pos().row();
 
