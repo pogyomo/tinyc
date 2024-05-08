@@ -1253,17 +1253,20 @@ std::shared_ptr<Expression> parse_multiplicative_expr(TokenStream& ts) {
 }
 
 std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
-    check(ts);
     auto state = ts.get_state();
+    std::optional<std::shared_ptr<CastExpression>> cast;
+    std::optional<std::vector<StorageClassSpecifier>> cs;
     try {
+        check(ts);
         if (ts.token()->kind() != TokenKind::LParen) {
             return parse_unary_expr(ts);
         }
         LParen lparen(ts.token()->span());
         ts.advance();
 
-        auto [cs, concrete] = parse_var_decl_concrete(ts);
+        auto [cs_, concrete] = parse_var_decl_concrete(ts);
         auto [type, name] = parse_var_decl_ptr(ts, concrete);
+        cs.emplace(cs_);
 
         check(ts, TokenKind::RParen, ")");
         RParen rparen(ts.token()->span());
@@ -1271,10 +1274,17 @@ std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
 
         auto expr = parse_unary_expr(ts);
 
-        return std::make_shared<CastExpression>(lparen, type, rparen, expr);
+        cast = std::make_shared<CastExpression>(lparen, type, rparen, expr);
     } catch (ParseError e) {
         ts.set_state(state);
         return parse_unary_expr(ts);
+    }
+
+    if (!cs.value().empty()) {
+        throw ParseError("class specifier in cast is not allowed",
+                         cast.value()->span());
+    } else {
+        return cast.value();
     }
 }
 
@@ -1341,8 +1351,14 @@ std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
             RParen rparen(ts.token()->span());
             ts.advance();
 
-            return std::make_shared<SizeofTypeExpression>(sizeof_kw, lparen,
-                                                          type, rparen);
+            auto szof = std::make_shared<SizeofTypeExpression>(
+                sizeof_kw, lparen, type, rparen);
+            if (!cs.empty()) {
+                throw ParseError("class specifier in sizeof is not allowed",
+                                 szof->span());
+            } else {
+                return szof;
+            }
         }
     } else {
         return parse_postfix_expr(ts);
