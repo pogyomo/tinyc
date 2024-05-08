@@ -652,6 +652,12 @@ std::shared_ptr<BlockStatement> parse_block_stmt(TokenStream& ts) {
 
     std::vector<std::shared_ptr<BlockStatementItem>> items;
     while (true) {
+        if (ts.eos()) {
+            std::vector<Span> spans;
+            spans.emplace_back(lcurly.span());
+            for (const auto& item : items) spans.emplace_back(item->span());
+            throw ParseError("unclosing block statement", concat_spans(spans));
+        }
         if (ts.token()->kind() == TokenKind::RCurly) {
             RCurly rcurly(ts.token()->span());
             ts.advance();
