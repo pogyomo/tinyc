@@ -799,7 +799,7 @@ public:
     }
 
     inline std::string debug() const override {
-        return return_kw_.debug() + expr_->debug(), semicolon_.debug();
+        return return_kw_.debug() + " " + expr_->debug() + semicolon_.debug();
     }
 
 private:

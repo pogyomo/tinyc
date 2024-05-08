@@ -1,5 +1,6 @@
 #include "preprocessor.h"
 
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -12,8 +13,7 @@
 
 namespace tinyc {
 
-std::vector<std::shared_ptr<Token>> parse_macro_body(TokenStream& ts) {
-    auto row = ts.token()->span().start().row();
+std::vector<std::shared_ptr<Token>> parse_macro_body(TokenStream& ts, int row) {
     std::vector<std::shared_ptr<Token>> body;
     while (!ts.eos() && ts.token()->span().start().row() == row) {
         body.push_back(ts.token());
@@ -22,7 +22,8 @@ std::vector<std::shared_ptr<Token>> parse_macro_body(TokenStream& ts) {
     return body;
 }
 
-std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts) {
+std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts,
+                                                         int row) {
     auto state = ts.get_state();
 
     if (ts.eos() || ts.token()->kind() != TokenKind::LParen) {
@@ -33,7 +34,7 @@ std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts) {
 
     std::vector<std::string> params;
     while (true) {
-        if (ts.eos()) {
+        if (ts.eos() || ts.token()->span().start().row() != row) {
             ts.set_state(state);
             return std::nullopt;
         } else if (ts.token()->kind() == TokenKind::RParen) {
@@ -41,7 +42,7 @@ std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts) {
             return params;
         }
 
-        if (ts.token()->kind() != TokenKind::Identifier) {
+        if (ts.eos() || ts.token()->kind() != TokenKind::Identifier) {
             ts.set_state(state);
             return std::nullopt;
         }
@@ -49,7 +50,7 @@ std::optional<std::vector<std::string>> parse_fun_params(TokenStream& ts) {
         params.push_back(id->value());
         ts.advance();
 
-        if (ts.eos()) {
+        if (ts.eos() || ts.token()->span().start().row() != row) {
             ts.set_state(state);
             return std::nullopt;
         } else if (ts.token()->kind() == TokenKind::RParen) {
@@ -72,10 +73,11 @@ std::pair<std::string, std::shared_ptr<Macro>> parse_macro(TokenStream& ts,
     }
     auto id = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
     auto name = id->value();
+    int row = id->span().start().row();
     ts.advance();
 
-    auto params = parse_fun_params(ts);
-    auto body = parse_macro_body(ts);
+    auto params = parse_fun_params(ts, row);
+    auto body = parse_macro_body(ts, row);
     if (params.has_value()) {
         return {name,
                 std::make_shared<FunctionMacro>(name, params.value(), body)};
@@ -121,6 +123,7 @@ std::vector<std::vector<std::shared_ptr<Token>>> parse_fun_args(TokenStream& ts,
 }
 
 TokenStream preprocess(Context& ctx, TokenStream&& ts) {
+    int waiting_if = 0;
     std::vector<std::shared_ptr<Token>> res;
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::Identifier) {
@@ -151,15 +154,110 @@ TokenStream preprocess(Context& ctx, TokenStream&& ts) {
             throw PreProcessError("expected identifier after #",
                                   ts.token()->span());
         }
-        auto id = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
-        if (id->value() == "define") {
+        auto directive_name =
+            std::static_pointer_cast<ValueToken<std::string>>(ts.token())
+                ->value();
+        if (directive_name == "define") {
             ts.advance();
             auto [name, macro] = parse_macro(ts, start);
             ctx.macro_table().add_macro(name, macro);
+        } else if (directive_name == "ifndef") {
+            ts.advance();
+            if (ts.eos() || ts.token()->kind() != TokenKind::Identifier) {
+                ts.retrest();
+                throw PreProcessError("expected macro name after ifndef",
+                                      ts.token()->span());
+            }
+            auto macro_name =
+                std::static_pointer_cast<ValueToken<std::string>>(ts.token())
+                    ->value();
+            Span ifndef_span = concat_spans({start, ts.token()->span()});
+            ts.advance();
+            if (ctx.macro_table().has_macro(macro_name)) {
+                while (true) {
+                    if (ts.eos()) {
+                        throw PreProcessError("unclosing ifndef", ifndef_span);
+                    }
+                    if (ts.token()->kind() != TokenKind::Sharp) {
+                        ts.advance();
+                        continue;
+                    }
+                    ts.advance();
+
+                    if (ts.eos()) {
+                        throw PreProcessError("unclosing ifndef", ifndef_span);
+                    }
+                    if (ts.token()->kind() != TokenKind::Identifier) {
+                        ts.advance();
+                        continue;
+                    }
+                    auto endif_name =
+                        std::static_pointer_cast<ValueToken<std::string>>(
+                            ts.token())
+                            ->value();
+                    ts.advance();
+
+                    if (endif_name == "endif") {
+                        break;
+                    }
+                }
+            } else {
+                waiting_if++;
+            }
+        } else if (directive_name == "ifdef") {
+            ts.advance();
+            if (ts.eos() || ts.token()->kind() != TokenKind::Identifier) {
+                ts.retrest();
+                throw PreProcessError("expected macro name after ifdef",
+                                      ts.token()->span());
+            }
+            auto macro_name =
+                std::static_pointer_cast<ValueToken<std::string>>(ts.token())
+                    ->value();
+            Span ifdef_span = concat_spans({start, ts.token()->span()});
+            ts.advance();
+            if (!ctx.macro_table().has_macro(macro_name)) {
+                while (true) {
+                    if (ts.eos()) {
+                        throw PreProcessError("unclosing ifdef", ifdef_span);
+                    }
+                    if (ts.token()->kind() != TokenKind::Sharp) {
+                        ts.advance();
+                        continue;
+                    }
+                    ts.advance();
+
+                    if (ts.eos()) {
+                        throw PreProcessError("unclosing ifdef", ifdef_span);
+                    }
+                    if (ts.token()->kind() != TokenKind::Identifier) {
+                        ts.advance();
+                        continue;
+                    }
+                    auto endif_name =
+                        std::static_pointer_cast<ValueToken<std::string>>(
+                            res.back())
+                            ->value();
+                    ts.advance();
+
+                    if (endif_name == "endif") {
+                        break;
+                    }
+                }
+            } else {
+                waiting_if++;
+            }
+        } else if (directive_name == "endif") {
+            if (waiting_if == 0) {
+                Span span = concat_spans({start, ts.token()->span()});
+                throw PreProcessError("extra endif", span);
+            }
+            ts.advance();
+            waiting_if--;
         } else {
             std::stringstream ss;
-            ss << "unknown directive name: " << id->value();
-            throw PreProcessError(ss.str(), id->span());
+            ss << "unknown directive name: " << directive_name;
+            throw PreProcessError(ss.str(), ts.token()->span());
         }
     }
     return res;

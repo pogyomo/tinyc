@@ -115,6 +115,10 @@ public:
         macros_.insert({name, macro});
     }
 
+    const bool has_macro(const std::string& name) {
+        return macros_.find(name) != macros_.end();
+    }
+
     const std::shared_ptr<Macro>& get_macro(const std::string& name) {
         try {
             return macros_.at(name);

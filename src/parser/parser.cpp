@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "../lexer/lexer.h"
+#include "../preprocessor/error.h"
 #include "../preprocessor/preprocessor.h"
 #include "decl.h"
 #include "error.h"
@@ -670,11 +671,13 @@ std::shared_ptr<BlockStatement> parse_block_stmt(TokenStream& ts) {
             return std::make_shared<BlockStatement>(lcurly, items, rcurly);
         }
 
+        auto state = ts.get_state();
         try {
             auto stmt = parse_stmt(ts);
             items.push_back(
                 std::make_shared<BlockStatementStatementItem>(stmt));
         } catch (ParseError e) {
+            ts.set_state(state);
             auto decl = parse_decl(ts);
             items.push_back(
                 std::make_shared<BlockStatementDeclarationItem>(decl));
@@ -1485,23 +1488,28 @@ std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts) {
 
 Program parse(Context& ctx, std::istream& is, const std::string& name,
               std::vector<ParseError>& es) {
-    std::vector<LexError> les;
-    auto ts = preprocess(ctx, lex(ctx, is, name, les));
-    for (const auto le : les) {
-        // TODO: Better way to treant lex error?
-        es.emplace_back(le.what(), le.span());
-    }
-
-    std::vector<std::shared_ptr<Declaration>> decls;
-    while (!ts.eos()) {
-        try {
-            decls.emplace_back(parse_decl(ts));
-        } catch (ParseError e) {
-            es.emplace_back(e);
-            return decls;
+    try {
+        std::vector<LexError> les;
+        auto ts = preprocess(ctx, lex(ctx, is, name, les));
+        for (const auto le : les) {
+            // TODO: Better way to treant lex error?
+            es.emplace_back(le.what(), le.span());
         }
+
+        std::vector<std::shared_ptr<Declaration>> decls;
+        while (!ts.eos()) {
+            try {
+                decls.emplace_back(parse_decl(ts));
+            } catch (ParseError e) {
+                es.emplace_back(e);
+                return decls;
+            }
+        }
+        return decls;
+    } catch (PreProcessError e) {
+        es.emplace_back(e.what(), e.span());
+        return std::vector<std::shared_ptr<Declaration>>();
     }
-    return decls;
 }
 
 }  // namespace tinyc
