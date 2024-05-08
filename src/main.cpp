@@ -12,9 +12,7 @@ int main(int argc, char* argv[]) {
     tinyc::Context ctx;
     std::fstream fs(argv[1]);
     auto prog = parse(ctx, fs, argv[1]);
-    if (!prog.has_value()) {
-        std::cout << "empty" << std::endl;
-    } else {
+    if (prog.has_value()) {
         for (const auto& decl : prog->decls()) {
             std::cout << decl->debug() << std::endl;
         }

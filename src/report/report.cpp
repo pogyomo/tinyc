@@ -1,73 +1,86 @@
 #include "report.h"
 
+#include <algorithm>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
 
-#include "color.h"
 #include "reportable.h"
 
 namespace tinyc {
 
-// Generate colored string such that "error: ", "warning:", etc. with location
-// and its length when it is displayed.
-std::pair<std::string, int> gen_info(const std::string& name, Position start,
-                                     ReportableLevel level, bool show_level) {
-    std::string s = "";
-    if (level == ReportableLevel::Error) {
-        s = "error: ";
-    } else {
-        s = "warning: ";
+int digits(int n) {
+    if (n == 0) {
+        return 1;
     }
-    ColoredString slevel(s);
-    if (level == ReportableLevel::Error) {
-        slevel.set_fg_red();
-    } else {
-        slevel.set_fg_yellow();
+    int res = 0;
+    while (n > 0) {
+        res++;
+        n /= 10;
     }
+    return res;
+}
 
-    std::stringstream info;
-    info << name << ":" << start.row() << ":" << start.offset() << ": ";
-    int len = info.str().size() + slevel.size();
-    if (show_level) {
-        info << slevel.str();
+std::string info(const std::string& filename, const std::string& context,
+                 Position start, ReportableLevel level) {
+    std::stringstream ss;
+    ss << filename << ":" << start.row() << ":" << start.offset() << ": ";
+    if (level == ReportableLevel::Error) {
+        ss << "\e[31m" << "error: " << "\e[0m";
     } else {
-        info << std::string(slevel.size(), ' ');
+        ss << "\e[31m" << "warning: " << "\e[0m";
     }
-    return {info.str(), len};
+    ss << context;
+    return ss.str();
 }
 
 void report(Context& ctx, const Reportable& r) {
-    auto span = r.span();
-    auto level = r.level();
-    auto input = ctx.input_cache().fetch(span.id());
+    auto start = r.span().start();
+    auto end = r.span().end();
+    auto input = ctx.input_cache().fetch(r.span().id());
     auto name = input.name();
-    if (span.start().row() == span.end().row()) {
-        auto [info, info_len] = gen_info(name, span.start(), level, true);
+    std::cerr << info(name, r.context(), start, r.level()) << std::endl;
+    if (start.row() == end.row()) {
+        int range = end.offset() - start.offset() + 1;
+        int width = digits(start.row());
+        std::stringstream sep_start;
+        sep_start << std::setfill('0') << std::setw(width);
+        sep_start << "  " << start.row() << "|";
+        std::stringstream sep;
+        sep << std::string(width + 2, ' ') << "|";
+        auto line_start = input.lines()[start.row()];
 
-        std::cerr << name << ": " << r.context() << std::endl;
-
-        auto line = input.lines()[span.start().row()];
-        std::cerr << info << line << std::endl;
-        std::cerr << std::string(span.start().offset() + info_len, ' ');
-        std::cerr << std::string(
-            span.end().offset() - span.start().offset() + 1, '^');
-        std::cerr << "-- " << r.what() << std::endl;
+        std::cerr << sep_start.str() << line_start << std::endl;
+        std::cerr << sep.str();
+        std::cerr << std::string(start.offset(), ' ');
+        std::cerr << std::string(range, '^');
+        std::cout << "-- " << r.what() << std::endl;
     } else {
-        auto [sinfo, sinfo_len] = gen_info(name, span.start(), level, true);
-        auto [einfo, einfo_len] = gen_info(name, span.end(), level, false);
-        auto info_len = sinfo_len > einfo_len ? sinfo_len : einfo_len;
+        int width = digits(std::max(start.row(), end.row()));
+        std::stringstream sep_start;
+        sep_start << std::setfill('0') << std::setw(width);
+        sep_start << "  " << start.row() << "|";
+        std::stringstream sep_end;
+        sep_end << std::setfill('0') << std::setw(width);
+        sep_end << "  " << end.row() << "|";
+        std::stringstream sep;
+        sep << std::string(width + 2, ' ') << "|";
+        std::stringstream cont;
+        cont << std::string(width + 2, ' ') << "...";
+        auto line_start = input.lines()[start.row()];
+        auto line_end = input.lines()[end.row()];
 
-        std::cerr << name << ": " << r.context() << std::endl;
-
-        auto sline = input.lines()[span.start().row()];
-        std::cerr << sinfo << sline << std::endl;
-        std::cerr << std::string(span.start().offset() + info_len, ' ');
-        std::cerr << std::string(sline.size() - span.start().offset(), '^');
+        std::cerr << sep_start.str() << line_start << std::endl;
+        std::cerr << sep.str();
+        std::cerr << std::string(start.offset(), ' ');
+        std::cerr << std::string(line_start.size() - start.offset(), '^');
         std::cerr << std::endl;
+        std::cerr << cont.str() << std::endl;
 
-        auto eline = input.lines()[span.end().row()];
-        std::cerr << einfo << eline << std::endl;
-        std::cerr << std::string(info_len, ' ');
-        std::cerr << std::string(span.end().offset() + 1, '^');
+        std::cerr << sep_end.str() << line_end << std::endl;
+        std::cerr << sep.str();
+        std::cerr << std::string(end.offset(), '^');
         std::cerr << "-- " << r.what() << std::endl;
     }
 }
