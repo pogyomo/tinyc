@@ -431,6 +431,7 @@ parse_decl_concrete(TokenStream& ts) {
     std::vector<StorageClassSpecifier> class_specifiers;
     std::vector<std::shared_ptr<TypeSpecifier>> specifiers;
     std::vector<std::shared_ptr<TypeQuantifier>> quantifiers;
+    bool has_keyword_type = false;
     while (true) {
         check(ts);
         auto kind = ts.token()->kind();
@@ -440,6 +441,7 @@ parse_decl_concrete(TokenStream& ts) {
             kind == TokenKind::Long || kind == TokenKind::Float ||
             kind == TokenKind::Double || kind == TokenKind::Enum ||
             kind == TokenKind::Union || kind == TokenKind::Struct) {
+            has_keyword_type = true;
             specifiers.emplace_back(parse_type_specifier(ts));
         } else if (kind == TokenKind::Const || kind == TokenKind::Volatile) {
             quantifiers.emplace_back(parse_type_quantifier(ts));
@@ -453,7 +455,7 @@ parse_decl_concrete(TokenStream& ts) {
             if (ts.token()->kind() == TokenKind::Semicolon ||
                 ts.token()->kind() == TokenKind::Assign ||
                 ts.token()->kind() == TokenKind::Comma ||
-                ts.token()->kind() == TokenKind::LParen) {
+                ts.token()->kind() == TokenKind::LParen || has_keyword_type) {
                 ts.retrest();
                 if (specifiers.empty()) {
                     throw ParseError("no specifiers found", ts.token()->span());
