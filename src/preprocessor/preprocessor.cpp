@@ -1,6 +1,6 @@
 #include "preprocessor.h"
 
-#include <iostream>
+#include <fstream>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "../lexer/lexer.h"
 #include "error.h"
 #include "macro.h"
 
@@ -163,6 +164,7 @@ TokenStream preprocess(Context& ctx, TokenStream&& ts) {
             ctx.macro_table().add_macro(name, macro);
         } else if (directive_name == "ifndef") {
             ts.advance();
+
             if (ts.eos() || ts.token()->kind() != TokenKind::Identifier) {
                 ts.retrest();
                 throw PreProcessError("expected macro name after ifndef",
@@ -173,6 +175,7 @@ TokenStream preprocess(Context& ctx, TokenStream&& ts) {
                     ->value();
             Span ifndef_span = concat_spans({start, ts.token()->span()});
             ts.advance();
+
             if (ctx.macro_table().has_macro(macro_name)) {
                 while (true) {
                     if (ts.eos()) {
@@ -206,6 +209,7 @@ TokenStream preprocess(Context& ctx, TokenStream&& ts) {
             }
         } else if (directive_name == "ifdef") {
             ts.advance();
+
             if (ts.eos() || ts.token()->kind() != TokenKind::Identifier) {
                 ts.retrest();
                 throw PreProcessError("expected macro name after ifdef",
@@ -216,6 +220,7 @@ TokenStream preprocess(Context& ctx, TokenStream&& ts) {
                     ->value();
             Span ifdef_span = concat_spans({start, ts.token()->span()});
             ts.advance();
+
             if (!ctx.macro_table().has_macro(macro_name)) {
                 while (true) {
                     if (ts.eos()) {
@@ -254,6 +259,26 @@ TokenStream preprocess(Context& ctx, TokenStream&& ts) {
             }
             ts.advance();
             waiting_if--;
+        } else if (directive_name == "include") {
+            ts.advance();
+
+            if (ts.eos() || ts.token()->kind() != TokenKind::String) {
+                ts.retrest();
+                throw PreProcessError("expected path string after include",
+                                      ts.token()->span());
+            }
+            auto path =
+                std::static_pointer_cast<ValueToken<std::string>>(ts.token())
+                    ->value();
+            ts.advance();
+
+            std::fstream fs(path);
+            std::vector<LexError> es;  // TODO: manage this `es`
+            auto included = preprocess(ctx, lex(ctx, fs, path, es));
+            while (!included.eos()) {
+                res.push_back(included.token());
+                included.advance();
+            }
         } else {
             std::stringstream ss;
             ss << "unknown directive name: " << directive_name;
