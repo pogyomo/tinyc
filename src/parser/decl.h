@@ -95,6 +95,8 @@ public:
     virtual ~VariableDeclaration() {}
     virtual const std::vector<StorageClassSpecifier>& class_specifiers()
         const = 0;
+    virtual const std::shared_ptr<Type>& type() const = 0;
+    virtual const std::optional<VariableDeclarationName> name() const = 0;
     virtual VariableDeclarationKind kind() const = 0;
 };
 
@@ -117,10 +119,6 @@ public:
           name_(name),
           initializer_(initializer) {}
 
-    inline const std::shared_ptr<Type>& type() const { return type_; }
-
-    inline const VariableDeclarationName& name() const { return name_; }
-
     inline const std::optional<VariableDeclarationInitializer> initializer()
         const {
         return initializer_;
@@ -129,6 +127,12 @@ public:
     inline const std::vector<StorageClassSpecifier>& class_specifiers()
         const override {
         return class_specifiers_;
+    }
+
+    inline const std::shared_ptr<Type>& type() const override { return type_; }
+
+    inline const std::optional<VariableDeclarationName> name() const override {
+        return name_;
     }
 
     inline VariableDeclarationKind kind() const override {
@@ -166,11 +170,15 @@ public:
         const std::shared_ptr<Type>& type)
         : class_specifiers_(class_specifiers), type_(type) {}
 
-    inline const std::shared_ptr<Type>& type() const { return type_; }
-
     inline const std::vector<StorageClassSpecifier>& class_specifiers()
         const override {
         return class_specifiers_;
+    }
+
+    inline const std::shared_ptr<Type>& type() const override { return type_; }
+
+    inline const std::optional<VariableDeclarationName> name() const override {
+        return std::nullopt;
     }
 
     inline VariableDeclarationKind kind() const override {
