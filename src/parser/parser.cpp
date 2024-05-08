@@ -541,14 +541,15 @@ VariableOrFunctionDeclBody parse_decl_body(
             throw ParseError("expected variable, but got function",
                              body.span());
         }
-        auto type_ = body.type();
-        auto name_ = body.variable();
 
-        if (name_.has_value())
-            params.emplace_back(type_, FunctionDeclarationArgName(
-                                           name_->name(), name_->span()));
-        else
-            params.emplace_back(type_);
+        auto param_type = body.type();
+        if (body.variable().has_value()) {
+            FunctionDeclarationArgName param_name(body.variable()->name(),
+                                                  body.variable()->span());
+            params.emplace_back(param_type, param_name);
+        } else {
+            params.emplace_back(param_type);
+        }
 
         if (!ts.eos() && ts.token()->kind() == TokenKind::RParen) {
             continue;
