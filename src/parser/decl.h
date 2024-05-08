@@ -93,6 +93,8 @@ enum class VariableDeclarationKind {
 class VariableDeclaration : public Node {
 public:
     virtual ~VariableDeclaration() {}
+    virtual const std::vector<StorageClassSpecifier>& class_specifiers()
+        const = 0;
     virtual VariableDeclarationKind kind() const = 0;
 };
 
@@ -115,10 +117,6 @@ public:
           name_(name),
           initializer_(initializer) {}
 
-    inline const std::vector<StorageClassSpecifier>& class_specifiers() const {
-        return class_specifiers_;
-    }
-
     inline const std::shared_ptr<Type>& type() const { return type_; }
 
     inline const VariableDeclarationName& name() const { return name_; }
@@ -126,6 +124,11 @@ public:
     inline const std::optional<VariableDeclarationInitializer> initializer()
         const {
         return initializer_;
+    }
+
+    inline const std::vector<StorageClassSpecifier>& class_specifiers()
+        const override {
+        return class_specifiers_;
     }
 
     inline VariableDeclarationKind kind() const override {
@@ -163,11 +166,12 @@ public:
         const std::shared_ptr<Type>& type)
         : class_specifiers_(class_specifiers), type_(type) {}
 
-    inline const std::vector<StorageClassSpecifier>& class_specifiers() const {
+    inline const std::shared_ptr<Type>& type() const { return type_; }
+
+    inline const std::vector<StorageClassSpecifier>& class_specifiers()
+        const override {
         return class_specifiers_;
     }
-
-    inline const std::shared_ptr<Type>& type() const { return type_; }
 
     inline VariableDeclarationKind kind() const override {
         return VariableDeclarationKind::Anonymous;

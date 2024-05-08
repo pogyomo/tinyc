@@ -226,7 +226,15 @@ std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts) {
                         union_kw, body);
                 }
             }
-            decls.emplace_back(*parse_var_decl(ts));
+            auto decl = parse_var_decl(ts);
+            for (const auto& d : decl->decls()) {
+                if (!d->class_specifiers().empty()) {
+                    throw ParseError(
+                        "class specifier in union member is not allowed",
+                        d->span());
+                }
+            }
+            decls.emplace_back(*decl);
         }
     } else if (name.has_value()) {
         return std::make_shared<NamedUnionTypeSpecifier>(union_kw,
@@ -270,7 +278,15 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
                         struct_kw, body);
                 }
             }
-            decls.emplace_back(*parse_var_decl(ts));
+            auto decl = parse_var_decl(ts);
+            for (const auto& d : decl->decls()) {
+                if (!d->class_specifiers().empty()) {
+                    throw ParseError(
+                        "class specifier in struct member is not allowed",
+                        d->span());
+                }
+            }
+            decls.emplace_back(*decl);
         }
     } else if (name.has_value()) {
         return std::make_shared<NamedStructTypeSpecifier>(struct_kw,
