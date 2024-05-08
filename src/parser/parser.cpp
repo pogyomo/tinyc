@@ -174,6 +174,11 @@ std::shared_ptr<EnumTypeSpecifier> parse_enum(TokenStream& ts) {
                     enumerators.emplace_back(Enumerator(ident, comma));
                 }
             } else if (ts.token()->kind() == TokenKind::RCurly) {
+                if (init.has_value()) {
+                    enumerators.emplace_back(Enumerator(ident, init.value()));
+                } else {
+                    enumerators.emplace_back(Enumerator(ident));
+                }
                 continue;
             } else {
                 throw ParseError("expected , or } after enumerator",
