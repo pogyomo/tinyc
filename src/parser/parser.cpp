@@ -304,7 +304,7 @@ std::shared_ptr<VariableDeclarations> parse_var_decl(TokenStream& ts) {
         if (!ts.eos() && ts.token()->kind() == TokenKind::Assign) {
             Assign assign(ts.token()->span());
             ts.advance();
-            auto expr = parse_expr(ts);
+            auto expr = parse_assign_expr(ts);
             VariableDeclarationInitializer initializer(assign, expr);
 
             decls.emplace_back(
