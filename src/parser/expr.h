@@ -24,6 +24,7 @@ enum class ExpressionKind {
     Cast,
     Integer,
     Identifier,
+    String,
     Surrounded,
 };
 
@@ -569,6 +570,26 @@ public:
     inline Span span() const override { return span_; }
 
     inline std::string debug() const override { return value_; }
+
+private:
+    const std::string value_;
+    const Span span_;
+};
+
+class StringExpression : public Expression {
+public:
+    StringExpression(const std::string& value, Span span)
+        : value_(value), span_(span) {}
+
+    inline const std::string& value() const { return value_; }
+
+    inline ExpressionKind kind() const override {
+        return ExpressionKind::String;
+    }
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "\"" + value_ + "\""; }
 
 private:
     const std::string value_;

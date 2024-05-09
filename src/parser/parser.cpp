@@ -1466,11 +1466,12 @@ std::shared_ptr<Expression> parse_postfix_expr(TokenStream& ts) {
 
             std::vector<std::shared_ptr<Expression>> params;
             while (true) {
+                check(ts);
                 if (ts.token()->kind() == TokenKind::RParen) {
                     RParen rparen(ts.token()->span());
+                    ts.advance();
                     lhs = std::make_shared<CallingExpression>(lhs, lparen,
                                                               params, rparen);
-                    ts.advance();
                     break;
                 }
 
@@ -1479,9 +1480,9 @@ std::shared_ptr<Expression> parse_postfix_expr(TokenStream& ts) {
                 check(ts);
                 if (ts.token()->kind() == TokenKind::RParen) {
                     RParen rparen(ts.token()->span());
+                    ts.advance();
                     lhs = std::make_shared<CallingExpression>(lhs, lparen,
                                                               params, rparen);
-                    ts.advance();
                     break;
                 } else if (ts.token()->kind() == TokenKind::Comma) {
                     ts.advance();
@@ -1546,6 +1547,12 @@ std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts) {
         auto span = tk->span();
         ts.advance();
         return std::make_shared<IntegerExpression>(value, span);
+    } else if (ts.token()->kind() == TokenKind::String) {
+        auto tk = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
+        auto value = tk->value();
+        auto span = tk->span();
+        ts.advance();
+        return std::make_shared<StringExpression>(value, span);
     } else if (ts.token()->kind() == TokenKind::LParen) {
         LParen lparen(ts.token()->span());
         ts.advance();
