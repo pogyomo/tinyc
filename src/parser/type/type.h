@@ -147,11 +147,60 @@ private:
     const RSquare rsquare_;
 };
 
+class FunctionParamName : public Node {
+public:
+    FunctionParamName(const std::string& name, Span span)
+        : name_(name), span_(span) {}
+
+    inline const std::string& name() const { return name_; }
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return name_; }
+
+private:
+    const std::string name_;
+    const Span span_;
+};
+
+class FunctionParam : public Node {
+public:
+    FunctionParam(const std::shared_ptr<Type>& type)
+        : type_(type), name_(std::nullopt) {}
+
+    FunctionParam(const std::shared_ptr<Type>& type,
+                  const FunctionParamName& name)
+        : type_(type), name_(name) {}
+
+    inline const std::shared_ptr<Type>& type() const { return type_; }
+
+    inline const std::optional<FunctionParamName>& name() const {
+        return name_;
+    }
+
+    Span span() const override {
+        if (name_.has_value())
+            return concat_spans({type_->span(), name_->span()});
+        else
+            return type_->span();
+    }
+
+    std::string debug() const override {
+        if (name_.has_value())
+            return type_->debug() + " " + name_->debug();
+        else
+            return type_->debug();
+    }
+
+private:
+    const std::shared_ptr<Type> type_;
+    const std::optional<FunctionParamName> name_;
+};
+
 class FunctionType : public Type {
 public:
     FunctionType(const std::shared_ptr<Type>& ret_type, LParen lparen,
-                 const std::vector<std::shared_ptr<Type>>& params,
-                 RParen rparen)
+                 const std::vector<FunctionParam>& params, RParen rparen)
         : ret_type_(ret_type),
           lparen_(lparen),
           params_(params),
@@ -161,9 +210,7 @@ public:
 
     inline const LParen& lparen() const { return lparen_; }
 
-    inline const std::vector<std::shared_ptr<Type>>& args() const {
-        return params_;
-    }
+    inline const std::vector<FunctionParam>& params() const { return params_; }
 
     inline const RParen& rparen() const { return rparen_; }
 
@@ -173,7 +220,7 @@ public:
         std::vector<Span> spans;
         spans.emplace_back(ret_type_->span());
         spans.emplace_back(lparen_.span());
-        for (const auto& param : params_) spans.emplace_back(param->span());
+        for (const auto& param : params_) spans.emplace_back(param.span());
         spans.emplace_back(rparen_.span());
         return concat_spans(spans);
     }
@@ -184,9 +231,9 @@ public:
         if (params_.empty()) {
             ss << rparen_.debug();
         } else {
-            ss << params_[0]->debug();
+            ss << params_[0].debug();
             for (int i = 1; i < params_.size(); i++)
-                ss << ", " << params_[i]->debug();
+                ss << ", " << params_[i].debug();
             ss << rparen_.debug();
         }
         return ss.str();
@@ -195,7 +242,7 @@ public:
 private:
     const std::shared_ptr<Type> ret_type_;
     const LParen lparen_;
-    const std::vector<std::shared_ptr<Type>> params_;
+    const std::vector<FunctionParam> params_;
     const RParen rparen_;
 };
 

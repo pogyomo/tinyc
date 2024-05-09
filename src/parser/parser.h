@@ -41,7 +41,7 @@ class VariableOrFunctionDeclBody : public Node {
 public:
     using Variable = std::optional<VariableDeclarationName>;
     using Function = std::tuple<FunctionDeclarationName, LParen,
-                                std::vector<FunctionDeclarationParam>, RParen>;
+                                std::vector<FunctionParam>, RParen>;
 
     VariableOrFunctionDeclBody(const std::shared_ptr<Type> type,
                                const Variable& variable)
@@ -133,8 +133,8 @@ VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
                                            const std::shared_ptr<Type>& base);
 std::shared_ptr<Type> parse_arrays(TokenStream& ts,
                                    const std::shared_ptr<Type>& base);
-std::tuple<LParen, std::vector<FunctionDeclarationParam>, RParen>
-parse_fun_params(TokenStream& ts);
+std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
+    TokenStream& ts);
 
 // ==================== statement parser ====================
 

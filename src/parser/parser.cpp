@@ -552,9 +552,7 @@ VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
             ts.set_state(state);
             return ret;
         } else if (ts.token()->kind() == TokenKind::LParen) {
-            auto [lparen, params_, rparen] = parse_fun_params(ts);
-            std::vector<std::shared_ptr<Type>> params;
-            for (const auto& param : params_) params.push_back(param.type());
+            auto [lparen, params, rparen] = parse_fun_params(ts);
             type = std::make_shared<FunctionType>(type, lparen, params, rparen);
             auto state = ts.get_state();
 
@@ -612,13 +610,13 @@ std::shared_ptr<Type> parse_arrays(TokenStream& ts,
     return type;
 }
 
-std::tuple<LParen, std::vector<FunctionDeclarationParam>, RParen>
-parse_fun_params(TokenStream& ts) {
+std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
+    TokenStream& ts) {
     check(ts, TokenKind::LParen, "(");
     LParen lparen(ts.token()->span());
     ts.advance();
 
-    std::vector<FunctionDeclarationParam> params;
+    std::vector<FunctionParam> params;
     while (true) {
         if (!ts.eos() && ts.token()->kind() == TokenKind::RParen) {
             RParen rparen(ts.token()->span());
@@ -645,8 +643,8 @@ parse_fun_params(TokenStream& ts) {
 
         auto param_type = body.type();
         if (body.variable().has_value()) {
-            FunctionDeclarationArgName param_name(body.variable()->name(),
-                                                  body.variable()->span());
+            FunctionParamName param_name(body.variable()->name(),
+                                         body.variable()->span());
             params.emplace_back(param_type, param_name);
         } else {
             params.emplace_back(param_type);
