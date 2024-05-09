@@ -129,8 +129,12 @@ std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
 StorageClassSpecifier parse_class_specifier(TokenStream& ts);
 std::pair<std::vector<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
 parse_decl_concrete(TokenStream& ts);
-VariableOrFunctionDeclBody parse_decl_body(
-    TokenStream& ts, std::shared_ptr<ConcreteType>& concrete);
+VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
+                                           const std::shared_ptr<Type>& base);
+std::shared_ptr<Type> parse_arrays(TokenStream& ts,
+                                   const std::shared_ptr<Type>& base);
+std::tuple<LParen, std::vector<FunctionDeclarationParam>, RParen>
+parse_fun_params(TokenStream& ts);
 
 // ==================== statement parser ====================
 
