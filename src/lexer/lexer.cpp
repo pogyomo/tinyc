@@ -173,28 +173,27 @@ std::shared_ptr<Token> token(InputStream& is) {
         return std::make_shared<SymbolToken>(TokenKind::Sharp, span);
     } else if (is.accept('.', span)) {
         return std::make_shared<SymbolToken>(TokenKind::Dot, span);
-    } else if (is.accept('"')) {
+    } else if (is.accept('"', span)) {
         int row = is.pos().row();
 
         std::string s;
-        Position start = is.pos();
         Position end = is.pos();
         while (true) {
             if (is.eos() || is.pos().row() != row) {
                 throw LexError("unclosing string literal",
-                               Span(is.input().id(), start, end));
+                               Span(is.input().id(), span.start(), end));
             }
+            end = is.pos();
             if (is.ch() == '"') {
                 is.advance();
                 break;
             } else {
                 s.push_back(is.ch());
-                end = is.pos();
                 is.advance();
             }
         }
         return std::make_shared<ValueToken<std::string>>(
-            TokenKind::String, s, Span(is.input().id(), start, end));
+            TokenKind::String, s, Span(is.input().id(), span.start(), end));
     } else if (is.accept("0x", span)) {
         int row = span.start().row();
 
