@@ -320,10 +320,9 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                                        ts.token()->span()));
                 return std::nullopt;
             }
-            auto path_s =
+            std::filesystem::path path =
                 std::static_pointer_cast<ValueToken<std::string>>(ts.token())
                     ->value();
-            std::filesystem::path path(path_s);
             ts.advance();
 
             std::fstream fs(path);
