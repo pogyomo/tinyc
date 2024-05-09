@@ -103,6 +103,7 @@ void report(Context& ctx, const Reportable& r) {
         end_color(std::cerr);
         std::cerr << " " << r.what() << std::endl;
     }
+    std::cerr << std::endl;
 }
 
 }  // namespace tinyc
