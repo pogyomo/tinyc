@@ -100,12 +100,14 @@ public:
 
     std::string debug() const override {
         std::stringstream ss;
+        ss << "(";
         ss << of_->debug() + " ";
         ss << star_.debug();
         if (!quantifiers_.empty()) {
             for (const auto& quantifier : quantifiers_)
                 ss << quantifier->debug() + " ";
         }
+        ss << ")";
         return ss.str();
     }
 
