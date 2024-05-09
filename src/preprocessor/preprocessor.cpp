@@ -107,11 +107,11 @@ std::vector<std::vector<std::shared_ptr<Token>>> parse_macro_args(
             args.back().push_back(ts.token());
             ts.advance();
         } else if (ts.token()->kind() == TokenKind::RParen) {
-            if (unclosing_paren == 1) {
+            unclosing_paren--;
+            if (unclosing_paren == 0) {
                 ts.advance();
                 return args;
             } else {
-                unclosing_paren--;
                 args.back().push_back(ts.token());
                 ts.advance();
             }
@@ -130,6 +130,7 @@ std::vector<std::vector<std::shared_ptr<Token>>> parse_macro_args(
 }
 
 std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
+    bool error_happend = false;  // true if recoverable error happen.
     int waiting_if = 0;
     std::vector<std::shared_ptr<Token>> res;
     while (!ts.eos()) {
@@ -194,7 +195,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                 ts.retrest();
                 report(ctx, PreProcessError("expected macro name after undef",
                                             ts.token()->span()));
-                return std::nullopt;
+                error_happend = true;
+                continue;
             }
             auto macro_name =
                 std::static_pointer_cast<ValueToken<std::string>>(ts.token())
@@ -208,7 +210,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                 ts.retrest();
                 report(ctx, PreProcessError("expected macro name after ifndef",
                                             ts.token()->span()));
-                return std::nullopt;
+                error_happend = true;
+                continue;
             }
             auto macro_name =
                 std::static_pointer_cast<ValueToken<std::string>>(ts.token())
@@ -259,7 +262,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                 ts.retrest();
                 report(ctx, PreProcessError("expected macro name after ifdef",
                                             ts.token()->span()));
-                return std::nullopt;
+                error_happend = true;
+                continue;
             }
             auto macro_name =
                 std::static_pointer_cast<ValueToken<std::string>>(ts.token())
@@ -318,7 +322,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                 report(ctx,
                        PreProcessError("expected path string after include",
                                        ts.token()->span()));
-                return std::nullopt;
+                error_happend = true;
+                continue;
             }
             std::filesystem::path path =
                 std::static_pointer_cast<ValueToken<std::string>>(ts.token())
@@ -351,10 +356,15 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             std::stringstream ss;
             ss << "unknown directive name: " << directive->value();
             report(ctx, PreProcessError(ss.str(), directive->span()));
-            return std::nullopt;
+            error_happend = true;
+            continue;
         }
     }
-    return res;
+
+    if (error_happend)
+        return std::nullopt;
+    else
+        return res;
 }
 
 }  // namespace tinyc
