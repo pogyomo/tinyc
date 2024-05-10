@@ -449,15 +449,16 @@ verify_type_quantifiers(Context& ctx,
     for (const auto& q : type_quantifiers) {
         if (q->kind() == TokenKind::Const) {
             if (const_kw.has_value()) {
-                report(ctx,
-                       SimpleWarning("in type", "multiple const", q->span()));
+                auto e = SimpleWarning("in type", "multiple const", q->span());
+                report(ctx, e);
             } else {
                 const_kw.emplace(Const(q->span()));
             }
         } else if (q->kind() == TokenKind::Volatile) {
             if (volatile_kw.has_value()) {
-                report(ctx, SimpleWarning("in type", "multiple volatile",
-                                          q->span()));
+                auto e =
+                    SimpleWarning("in type", "multiple volatile", q->span());
+                report(ctx, e);
             } else {
                 volatile_kw.emplace(Volatile(q->span()));
             }
@@ -477,14 +478,15 @@ std::shared_ptr<BuiltinTypeSpecifier> verify_builtin_types(
     for (const auto& t : builtin_types) {
         if (t->kind() == TokenKind::Signed) {
             if (kinds.find(t->kind()) != kinds.end()) {
-                report(ctx,
-                       SimpleWarning("in type", "multiple signed", t->span()));
+                auto e = SimpleWarning("in type", "multiple signed", t->span());
+                report(ctx, e);
                 continue;
             }
         } else if (t->kind() == TokenKind::Unsigned) {
             if (kinds.find(t->kind()) != kinds.end()) {
-                report(ctx, SimpleWarning("in type", "multiple unsigned",
-                                          t->span()));
+                auto e =
+                    SimpleWarning("in type", "multiple unsigned", t->span());
+                report(ctx, e);
                 continue;
             }
         }
