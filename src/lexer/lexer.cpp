@@ -233,10 +233,13 @@ std::shared_ptr<Token> token(InputStream& is) {
             }
         }
 
-        long long value = std::stoll(buf, nullptr, 16);
-        return std::make_shared<ValueToken<long long>>(
-            TokenKind::Integer, value, Span(is.input().id(), span.start(), end),
-            lrow);
+        span = Span(span.id(), span.start(), end);
+        if (buf.empty()) {
+            throw LexError("empty integer literal", span);
+        }
+        long long value = std::stoull(buf, nullptr, 16);
+        return std::make_shared<ValueToken<unsigned long long>>(
+            TokenKind::Integer, value, span, lrow);
     } else if (is.accept('0', span)) {
         int lrow = is.lrow();
 
@@ -253,11 +256,11 @@ std::shared_ptr<Token> token(InputStream& is) {
         }
 
         if (buf.empty()) {
-            return std::make_shared<ValueToken<long long>>(TokenKind::Integer,
-                                                           0, span, lrow);
+            return std::make_shared<ValueToken<unsigned long long>>(
+                TokenKind::Integer, 0, span, lrow);
         } else {
-            long long value = std::stoll(buf, nullptr, 8);
-            return std::make_shared<ValueToken<long long>>(
+            long long value = std::stoull(buf, nullptr, 8);
+            return std::make_shared<ValueToken<unsigned long long>>(
                 TokenKind::Integer, value,
                 Span(is.input().id(), span.start(), end), lrow);
         }
@@ -265,7 +268,6 @@ std::shared_ptr<Token> token(InputStream& is) {
         int lrow = is.lrow();
 
         std::string buf;
-        Position start = is.pos();
         Position end = is.pos();
         while (!is.eos() && is.lrow() == lrow) {
             if (std::isdigit(is.ch())) {
@@ -276,9 +278,14 @@ std::shared_ptr<Token> token(InputStream& is) {
                 break;
             }
         }
-        auto value = std::stoll(buf);
-        return std::make_shared<ValueToken<long long>>(
-            TokenKind::Integer, value, Span(is.input().id(), start, end), lrow);
+
+        span = Span(span.id(), span.start(), end);
+        if (buf.empty()) {
+            throw LexError("empty integer literal", span);
+        }
+        auto value = std::stoull(buf);
+        return std::make_shared<ValueToken<unsigned long long>>(
+            TokenKind::Integer, value, span, lrow);
     } else if (std::isalpha(is.ch())) {
         int lrow = is.lrow();
 

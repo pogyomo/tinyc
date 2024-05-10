@@ -179,7 +179,7 @@ std::string KeywordToken::debug() const {
 }
 
 template <>
-std::string ValueToken<long long>::debug() const {
+std::string ValueToken<unsigned long long>::debug() const {
     switch (kind()) {
         case TokenKind::Integer:
             return std::to_string(value_);
