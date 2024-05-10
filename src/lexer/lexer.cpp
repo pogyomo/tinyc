@@ -81,6 +81,10 @@ void skips(InputStream& is) {
     }
 }
 
+bool is_ident_head(char c) { return std::isalpha(c) || c == '_'; }
+
+bool is_ident_rest(char c) { return std::isalnum(c) || c == '_'; }
+
 // Extract a toke from non-empty `is`.
 // If unknown character found, throw `LexError` and skip the character.
 std::shared_ptr<Token> token(InputStream& is) {
@@ -286,14 +290,14 @@ std::shared_ptr<Token> token(InputStream& is) {
         auto value = std::stoull(buf);
         return std::make_shared<ValueToken<unsigned long long>>(
             TokenKind::Integer, value, span, lrow);
-    } else if (std::isalpha(is.ch())) {
+    } else if (is_ident_head(is.ch())) {
         int lrow = is.lrow();
 
         std::string buf;
         Position start = is.pos();
         Position end = is.pos();
         while (!is.eos() && is.lrow() == lrow) {
-            if (std::isalnum(is.ch()) || is.ch() == '_') {
+            if (is_ident_rest(is.ch())) {
                 end = is.pos();
                 buf.push_back(is.ch());
                 is.advance();
@@ -302,7 +306,7 @@ std::shared_ptr<Token> token(InputStream& is) {
             }
         }
 
-        Span span(is.input().id(), start, end);
+        span = Span(is.input().id(), span.start(), end);
         if (buf == "auto") {
             return std::make_shared<KeywordToken>(TokenKind::Auto, span, lrow);
         } else if (buf == "break") {
