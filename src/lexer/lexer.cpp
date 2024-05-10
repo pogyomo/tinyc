@@ -122,6 +122,8 @@ char consume_char(InputStream& is) {
             return 0x22;
         } else if (ch == '?') {
             return 0x3F;
+        } else if (ch == '0') {
+            return 0x00;
         } else {
             throw LexError("unknown escape sequence", span);
         }

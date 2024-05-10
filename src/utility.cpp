@@ -27,6 +27,8 @@ std::string to_printable(char c) {
         return "\\\"";
     } else if (c == 0x3F) {
         return "\\?";
+    } else if (c == 0x00) {
+        return "\\0";
     } else {
         return std::string(1, c);
     }
