@@ -85,6 +85,52 @@ bool is_ident_head(char c) { return std::isalpha(c) || c == '_'; }
 
 bool is_ident_rest(char c) { return std::isalnum(c) || c == '_'; }
 
+char consume_char(InputStream& is) {
+    char ch = is.ch();
+    if (ch == '\\') {
+        Span span(is.input().id(), is.pos(), is.pos());
+        is.advance();
+
+        if (is.eos()) {
+            throw LexError("no character after \\", span);
+        }
+
+        ch = is.ch();
+        span = Span(is.input().id(), is.pos(), is.pos());
+        is.advance();
+        if (ch == 'a') {
+            return 0x07;
+        } else if (ch == 'b') {
+            return 0x08;
+        } else if (ch == 'e') {
+            return 0x1B;
+        } else if (ch == 'f') {
+            return 0x0C;
+        } else if (ch == 'n') {
+            return 0x0A;
+        } else if (ch == 'r') {
+            return 0x0D;
+        } else if (ch == 't') {
+            return 0x09;
+        } else if (ch == 'v') {
+            return 0x0B;
+        } else if (ch == '\\') {
+            return 0x5C;
+        } else if (ch == '\'') {
+            return 0x27;
+        } else if (ch == '"') {
+            return 0x22;
+        } else if (ch == '?') {
+            return 0x3F;
+        } else {
+            throw LexError("unknown escape sequence", span);
+        }
+    } else {
+        is.advance();
+        return ch;
+    }
+}
+
 // Extract a toke from non-empty `is`.
 // If unknown character found, throw `LexError` and skip the character.
 std::shared_ptr<Token> token(InputStream& is) {
@@ -187,8 +233,7 @@ std::shared_ptr<Token> token(InputStream& is) {
     } else if (is.accept('\'', span)) {
         int lrow = is.lrow();
 
-        char ch = is.ch();
-        is.advance();
+        char ch = consume_char(is);
 
         span = Span(is.input().id(), span.start(), is.pos());
         if (is.eos() || is.ch() != '\'') {
@@ -213,8 +258,7 @@ std::shared_ptr<Token> token(InputStream& is) {
                 is.advance();
                 break;
             } else {
-                s.push_back(is.ch());
-                is.advance();
+                s.push_back(consume_char(is));
             }
         }
         return std::make_shared<ValueToken<std::string>>(

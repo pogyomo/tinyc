@@ -5,6 +5,7 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE
     src/main.cpp
     src/span.cpp
+    src/utility.cpp
     src/input/cache.cpp
     src/input/input.cpp
     src/input/stream.cpp

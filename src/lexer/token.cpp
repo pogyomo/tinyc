@@ -1,6 +1,9 @@
 #include "token.h"
 
+#include <sstream>
 #include <string>
+
+#include "../utility.h"
 
 namespace tinyc {
 
@@ -193,8 +196,13 @@ std::string ValueToken<std::string>::debug() const {
     switch (kind()) {
         case TokenKind::Identifier:
             return value_;
-        case TokenKind::String:
-            return "\"" + value_ + "\"";
+        case TokenKind::String: {
+            std::stringstream ss;
+            ss << "\"";
+            for (auto c : value_) ss << to_printable(c);
+            ss << "\"";
+            return ss.str();
+        }
         default:
             return "unknown value token";
     }
@@ -204,7 +212,7 @@ template <>
 std::string ValueToken<char>::debug() const {
     switch (kind()) {
         case TokenKind::Character:
-            return "'" + std::string(1, value_) + "'";
+            return "'" + to_printable(value_) + "'";
         default:
             return "unknown value token";
     }

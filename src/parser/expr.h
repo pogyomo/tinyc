@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "../span.h"
+#include "../utility.h"
 #include "node.h"
 #include "type/type.h"
 
@@ -591,7 +592,13 @@ public:
 
     inline Span span() const override { return span_; }
 
-    inline std::string debug() const override { return "\"" + value_ + "\""; }
+    std::string debug() const override {
+        std::stringstream ss;
+        ss << "\"";
+        for (auto c : value_) ss << to_printable(c);
+        ss << "\"";
+        return ss.str();
+    }
 
 private:
     const std::string value_;
@@ -611,7 +618,7 @@ public:
     inline Span span() const override { return span_; }
 
     inline std::string debug() const override {
-        return "'" + std::string(1, value_) + "'";
+        return "'" + to_printable(value_) + "'";
     }
 
 private:
