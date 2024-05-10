@@ -180,7 +180,21 @@ std::shared_ptr<Token> token(InputStream& is) {
         return std::make_shared<SymbolToken>(TokenKind::Sharp, span, lrow);
     } else if (is.accept('.', span)) {
         return std::make_shared<SymbolToken>(TokenKind::Dot, span, lrow);
-    } else if (is.accept('"')) {
+    } else if (is.accept('\'', span)) {
+        int lrow = is.lrow();
+
+        char ch = is.ch();
+        is.advance();
+
+        span = Span(is.input().id(), span.start(), is.pos());
+        if (is.eos() || is.ch() != '\'') {
+            throw LexError("unclosing character literal", span);
+        } else {
+            is.advance();
+            return std::make_shared<ValueToken<char>>(TokenKind::Character, ch,
+                                                      span, lrow);
+        }
+    } else if (is.accept('"', span)) {
         int lrow = is.lrow();
 
         std::string s;

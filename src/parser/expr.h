@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "../span.h"
@@ -25,6 +26,7 @@ enum class ExpressionKind {
     Integer,
     Identifier,
     String,
+    Character,
     Surrounded,
 };
 
@@ -593,6 +595,27 @@ public:
 
 private:
     const std::string value_;
+    const Span span_;
+};
+
+class CharacterExpression : public Expression {
+public:
+    CharacterExpression(char value, Span span) : value_(value), span_(span) {}
+
+    inline char value() const { return value_; }
+
+    inline ExpressionKind kind() const override {
+        return ExpressionKind::Character;
+    }
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override {
+        return "'" + std::string(1, value_) + "'";
+    }
+
+private:
+    const char value_;
     const Span span_;
 };
 

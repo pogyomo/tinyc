@@ -1740,6 +1740,12 @@ std::shared_ptr<Expression> parse_primary_expr(Context& ctx, TokenStream& ts) {
         auto span = tk->span();
         ts.advance();
         return std::make_shared<StringExpression>(value, span);
+    } else if (ts.token()->kind() == TokenKind::Character) {
+        auto tk = std::static_pointer_cast<ValueToken<char>>(ts.token());
+        auto value = tk->value();
+        auto span = tk->span();
+        ts.advance();
+        return std::make_shared<CharacterExpression>(value, span);
     } else if (ts.token()->kind() == TokenKind::LParen) {
         LParen lparen(ts.token()->span());
         ts.advance();

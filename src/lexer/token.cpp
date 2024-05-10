@@ -200,4 +200,14 @@ std::string ValueToken<std::string>::debug() const {
     }
 }
 
+template <>
+std::string ValueToken<char>::debug() const {
+    switch (kind()) {
+        case TokenKind::Character:
+            return "'" + std::string(1, value_) + "'";
+        default:
+            return "unknown value token";
+    }
+}
+
 }  // namespace tinyc
