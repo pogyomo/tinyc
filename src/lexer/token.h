@@ -101,28 +101,33 @@ enum class TokenKind {
 // A base class of token which hold its kind and span in source code.
 class Token {
 public:
-    Token(TokenKind kind, Span span) : kind_(kind), span_(span) {}
+    Token(TokenKind kind, Span span, int lrow)
+        : kind_(kind), span_(span), lrow_(lrow) {}
     virtual ~Token() {}
     virtual std::string debug() const = 0;
     inline const TokenKind& kind() const { return kind_; }
     inline const Span& span() const { return span_; }
+    inline const int lrow() const { return lrow_; }
 
 private:
     const TokenKind kind_;
     const Span span_;
+    int lrow_;
 };
 
 // A class for symbol like +, <<, etc.
 class SymbolToken : public Token {
 public:
-    SymbolToken(TokenKind kind, Span span) : Token(kind, span) {}
+    SymbolToken(TokenKind kind, Span span, int lrow)
+        : Token(kind, span, lrow) {}
     std::string debug() const override;
 };
 
 // A class for keyword like int, long, etc.
 class KeywordToken : public Token {
 public:
-    KeywordToken(TokenKind kind, Span span) : Token(kind, span) {}
+    KeywordToken(TokenKind kind, Span span, int lrow)
+        : Token(kind, span, lrow) {}
     std::string debug() const override;
 };
 
@@ -130,8 +135,8 @@ public:
 template <class T>
 class ValueToken : public Token {
 public:
-    ValueToken(TokenKind kind, T value, Span span)
-        : Token(kind, span), value_(value) {}
+    ValueToken(TokenKind kind, T value, Span span, int lrow)
+        : Token(kind, span, lrow), value_(value) {}
     inline const T& value() const { return value_; }
     std::string debug() const override;
 

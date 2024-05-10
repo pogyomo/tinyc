@@ -11,7 +11,8 @@ namespace tinyc {
 // A helper class for iterating `Input`.
 class InputStream {
 public:
-    InputStream(const Input& input) : row_(0), offset_(0), input_(input) {}
+    InputStream(const Input& input)
+        : lrow_(0), row_(0), offset_(0), input_(input) {}
 
     // Returns the input this stream holding.
     inline const Input& input() const { return input_; }
@@ -25,7 +26,11 @@ public:
 
     // Returns currently peeking character's position in source code.
     // Calling this when `eos()` returns true, throw `out_of_range` exception.
-    inline Position pos() const { return {row_, offset_}; }
+    Position pos() const;
+
+    // Returns the logical row currently peeking character stay.
+    // Calling this when `eos()` returns true, throw `out_of_range` exception.
+    int lrow() const;
 
     // Advance the position of this stream to peek next character.
     // Calling this when `eos()` returns true, nothing happen.
@@ -48,6 +53,7 @@ public:
     bool accept(const std::string& s);
 
 private:
+    int lrow_;
     int row_;
     int offset_;
     const Input& input_;

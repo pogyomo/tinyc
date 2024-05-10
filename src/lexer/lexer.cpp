@@ -37,9 +37,13 @@ bool skip_whitespaces(InputStream& is) {
 // Advance `is` to next line or eos if `is` start with `//`.
 // Returns true if it consume comment.
 bool skip_oneline_comment(InputStream& is) {
-    int row = is.pos().row();
+    if (is.eos()) {
+        return false;
+    }
+
+    int lrow = is.lrow();
     if (is.accept("//")) {
-        while (!is.eos() && is.pos().row() == row) {
+        while (!is.eos() && is.lrow() == lrow) {
             is.advance();
         }
         return true;
@@ -80,106 +84,109 @@ void skips(InputStream& is) {
 // Extract a toke from non-empty `is`.
 // If unknown character found, throw `LexError` and skip the character.
 std::shared_ptr<Token> token(InputStream& is) {
+    int lrow = is.lrow();
     Span span = Span(is.input().id(), is.pos(), is.pos());
     if (is.accept("&&", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::And, span);
+        return std::make_shared<SymbolToken>(TokenKind::And, span, lrow);
     } else if (is.accept("&=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::AndAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::AndAssign, span, lrow);
     } else if (is.accept('&', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Ampersand, span);
+        return std::make_shared<SymbolToken>(TokenKind::Ampersand, span, lrow);
     } else if (is.accept("||", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Or, span);
+        return std::make_shared<SymbolToken>(TokenKind::Or, span, lrow);
     } else if (is.accept("|=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::OrAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::OrAssign, span, lrow);
     } else if (is.accept('|', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Vertical, span);
+        return std::make_shared<SymbolToken>(TokenKind::Vertical, span, lrow);
     } else if (is.accept("^=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::XorAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::XorAssign, span, lrow);
     } else if (is.accept('^', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Hat, span);
+        return std::make_shared<SymbolToken>(TokenKind::Hat, span, lrow);
     } else if (is.accept("==", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::EQ, span);
+        return std::make_shared<SymbolToken>(TokenKind::EQ, span, lrow);
     } else if (is.accept('=', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Assign, span);
+        return std::make_shared<SymbolToken>(TokenKind::Assign, span, lrow);
     } else if (is.accept("!=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::NE, span);
+        return std::make_shared<SymbolToken>(TokenKind::NE, span, lrow);
     } else if (is.accept('!', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Not, span);
+        return std::make_shared<SymbolToken>(TokenKind::Not, span, lrow);
     } else if (is.accept("<<=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::LShiftAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::LShiftAssign, span,
+                                             lrow);
     } else if (is.accept("<<", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::LShift, span);
+        return std::make_shared<SymbolToken>(TokenKind::LShift, span, lrow);
     } else if (is.accept("<=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::LE, span);
+        return std::make_shared<SymbolToken>(TokenKind::LE, span, lrow);
     } else if (is.accept('<', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::LT, span);
+        return std::make_shared<SymbolToken>(TokenKind::LT, span, lrow);
     } else if (is.accept(">>=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::RShiftAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::RShiftAssign, span,
+                                             lrow);
     } else if (is.accept(">>", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::RShift, span);
+        return std::make_shared<SymbolToken>(TokenKind::RShift, span, lrow);
     } else if (is.accept(">=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::GE, span);
+        return std::make_shared<SymbolToken>(TokenKind::GE, span, lrow);
     } else if (is.accept('>', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::GT, span);
+        return std::make_shared<SymbolToken>(TokenKind::GT, span, lrow);
     } else if (is.accept("++", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::PlusPlus, span);
+        return std::make_shared<SymbolToken>(TokenKind::PlusPlus, span, lrow);
     } else if (is.accept("+=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::AddAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::AddAssign, span, lrow);
     } else if (is.accept('+', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Plus, span);
+        return std::make_shared<SymbolToken>(TokenKind::Plus, span, lrow);
     } else if (is.accept("--", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::MinusMinus, span);
+        return std::make_shared<SymbolToken>(TokenKind::MinusMinus, span, lrow);
     } else if (is.accept("-=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::SubAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::SubAssign, span, lrow);
     } else if (is.accept("->", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Arrow, span);
+        return std::make_shared<SymbolToken>(TokenKind::Arrow, span, lrow);
     } else if (is.accept('-', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Minus, span);
+        return std::make_shared<SymbolToken>(TokenKind::Minus, span, lrow);
     } else if (is.accept("*=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::MulAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::MulAssign, span, lrow);
     } else if (is.accept('*', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Star, span);
+        return std::make_shared<SymbolToken>(TokenKind::Star, span, lrow);
     } else if (is.accept("/=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::DivAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::DivAssign, span, lrow);
     } else if (is.accept('/', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Slash, span);
+        return std::make_shared<SymbolToken>(TokenKind::Slash, span, lrow);
     } else if (is.accept("%=", span)) {
-        return std::make_shared<SymbolToken>(TokenKind::ModAssign, span);
+        return std::make_shared<SymbolToken>(TokenKind::ModAssign, span, lrow);
     } else if (is.accept('%', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Percent, span);
+        return std::make_shared<SymbolToken>(TokenKind::Percent, span, lrow);
     } else if (is.accept('(', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::LParen, span);
+        return std::make_shared<SymbolToken>(TokenKind::LParen, span, lrow);
     } else if (is.accept(')', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::RParen, span);
+        return std::make_shared<SymbolToken>(TokenKind::RParen, span, lrow);
     } else if (is.accept('{', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::LCurly, span);
+        return std::make_shared<SymbolToken>(TokenKind::LCurly, span, lrow);
     } else if (is.accept('}', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::RCurly, span);
+        return std::make_shared<SymbolToken>(TokenKind::RCurly, span, lrow);
     } else if (is.accept('[', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::LSquare, span);
+        return std::make_shared<SymbolToken>(TokenKind::LSquare, span, lrow);
     } else if (is.accept(']', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::RSquare, span);
+        return std::make_shared<SymbolToken>(TokenKind::RSquare, span, lrow);
     } else if (is.accept(';', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Semicolon, span);
+        return std::make_shared<SymbolToken>(TokenKind::Semicolon, span, lrow);
     } else if (is.accept(':', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Colon, span);
+        return std::make_shared<SymbolToken>(TokenKind::Colon, span, lrow);
     } else if (is.accept(',', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Comma, span);
+        return std::make_shared<SymbolToken>(TokenKind::Comma, span, lrow);
     } else if (is.accept('~', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Tilde, span);
+        return std::make_shared<SymbolToken>(TokenKind::Tilde, span, lrow);
     } else if (is.accept('?', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Question, span);
+        return std::make_shared<SymbolToken>(TokenKind::Question, span, lrow);
     } else if (is.accept('#', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Sharp, span);
+        return std::make_shared<SymbolToken>(TokenKind::Sharp, span, lrow);
     } else if (is.accept('.', span)) {
-        return std::make_shared<SymbolToken>(TokenKind::Dot, span);
-    } else if (is.accept('"', span)) {
-        int row = is.pos().row();
+        return std::make_shared<SymbolToken>(TokenKind::Dot, span, lrow);
+    } else if (is.accept('"')) {
+        int lrow = is.lrow();
 
         std::string s;
         Position end = is.pos();
         while (true) {
-            if (is.eos() || is.pos().row() != row) {
+            if (is.eos() || is.lrow() != lrow) {
                 throw LexError("unclosing string literal",
                                Span(is.input().id(), span.start(), end));
             }
@@ -193,13 +200,14 @@ std::shared_ptr<Token> token(InputStream& is) {
             }
         }
         return std::make_shared<ValueToken<std::string>>(
-            TokenKind::String, s, Span(is.input().id(), span.start(), end));
+            TokenKind::String, s, Span(is.input().id(), span.start(), end),
+            lrow);
     } else if (is.accept("0x", span)) {
-        int row = span.start().row();
+        int lrow = is.lrow();
 
         std::string buf;
         Position end = is.pos();
-        while (!is.eos() && is.pos().row() == row) {
+        while (!is.eos() && is.lrow() == lrow) {
             if ('0' <= is.ch() && is.ch() <= '9' ||
                 'a' <= is.ch() && is.ch() <= 'f' ||
                 'A' <= is.ch() && is.ch() <= 'F') {
@@ -213,14 +221,14 @@ std::shared_ptr<Token> token(InputStream& is) {
 
         long long value = std::stoll(buf, nullptr, 16);
         return std::make_shared<ValueToken<long long>>(
-            TokenKind::Integer, value,
-            Span(is.input().id(), span.start(), end));
+            TokenKind::Integer, value, Span(is.input().id(), span.start(), end),
+            lrow);
     } else if (is.accept('0', span)) {
-        int row = span.start().row();
+        int lrow = is.lrow();
 
         std::string buf;
         Position end = is.pos();
-        while (!is.eos() && is.pos().row() == row) {
+        while (!is.eos() && is.lrow() == lrow) {
             if ('0' <= is.ch() && is.ch() <= '7') {
                 end = is.pos();
                 buf.push_back(is.ch());
@@ -232,20 +240,20 @@ std::shared_ptr<Token> token(InputStream& is) {
 
         if (buf.empty()) {
             return std::make_shared<ValueToken<long long>>(TokenKind::Integer,
-                                                           0, span);
+                                                           0, span, lrow);
         } else {
             long long value = std::stoll(buf, nullptr, 8);
             return std::make_shared<ValueToken<long long>>(
                 TokenKind::Integer, value,
-                Span(is.input().id(), span.start(), end));
+                Span(is.input().id(), span.start(), end), lrow);
         }
     } else if (std::isdigit(is.ch())) {
-        int row = is.pos().row();
+        int lrow = is.lrow();
 
         std::string buf;
         Position start = is.pos();
         Position end = is.pos();
-        while (!is.eos() && is.pos().row() == row) {
+        while (!is.eos() && is.lrow() == lrow) {
             if (std::isdigit(is.ch())) {
                 end = is.pos();
                 buf.push_back(is.ch());
@@ -256,14 +264,14 @@ std::shared_ptr<Token> token(InputStream& is) {
         }
         auto value = std::stoll(buf);
         return std::make_shared<ValueToken<long long>>(
-            TokenKind::Integer, value, Span(is.input().id(), start, end));
+            TokenKind::Integer, value, Span(is.input().id(), start, end), lrow);
     } else if (std::isalpha(is.ch())) {
-        int row = is.pos().row();
+        int lrow = is.lrow();
 
         std::string buf;
         Position start = is.pos();
         Position end = is.pos();
-        while (!is.eos() && is.pos().row() == row) {
+        while (!is.eos() && is.lrow() == lrow) {
             if (std::isalnum(is.ch()) || is.ch() == '_') {
                 end = is.pos();
                 buf.push_back(is.ch());
@@ -275,76 +283,92 @@ std::shared_ptr<Token> token(InputStream& is) {
 
         Span span(is.input().id(), start, end);
         if (buf == "auto") {
-            return std::make_shared<KeywordToken>(TokenKind::Auto, span);
+            return std::make_shared<KeywordToken>(TokenKind::Auto, span, lrow);
         } else if (buf == "break") {
-            return std::make_shared<KeywordToken>(TokenKind::Break, span);
+            return std::make_shared<KeywordToken>(TokenKind::Break, span, lrow);
         } else if (buf == "case") {
-            return std::make_shared<KeywordToken>(TokenKind::Case, span);
+            return std::make_shared<KeywordToken>(TokenKind::Case, span, lrow);
         } else if (buf == "char") {
-            return std::make_shared<KeywordToken>(TokenKind::Char, span);
+            return std::make_shared<KeywordToken>(TokenKind::Char, span, lrow);
         } else if (buf == "const") {
-            return std::make_shared<KeywordToken>(TokenKind::Const, span);
+            return std::make_shared<KeywordToken>(TokenKind::Const, span, lrow);
         } else if (buf == "continue") {
-            return std::make_shared<KeywordToken>(TokenKind::Continue, span);
+            return std::make_shared<KeywordToken>(TokenKind::Continue, span,
+                                                  lrow);
         } else if (buf == "default") {
-            return std::make_shared<KeywordToken>(TokenKind::Default, span);
+            return std::make_shared<KeywordToken>(TokenKind::Default, span,
+                                                  lrow);
         } else if (buf == "do") {
-            return std::make_shared<KeywordToken>(TokenKind::Do, span);
+            return std::make_shared<KeywordToken>(TokenKind::Do, span, lrow);
         } else if (buf == "double") {
-            return std::make_shared<KeywordToken>(TokenKind::Double, span);
+            return std::make_shared<KeywordToken>(TokenKind::Double, span,
+                                                  lrow);
         } else if (buf == "else") {
-            return std::make_shared<KeywordToken>(TokenKind::Else, span);
+            return std::make_shared<KeywordToken>(TokenKind::Else, span, lrow);
         } else if (buf == "enum") {
-            return std::make_shared<KeywordToken>(TokenKind::Enum, span);
+            return std::make_shared<KeywordToken>(TokenKind::Enum, span, lrow);
         } else if (buf == "extern") {
-            return std::make_shared<KeywordToken>(TokenKind::Extern, span);
+            return std::make_shared<KeywordToken>(TokenKind::Extern, span,
+                                                  lrow);
         } else if (buf == "float") {
-            return std::make_shared<KeywordToken>(TokenKind::Float, span);
+            return std::make_shared<KeywordToken>(TokenKind::Float, span, lrow);
         } else if (buf == "for") {
-            return std::make_shared<KeywordToken>(TokenKind::For, span);
+            return std::make_shared<KeywordToken>(TokenKind::For, span, lrow);
         } else if (buf == "goto") {
-            return std::make_shared<KeywordToken>(TokenKind::Goto, span);
+            return std::make_shared<KeywordToken>(TokenKind::Goto, span, lrow);
         } else if (buf == "if") {
-            return std::make_shared<KeywordToken>(TokenKind::If, span);
+            return std::make_shared<KeywordToken>(TokenKind::If, span, lrow);
         } else if (buf == "inline") {
-            return std::make_shared<KeywordToken>(TokenKind::Inline, span);
+            return std::make_shared<KeywordToken>(TokenKind::Inline, span,
+                                                  lrow);
         } else if (buf == "int") {
-            return std::make_shared<KeywordToken>(TokenKind::Int, span);
+            return std::make_shared<KeywordToken>(TokenKind::Int, span, lrow);
         } else if (buf == "long") {
-            return std::make_shared<KeywordToken>(TokenKind::Long, span);
+            return std::make_shared<KeywordToken>(TokenKind::Long, span, lrow);
         } else if (buf == "register") {
-            return std::make_shared<KeywordToken>(TokenKind::Register, span);
+            return std::make_shared<KeywordToken>(TokenKind::Register, span,
+                                                  lrow);
         } else if (buf == "restrict") {
-            return std::make_shared<KeywordToken>(TokenKind::Restrict, span);
+            return std::make_shared<KeywordToken>(TokenKind::Restrict, span,
+                                                  lrow);
         } else if (buf == "return") {
-            return std::make_shared<KeywordToken>(TokenKind::Return, span);
+            return std::make_shared<KeywordToken>(TokenKind::Return, span,
+                                                  lrow);
         } else if (buf == "short") {
-            return std::make_shared<KeywordToken>(TokenKind::Short, span);
+            return std::make_shared<KeywordToken>(TokenKind::Short, span, lrow);
         } else if (buf == "signed") {
-            return std::make_shared<KeywordToken>(TokenKind::Signed, span);
+            return std::make_shared<KeywordToken>(TokenKind::Signed, span,
+                                                  lrow);
         } else if (buf == "sizeof") {
-            return std::make_shared<KeywordToken>(TokenKind::Sizeof, span);
+            return std::make_shared<KeywordToken>(TokenKind::Sizeof, span,
+                                                  lrow);
         } else if (buf == "static") {
-            return std::make_shared<KeywordToken>(TokenKind::Static, span);
+            return std::make_shared<KeywordToken>(TokenKind::Static, span,
+                                                  lrow);
         } else if (buf == "struct") {
-            return std::make_shared<KeywordToken>(TokenKind::Struct, span);
+            return std::make_shared<KeywordToken>(TokenKind::Struct, span,
+                                                  lrow);
         } else if (buf == "switch") {
-            return std::make_shared<KeywordToken>(TokenKind::Switch, span);
+            return std::make_shared<KeywordToken>(TokenKind::Switch, span,
+                                                  lrow);
         } else if (buf == "typedef") {
-            return std::make_shared<KeywordToken>(TokenKind::Typedef, span);
+            return std::make_shared<KeywordToken>(TokenKind::Typedef, span,
+                                                  lrow);
         } else if (buf == "union") {
-            return std::make_shared<KeywordToken>(TokenKind::Union, span);
+            return std::make_shared<KeywordToken>(TokenKind::Union, span, lrow);
         } else if (buf == "unsigned") {
-            return std::make_shared<KeywordToken>(TokenKind::Unsigned, span);
+            return std::make_shared<KeywordToken>(TokenKind::Unsigned, span,
+                                                  lrow);
         } else if (buf == "void") {
-            return std::make_shared<KeywordToken>(TokenKind::Void, span);
+            return std::make_shared<KeywordToken>(TokenKind::Void, span, lrow);
         } else if (buf == "volatile") {
-            return std::make_shared<KeywordToken>(TokenKind::Volatile, span);
+            return std::make_shared<KeywordToken>(TokenKind::Volatile, span,
+                                                  lrow);
         } else if (buf == "while") {
-            return std::make_shared<KeywordToken>(TokenKind::While, span);
+            return std::make_shared<KeywordToken>(TokenKind::While, span, lrow);
         } else {
             return std::make_shared<ValueToken<std::string>>(
-                TokenKind::Identifier, buf, span);
+                TokenKind::Identifier, buf, span, lrow);
         }
     } else {
         std::stringstream ss;

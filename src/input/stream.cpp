@@ -14,17 +14,42 @@ char InputStream::ch() const {
     }
 }
 
+Position InputStream::pos() const {
+    if (eos()) {
+        throw std::out_of_range("`pos()` called when `eos()` returns true");
+    } else {
+        return {row_, offset_};
+    }
+}
+
+int InputStream::lrow() const {
+    if (eos()) {
+        throw std::out_of_range("`lrow()` called when `eos()` returns true");
+    } else {
+        return lrow_;
+    }
+}
+
 void InputStream::advance() {
     if (eos()) {
         return;
     }
 
+    auto cont_line = false;
     auto lines = input_.lines();
     offset_++;
+    if (offset_ + 1 == lines[row_].size() && ch() == '\\') {
+        offset_++;
+        cont_line = true;
+    }
     if (offset_ == lines[row_].size()) {
-        offset_ = 0;
+        if (!cont_line) {
+            lrow_++;
+        }
         row_++;
+        offset_ = 0;
         while (row_ < lines.size() && lines[row_].empty()) {
+            lrow_++;
             row_++;
         }
     }
@@ -45,12 +70,19 @@ bool InputStream::accept(char c) {
 }
 
 bool InputStream::accept(const std::string& s, Span& span) {
+    if (eos()) {
+        return false;
+    }
+
+    int lrow = lrow_;
     int row = row_;
     int offset = offset_;
+
     Position start = pos();
     Position end = pos();
     for (const auto c : s) {
         if (eos() || ch() != c) {
+            lrow_ = lrow;
             row_ = row;
             offset_ = offset;
             return false;
@@ -58,8 +90,16 @@ bool InputStream::accept(const std::string& s, Span& span) {
         end = pos();
         advance();
     }
-    span = Span(input_.id(), start, end);
-    return true;
+
+    if (lrow_ != lrow) {
+        lrow_ = lrow;
+        row_ = row;
+        offset_ = offset;
+        return false;
+    } else {
+        span = Span(input_.id(), start, end);
+        return true;
+    }
 }
 
 bool InputStream::accept(const std::string& s) {
