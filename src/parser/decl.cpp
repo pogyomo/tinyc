@@ -23,7 +23,8 @@ std::string StorageClassSpecifier::debug() const {
 
 Span FunctionDeclaration::span() const {
     std::vector<Span> spans;
-    for (const auto& cs : class_specifiers_) spans.emplace_back(cs.span());
+    if (class_specifier_.has_value())
+        spans.emplace_back(class_specifier_->span());
     spans.emplace_back(ret_type_->span());
     spans.emplace_back(name_.span());
     spans.emplace_back(lparen_.span());
@@ -35,7 +36,7 @@ Span FunctionDeclaration::span() const {
 
 std::string FunctionDeclaration::debug() const {
     std::stringstream ss;
-    for (const auto& cs : class_specifiers_) ss << cs.debug() << " ";
+    if (class_specifier_.has_value()) ss << class_specifier_->debug() << " ";
     ss << ret_type_->debug() << " " << name_.debug() << lparen_.debug();
     if (!params_.empty()) {
         ss << params_[0].debug();

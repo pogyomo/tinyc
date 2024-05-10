@@ -228,7 +228,7 @@ std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts) {
             }
             auto decl = parse_var_decl(ts);
             for (const auto& d : decl->decls()) {
-                if (!d->class_specifiers().empty()) {
+                if (d->class_specifier().has_value()) {
                     throw ParseError(
                         "class specifier in union member is not allowed",
                         d->span());
@@ -280,7 +280,7 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
             }
             auto decl = parse_var_decl(ts);
             for (const auto& d : decl->decls()) {
-                if (!d->class_specifiers().empty()) {
+                if (d->class_specifier().has_value()) {
                     throw ParseError(
                         "class specifier in struct member is not allowed",
                         d->span());
@@ -301,6 +301,16 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
 
 std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     auto [cs, concrete] = parse_decl_concrete(ts);
+    if (cs.size() > 1) {
+        std::vector<Span> spans;
+        for (const auto& c : cs) spans.emplace_back(c.span());
+        throw ParseError("multiple storage class in declaration",
+                         concat_spans(spans));
+    }
+    std::optional<StorageClassSpecifier> class_specifier(std::nullopt);
+    if (cs.size() == 1) {
+        class_specifier.emplace(cs[0]);
+    }
     auto state = ts.get_state();
     std::shared_ptr<Type> base = concrete;
     auto body = parse_decl_body(ts, base);
@@ -323,16 +333,17 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
                 auto init = parse_var_decl_init(ts);
 
                 decls.emplace_back(std::make_shared<NamedVariableDeclaration>(
-                    cs, type, name.value(), std::make_pair(assign, init)));
+                    class_specifier, type, name.value(),
+                    std::make_pair(assign, init)));
             } else {
                 if (name.has_value())
                     decls.emplace_back(
                         std::make_shared<NamedVariableDeclaration>(
-                            cs, type, name.value()));
+                            class_specifier, type, name.value()));
                 else
                     decls.emplace_back(
-                        std::make_shared<AnonymousVariableDeclaration>(cs,
-                                                                       type));
+                        std::make_shared<AnonymousVariableDeclaration>(
+                            class_specifier, type));
             }
 
             if (!ts.eos() && ts.token()->kind() == TokenKind::Comma) {
@@ -356,17 +367,20 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
             Semicolon semicolon(ts.token()->span());
             ts.advance();
             return std::make_shared<FunctionDeclaration>(
-                cs, ret_type, name, lparen, args, rparen, semicolon);
+                class_specifier, ret_type, name, lparen, args, rparen,
+                semicolon);
         } else if (ts.token()->kind() == TokenKind::LCurly) {
             auto body = parse_block_stmt(ts);
             if (!ts.eos() && ts.token()->kind() == TokenKind::Semicolon) {
                 Semicolon semicolon(ts.token()->span());
                 ts.advance();
                 return std::make_shared<FunctionDeclaration>(
-                    cs, ret_type, name, lparen, args, rparen, body, semicolon);
+                    class_specifier, ret_type, name, lparen, args, rparen, body,
+                    semicolon);
             } else {
                 return std::make_shared<FunctionDeclaration>(
-                    cs, ret_type, name, lparen, args, rparen, body);
+                    class_specifier, ret_type, name, lparen, args, rparen,
+                    body);
             }
         } else {
             ts.retrest();
