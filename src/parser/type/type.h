@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "../node.h"
-#include "quantifier.h"
 #include "specifier/specifier.h"
 
 namespace tinyc {
@@ -32,70 +31,80 @@ public:
 
 class ConcreteType : public Type {
 public:
-    ConcreteType(const std::vector<std::shared_ptr<TypeSpecifier>>& specifiers,
-                 const std::vector<std::shared_ptr<TypeQuantifier>> quantifiers)
-        : specifiers_(specifiers), quantifiers_(quantifiers) {
-        if (specifiers.empty()) {
-            throw std::runtime_error("`specifiers` must not be empty");
-        }
+    ConcreteType(const std::shared_ptr<TypeSpecifier>& specifier,
+                 const std::optional<Const>& const_kw,
+                 const std::optional<Volatile>& volatile_kw)
+        : specifier_(specifier),
+          const_kw_(const_kw),
+          volatile_kw_(volatile_kw) {}
+
+    inline const std::shared_ptr<TypeSpecifier>& specifier() const {
+        return specifier_;
     }
 
-    inline const std::vector<std::shared_ptr<TypeSpecifier>>& specifiers()
-        const {
-        return specifiers_;
-    }
+    inline const std::optional<Const>& const_kw() { return const_kw_; }
 
-    inline const std::vector<std::shared_ptr<TypeQuantifier>>& quantifiers()
-        const {
-        return quantifiers_;
-    }
+    inline const std::optional<Volatile>& volatile_kw() { return volatile_kw_; }
+
+    bool is_const() const { return const_kw_.has_value(); }
+
+    bool is_volatile() const { return volatile_kw_.has_value(); }
 
     inline TypeKind kind() const override { return TypeKind::Concrete; }
 
     Span span() const override {
         std::vector<Span> spans;
-        for (const auto& specifier : specifiers_)
-            spans.emplace_back(specifier->span());
-        for (const auto& quantifier : quantifiers_)
-            spans.emplace_back(quantifier->span());
+        spans.emplace_back(specifier_->span());
+        if (const_kw_.has_value()) spans.emplace_back(const_kw_->span());
+        if (volatile_kw_.has_value()) spans.emplace_back(volatile_kw_->span());
         return concat_spans(spans);
     }
 
     std::string debug() const override {
         std::stringstream ss;
-        ss << specifiers_[0]->debug();
-        for (int i = 1; i < specifiers_.size(); i++)
-            ss << " " << specifiers_[i]->debug();
-        for (const auto& quantifier : quantifiers_)
-            ss << " " << quantifier->debug();
+        if (const_kw_.has_value()) ss << const_kw_->debug() << " ";
+        if (volatile_kw_.has_value()) ss << volatile_kw_->debug() << " ";
+        ss << specifier_->debug();
         return ss.str();
     }
 
 private:
-    const std::vector<std::shared_ptr<TypeSpecifier>> specifiers_;
-    const std::vector<std::shared_ptr<TypeQuantifier>> quantifiers_;
+    const std::shared_ptr<TypeSpecifier> specifier_;
+    const std::optional<Const> const_kw_;
+    const std::optional<Volatile> volatile_kw_;
 };
 
 class PointerType : public Type {
 public:
-    PointerType(Star star,
-                const std::vector<std::shared_ptr<TypeQuantifier>>& quantifiers,
+    PointerType(Star star, const std::optional<Const>& const_kw,
+                const std::optional<Volatile>& volatile_kw,
                 const std::shared_ptr<Type>& of)
-        : star_(star), quantifiers_(quantifiers), of_(of) {}
+        : star_(star),
+          const_kw_(const_kw),
+          volatile_kw_(volatile_kw),
+          of_(of) {}
 
     inline const Star& star() const { return star_; }
 
-    inline const std::vector<std::shared_ptr<TypeQuantifier>>& quantifiers()
-        const {
-        return quantifiers_;
-    }
+    inline const std::optional<Const>& const_kw() { return const_kw_; }
+
+    inline const std::optional<Volatile>& volatile_kw() { return volatile_kw_; }
 
     inline const std::shared_ptr<Type>& of() const { return of_; }
+
+    bool is_const() const { return const_kw_.has_value(); }
+
+    bool is_volatile() const { return volatile_kw_.has_value(); }
 
     inline TypeKind kind() const override { return TypeKind::Pointer; }
 
     inline Span span() const override {
-        return concat_spans({star_.span(), of_->span()});
+        std::vector<Span> spans;
+        spans.emplace_back(star_.span());
+        if (const_kw_.has_value()) spans.emplace_back(const_kw_->span());
+        if (volatile_kw_.has_value()) spans.emplace_back(volatile_kw_->span());
+        spans.emplace_back(of_->span());
+        return concat_spans(spans);
     }
 
     std::string debug() const override {
@@ -103,17 +112,16 @@ public:
         ss << "(";
         ss << of_->debug() + " ";
         ss << star_.debug();
-        if (!quantifiers_.empty()) {
-            for (const auto& quantifier : quantifiers_)
-                ss << quantifier->debug() + " ";
-        }
+        if (const_kw_.has_value()) ss << " " << const_kw_->debug();
+        if (volatile_kw_.has_value()) ss << " " << volatile_kw_->debug();
         ss << ")";
         return ss.str();
     }
 
 private:
     const Star star_;
-    const std::vector<std::shared_ptr<TypeQuantifier>> quantifiers_;
+    const std::optional<Const> const_kw_;
+    const std::optional<Volatile> volatile_kw_;
     const std::shared_ptr<Type> of_;
 };
 

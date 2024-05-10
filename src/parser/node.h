@@ -363,6 +363,30 @@ private:
     const Span span_;
 };
 
+class Const : public Node {
+public:
+    Const(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "const"; }
+
+private:
+    const Span span_;
+};
+
+class Volatile : public Node {
+public:
+    Volatile(Span span) : span_(span) {}
+
+    inline Span span() const override { return span_; }
+
+    inline std::string debug() const override { return "volatile"; }
+
+private:
+    const Span span_;
+};
+
 }  // namespace tinyc
 
 #endif  // TINYC_PARSER_NODE_H_

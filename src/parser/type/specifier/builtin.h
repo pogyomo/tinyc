@@ -10,16 +10,22 @@
 
 namespace tinyc {
 
+// reference: https://ja.cppreference.com/w/cpp/language/types
 enum class BuiltinTypeSpecifierKind {
     Void,
-    Signed,
-    Unsigned,
     Char,
+    UnsignedChar,
     Short,
+    UnsignedShort,
     Int,
+    UnsignedInt,
     Long,
+    UnsignedLong,
+    LongLong,
+    UnsignedLongLong,
     Float,
     Double,
+    LongDouble,
 };
 
 class BuiltinTypeSpecifier : public TypeSpecifier {
@@ -41,22 +47,28 @@ public:
         switch (kind_) {
             case BuiltinTypeSpecifierKind::Void:
                 return "void";
-            case BuiltinTypeSpecifierKind::Signed:
-                return "signed";
-            case BuiltinTypeSpecifierKind::Unsigned:
-                return "unsigned";
             case BuiltinTypeSpecifierKind::Char:
                 return "char";
-            case BuiltinTypeSpecifierKind::Short:
-                return "short";
+            case BuiltinTypeSpecifierKind::UnsignedChar:
+                return "unsigned char";
             case BuiltinTypeSpecifierKind::Int:
                 return "int";
+            case BuiltinTypeSpecifierKind::UnsignedInt:
+                return "unsigned int";
             case BuiltinTypeSpecifierKind::Long:
                 return "long";
+            case BuiltinTypeSpecifierKind::UnsignedLong:
+                return "unsigned long";
+            case BuiltinTypeSpecifierKind::LongLong:
+                return "long long";
+            case BuiltinTypeSpecifierKind::UnsignedLongLong:
+                return "unsigned long long";
             case BuiltinTypeSpecifierKind::Float:
                 return "float";
             case BuiltinTypeSpecifierKind::Double:
                 return "double";
+            case BuiltinTypeSpecifierKind::LongDouble:
+                return "long double";
             default:
                 return "";
         }

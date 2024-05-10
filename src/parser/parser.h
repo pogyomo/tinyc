@@ -18,7 +18,6 @@
 #include "node.h"
 #include "program.h"
 #include "stmt.h"
-#include "type/quantifier.h"
 #include "type/specifier/enum.h"
 #include "type/specifier/specifier.h"
 #include "type/specifier/struct.h"
@@ -29,8 +28,6 @@ namespace tinyc {
 
 // ==================== type parser ====================
 
-std::shared_ptr<TypeQuantifier> parse_type_quantifier(TokenStream& ts);
-std::shared_ptr<TypeSpecifier> parse_type_specifier(TokenStream& ts);
 std::shared_ptr<EnumTypeSpecifier> parse_enum(TokenStream& ts);
 std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts);
 std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts);
@@ -126,9 +123,8 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts);
 std::shared_ptr<VariablesDeclaration> parse_var_decl(TokenStream& ts);
 std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
 
-StorageClassSpecifier parse_class_specifier(TokenStream& ts);
-std::pair<std::vector<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
-parse_decl_concrete(TokenStream& ts);
+std::pair<std::optional<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
+parse_decl_head(TokenStream& ts);
 VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
                                            const std::shared_ptr<Type>& base);
 std::shared_ptr<Type> parse_arrays(TokenStream& ts,

@@ -9,7 +9,7 @@ namespace tinyc {
 
 enum class TokenKind {
     // Operators
-    Or,            // ||
+    Or = 1,        // ||
     And,           // &&
     Vertical,      // |
     Hat,           // ^
