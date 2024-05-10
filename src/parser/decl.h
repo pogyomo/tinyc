@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "../span.h"
+#include "expr.h"
 #include "node.h"
 #include "type/type.h"
 
@@ -66,23 +67,83 @@ private:
     const Span span_;
 };
 
-class VariableDeclarationInitializer : public Node {
-public:
-    VariableDeclarationInitializer(Assign assign,
-                                   const std::shared_ptr<Expression>& expr)
-        : assign_(assign), expr_(expr) {}
+enum class VariableDeclarationInitKind {
+    Expr,
+    List,
+};
 
-    inline const Assign& assign() const { return assign_; }
+class VariableDeclarationInit : public Node {
+public:
+    virtual ~VariableDeclarationInit() {}
+    virtual VariableDeclarationInitKind kind() const = 0;
+};
+
+class VariableDeclarationInitExpr : public VariableDeclarationInit {
+public:
+    VariableDeclarationInitExpr(const std::shared_ptr<Expression>& expr)
+        : expr_(expr) {}
 
     inline const std::shared_ptr<Expression>& expr() const { return expr_; }
 
-    Span span() const override;
+    inline VariableDeclarationInitKind kind() const override {
+        return VariableDeclarationInitKind::Expr;
+    }
 
-    std::string debug() const override;
+    inline Span span() const override { return expr_->span(); }
+
+    inline std::string debug() const override { return expr_->debug(); }
 
 private:
-    const Assign assign_;
     const std::shared_ptr<Expression> expr_;
+};
+
+class VariableDeclarationInitList : public VariableDeclarationInit {
+public:
+    VariableDeclarationInitList(
+        LCurly lcurly,
+        const std::vector<std::shared_ptr<VariableDeclarationInit>>&
+            initializers,
+        RCurly rcurly)
+        : lcurly_(lcurly), initializers_(initializers), rcurly_(rcurly) {}
+
+    inline const LCurly& lcurly() const { return lcurly_; }
+
+    inline const std::vector<std::shared_ptr<VariableDeclarationInit>>&
+    initializers() const {
+        return initializers_;
+    }
+
+    inline const RCurly& rcurly() const { return rcurly_; }
+
+    inline VariableDeclarationInitKind kind() const override {
+        return VariableDeclarationInitKind::List;
+    }
+
+    Span span() const override {
+        std::vector<Span> spans;
+        spans.emplace_back(lcurly_.span());
+        for (const auto& initializer : initializers_)
+            spans.emplace_back(initializer->span());
+        spans.emplace_back(rcurly_.span());
+        return concat_spans(spans);
+    }
+
+    std::string debug() const override {
+        std::stringstream ss;
+        ss << lcurly_.debug() << " ";
+        if (!initializers_.empty()) {
+            ss << initializers_[0]->debug();
+            for (int i = 1; i < initializers_.size(); i++)
+                ss << ", " << initializers_[i]->debug();
+        }
+        ss << " " << rcurly_.debug();
+        return ss.str();
+    }
+
+private:
+    const LCurly lcurly_;
+    const std::vector<std::shared_ptr<VariableDeclarationInit>> initializers_;
+    const RCurly rcurly_;
 };
 
 enum class VariableDeclarationKind {
@@ -113,14 +174,16 @@ public:
     NamedVariableDeclaration(
         const std::vector<StorageClassSpecifier> class_specifiers,
         const std::shared_ptr<Type>& type, const VariableDeclarationName& name,
-        const VariableDeclarationInitializer& initializer)
+        const std::pair<Assign, std::shared_ptr<VariableDeclarationInit>>&
+            initializer)
         : class_specifiers_(class_specifiers),
           type_(type),
           name_(name),
           initializer_(initializer) {}
 
-    inline const std::optional<VariableDeclarationInitializer> initializer()
-        const {
+    inline const std::optional<
+        std::pair<Assign, std::shared_ptr<VariableDeclarationInit>>>&
+    initializer() const {
         return initializer_;
     }
 
@@ -144,7 +207,10 @@ public:
         for (const auto& cs : class_specifiers_) spans.emplace_back(cs.span());
         spans.emplace_back(type_->span());
         spans.emplace_back(name_.span());
-        if (initializer_.has_value()) spans.emplace_back(initializer_->span());
+        if (initializer_.has_value()) {
+            spans.emplace_back(initializer_->first.span());
+            spans.emplace_back(initializer_->second->span());
+        }
         return concat_spans(spans);
     }
 
@@ -152,7 +218,10 @@ public:
         std::stringstream ss;
         for (const auto& cs : class_specifiers_) ss << cs.debug() << " ";
         ss << type_->debug() << " " << name_.debug();
-        if (initializer_.has_value()) ss << " " << initializer_->debug();
+        if (initializer_.has_value()) {
+            ss << " " << initializer_->first.debug() << " ";
+            ss << initializer_->second->debug();
+        }
         return ss.str();
     }
 
@@ -160,7 +229,9 @@ private:
     const std::vector<StorageClassSpecifier> class_specifiers_;
     const std::shared_ptr<Type> type_;
     const VariableDeclarationName name_;
-    const std::optional<VariableDeclarationInitializer> initializer_;
+    const std::optional<
+        std::pair<Assign, std::shared_ptr<VariableDeclarationInit>>>
+        initializer_;
 };
 
 class AnonymousVariableDeclaration : public VariableDeclaration {

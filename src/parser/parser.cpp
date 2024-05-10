@@ -320,11 +320,10 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
                 ts.token()->kind() == TokenKind::Assign) {
                 Assign assign(ts.token()->span());
                 ts.advance();
-                auto expr = parse_assign_expr(ts);
-                VariableDeclarationInitializer initializer(assign, expr);
+                auto init = parse_var_decl_init(ts);
 
                 decls.emplace_back(std::make_shared<NamedVariableDeclaration>(
-                    cs, type, name.value(), initializer));
+                    cs, type, name.value(), std::make_pair(assign, init)));
             } else {
                 if (name.has_value())
                     decls.emplace_back(
@@ -658,6 +657,36 @@ std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
             ts.retrest();
             throw ParseError("expected ) or , after this", ts.token()->span());
         }
+    }
+}
+
+std::shared_ptr<VariableDeclarationInit> parse_var_decl_init(TokenStream& ts) {
+    check(ts);
+    if (ts.token()->kind() == TokenKind::LCurly) {
+        LCurly lcurly(ts.token()->span());
+        ts.advance();
+
+        std::vector<std::shared_ptr<VariableDeclarationInit>> inits;
+        while (true) {
+            check(ts);
+            if (ts.token()->kind() == TokenKind::RCurly) {
+                RCurly rcurly(ts.token()->span());
+                ts.advance();
+
+                return std::make_shared<VariableDeclarationInitList>(
+                    lcurly, inits, rcurly);
+            }
+
+            inits.emplace_back(parse_var_decl_init(ts));
+
+            check(ts);
+            if (ts.token()->kind() == TokenKind::Comma) {
+                ts.advance();
+            }
+        }
+    } else {
+        auto expr = parse_assign_expr(ts);
+        return std::make_shared<VariableDeclarationInitExpr>(expr);
     }
 }
 

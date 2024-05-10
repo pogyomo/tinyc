@@ -135,6 +135,7 @@ std::shared_ptr<Type> parse_arrays(TokenStream& ts,
                                    const std::shared_ptr<Type>& base);
 std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
     TokenStream& ts);
+std::shared_ptr<VariableDeclarationInit> parse_var_decl_init(TokenStream& ts);
 
 // ==================== statement parser ====================
 

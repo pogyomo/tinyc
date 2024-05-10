@@ -21,14 +21,6 @@ std::string StorageClassSpecifier::debug() const {
     }
 }
 
-Span VariableDeclarationInitializer::span() const {
-    return concat_spans({assign_.span(), expr_->span()});
-}
-
-std::string VariableDeclarationInitializer::debug() const {
-    return assign_.debug() + " " + expr_->debug();
-}
-
 Span FunctionDeclaration::span() const {
     std::vector<Span> spans;
     for (const auto& cs : class_specifiers_) spans.emplace_back(cs.span());
