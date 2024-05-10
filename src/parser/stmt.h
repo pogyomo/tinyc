@@ -537,12 +537,44 @@ private:
     const Semicolon semicolon_;
 };
 
+enum class ForStatementInitKind {
+    Decl,
+    Expr,
+};
+
 class ForStatementInit : public Node {
 public:
-    ForStatementInit(Semicolon semicolon)
+    virtual ~ForStatementInit() {}
+    virtual ForStatementInitKind kind() const = 0;
+};
+
+class ForStatementInitDecl : public ForStatementInit {
+public:
+    ForStatementInitDecl(const std::shared_ptr<VariablesDeclaration>& decl)
+        : decl_(decl) {}
+
+    inline const std::shared_ptr<VariablesDeclaration>& decl() const {
+        return decl_;
+    }
+
+    inline ForStatementInitKind kind() const override {
+        return ForStatementInitKind::Decl;
+    }
+
+    inline Span span() const override { return decl_->span(); }
+
+    inline std::string debug() const override { return decl_->debug(); }
+
+private:
+    const std::shared_ptr<VariablesDeclaration> decl_;
+};
+
+class ForStatementInitExpr : public ForStatementInit {
+public:
+    ForStatementInitExpr(Semicolon semicolon)
         : init_(std::nullopt), semicolon_(semicolon) {}
 
-    ForStatementInit(std::shared_ptr<Expression> init, Semicolon semicolon)
+    ForStatementInitExpr(std::shared_ptr<Expression> init, Semicolon semicolon)
         : init_(init), semicolon_(semicolon) {}
 
     inline const std::optional<std::shared_ptr<Expression>>& init() const {
@@ -550,6 +582,10 @@ public:
     }
 
     inline const Semicolon& semicolon() const { return semicolon_; }
+
+    inline ForStatementInitKind kind() const override {
+        return ForStatementInitKind::Expr;
+    }
 
     Span span() const override {
         if (init_.has_value()) {
@@ -609,7 +645,8 @@ private:
 
 class ForStatement : public Statement {
 public:
-    ForStatement(For for_kw, LParen lparen, const ForStatementInit& init,
+    ForStatement(For for_kw, LParen lparen,
+                 const std::shared_ptr<ForStatementInit>& init,
                  const ForStatementCond& cond, RParen rparen,
                  const std::shared_ptr<Statement> body)
         : for_kw_(for_kw),
@@ -620,7 +657,8 @@ public:
           rparen_(rparen),
           body_(body) {}
 
-    ForStatement(For for_kw, LParen lparen, const ForStatementInit& init,
+    ForStatement(For for_kw, LParen lparen,
+                 const std::shared_ptr<ForStatementInit>& init,
                  const ForStatementCond& cond,
                  const std::shared_ptr<Expression>& update, RParen rparen,
                  const std::shared_ptr<Statement> body)
@@ -636,7 +674,9 @@ public:
 
     inline const LParen lparen() const { return lparen_; }
 
-    inline const ForStatementInit init() const { return init_; }
+    inline const std::shared_ptr<ForStatementInit>& init() const {
+        return init_;
+    }
 
     inline const ForStatementCond cond() const { return cond_; }
 
@@ -654,7 +694,7 @@ public:
         std::vector<Span> spans;
         spans.emplace_back(for_kw_.span());
         spans.emplace_back(lparen_.span());
-        spans.emplace_back(init_.span());
+        spans.emplace_back(init_->span());
         spans.emplace_back(cond_.span());
         if (update_.has_value()) {
             spans.emplace_back(update_.value()->span());
@@ -667,7 +707,7 @@ public:
     std::string debug() const override {
         std::stringstream ss;
         ss << for_kw_.debug() << lparen_.debug();
-        ss << init_.debug() << " " << cond_.debug() << " ";
+        ss << init_->debug() << " " << cond_.debug() << " ";
         if (update_.has_value()) {
             ss << update_.value()->debug();
         }
@@ -678,7 +718,7 @@ public:
 private:
     const For for_kw_;
     const LParen lparen_;
-    const ForStatementInit init_;
+    const std::shared_ptr<ForStatementInit> init_;
     const ForStatementCond cond_;
     const std::optional<std::shared_ptr<Expression>> update_;
     const RParen rparen_;

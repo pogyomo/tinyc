@@ -920,22 +920,29 @@ std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts) {
     LParen lparen(ts.token()->span());
     ts.advance();
 
-    std::optional<ForStatementInit> init = std::nullopt;
+    std::optional<std::shared_ptr<ForStatementInit>> init = std::nullopt;
     check(ts);
     if (ts.token()->kind() != TokenKind::Semicolon) {
-        auto expr = parse_expr(ts);
+        auto state = ts.get_state();
+        try {
+            auto expr = parse_expr(ts);
 
-        check(ts, TokenKind::Semicolon, ";");
-        Semicolon semicolon(ts.token()->span());
-        ts.advance();
+            check(ts, TokenKind::Semicolon, ";");
+            Semicolon semicolon(ts.token()->span());
+            ts.advance();
 
-        init.emplace(expr, semicolon);
+            init.emplace(
+                std::make_shared<ForStatementInitExpr>(expr, semicolon));
+        } catch (ParseError e) {
+            ts.set_state(state);
+            auto decl = parse_var_decl(ts);
+            init.emplace(std::make_shared<ForStatementInitDecl>(decl));
+        }
     } else {
-        check(ts, TokenKind::Semicolon, ";");
         Semicolon semicolon(ts.token()->span());
         ts.advance();
 
-        init.emplace(semicolon);
+        init.emplace(std::make_shared<ForStatementInitExpr>(semicolon));
     }
 
     std::optional<ForStatementCond> cond = std::nullopt;
