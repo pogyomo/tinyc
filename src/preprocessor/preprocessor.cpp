@@ -329,12 +329,21 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                 error_happend = true;
                 continue;
             }
+
+            Span path_span = ts.token()->span();
             std::filesystem::path path =
                 std::static_pointer_cast<ValueToken<std::string>>(ts.token())
                     ->value();
             ts.advance();
 
-            std::fstream fs(path);
+            std::ifstream fs(path);
+            if (!fs) {
+                report(ctx,
+                       PreProcessError("failed to open this file", path_span));
+                error_happend = true;
+                continue;
+            }
+
             auto included = lex(ctx, fs, path.filename());
             if (!included.has_value()) {
                 return std::nullopt;
