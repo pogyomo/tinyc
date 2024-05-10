@@ -44,7 +44,7 @@ void check(TokenStream& ts, TokenKind kind, const std::string& msg) {
 
 // ==================== type parser ====================
 
-std::shared_ptr<EnumTypeSpecifier> parse_enum(TokenStream& ts) {
+std::shared_ptr<EnumTypeSpecifier> parse_enum(Context& ctx, TokenStream& ts) {
     check(ts, TokenKind::Enum, "enum");
     Enum enum_kw(ts.token()->span());
     ts.advance();
@@ -89,7 +89,7 @@ std::shared_ptr<EnumTypeSpecifier> parse_enum(TokenStream& ts) {
             if (ts.token()->kind() == TokenKind::Assign) {
                 Assign assign(ts.token()->span());
                 ts.advance();
-                init.emplace(assign, parse_expr(ts));
+                init.emplace(assign, parse_expr(ctx, ts));
             }
 
             check(ts);
@@ -122,7 +122,7 @@ std::shared_ptr<EnumTypeSpecifier> parse_enum(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts) {
+std::shared_ptr<UnionTypeSpecifier> parse_union(Context& ctx, TokenStream& ts) {
     check(ts, TokenKind::Union, "union");
     Union union_kw(ts.token()->span());
     ts.advance();
@@ -155,7 +155,7 @@ std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts) {
                         union_kw, body);
                 }
             }
-            auto decl = parse_var_decl(ts);
+            auto decl = parse_var_decl(ctx, ts);
             for (const auto& d : decl->decls()) {
                 if (d->class_specifier().has_value()) {
                     throw ParseError(
@@ -174,7 +174,8 @@ std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
+std::shared_ptr<StructTypeSpecifier> parse_struct(Context& ctx,
+                                                  TokenStream& ts) {
     check(ts, TokenKind::Struct, "struct");
     Struct struct_kw(ts.token()->span());
     ts.advance();
@@ -207,7 +208,7 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
                         struct_kw, body);
                 }
             }
-            auto decl = parse_var_decl(ts);
+            auto decl = parse_var_decl(ctx, ts);
             for (const auto& d : decl->decls()) {
                 if (d->class_specifier().has_value()) {
                     throw ParseError(
@@ -228,16 +229,16 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts) {
 
 // ==================== declaration parser ====================
 
-std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
-    auto [storage, concrete] = parse_decl_head(ts);
+std::shared_ptr<Declaration> parse_decl(Context& ctx, TokenStream& ts) {
+    auto [storage, concrete] = parse_decl_head(ctx, ts);
     auto state = ts.get_state();
     std::shared_ptr<Type> base = concrete;
-    auto body = parse_decl_body(ts, base);
+    auto body = parse_decl_body(ctx, ts, base);
     if (body.is_variable()) {
         ts.set_state(state);
         std::vector<std::shared_ptr<VariableDeclaration>> decls;
         while (true) {
-            auto body = parse_decl_body(ts, base);
+            auto body = parse_decl_body(ctx, ts, base);
             if (body.is_function()) {
                 throw ParseError("expected variable, but function found",
                                  body.span());
@@ -249,7 +250,7 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
                 ts.token()->kind() == TokenKind::Assign) {
                 Assign assign(ts.token()->span());
                 ts.advance();
-                auto init = parse_var_decl_init(ts);
+                auto init = parse_var_decl_init(ctx, ts);
 
                 decls.emplace_back(std::make_shared<NamedVariableDeclaration>(
                     storage, type, name.value(), std::make_pair(assign, init)));
@@ -287,7 +288,7 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
             return std::make_shared<FunctionDeclaration>(
                 storage, ret_type, name, lparen, args, rparen, semicolon);
         } else if (ts.token()->kind() == TokenKind::LCurly) {
-            auto body = parse_block_stmt(ts);
+            auto body = parse_block_stmt(ctx, ts);
             if (!ts.eos() && ts.token()->kind() == TokenKind::Semicolon) {
                 Semicolon semicolon(ts.token()->span());
                 ts.advance();
@@ -305,8 +306,9 @@ std::shared_ptr<Declaration> parse_decl(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<VariablesDeclaration> parse_var_decl(TokenStream& ts) {
-    auto decl = parse_decl(ts);
+std::shared_ptr<VariablesDeclaration> parse_var_decl(Context& ctx,
+                                                     TokenStream& ts) {
+    auto decl = parse_decl(ctx, ts);
     if (decl->kind() == DeclarationKind::Variables) {
         return std::static_pointer_cast<VariablesDeclaration>(decl);
     } else {
@@ -314,8 +316,9 @@ std::shared_ptr<VariablesDeclaration> parse_var_decl(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts) {
-    auto decl = parse_decl(ts);
+std::shared_ptr<FunctionDeclaration> parse_fun_decl(Context& ctx,
+                                                    TokenStream& ts) {
+    auto decl = parse_decl(ctx, ts);
     if (decl->kind() == DeclarationKind::Function) {
         return std::static_pointer_cast<FunctionDeclaration>(decl);
     } else {
@@ -324,7 +327,7 @@ std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts) {
 }
 
 bool collect_storage_class_specifiers(
-    TokenStream& ts,
+    Context& ctx, TokenStream& ts,
     std::vector<std::shared_ptr<Token>>& storage_class_specifiers) {
     bool collect_atleast_one = false;
     while (!ts.eos()) {
@@ -343,7 +346,8 @@ bool collect_storage_class_specifiers(
 }
 
 bool collect_type_quantifiers(
-    TokenStream& ts, std::vector<std::shared_ptr<Token>>& type_quantifiers) {
+    Context& ctx, TokenStream& ts,
+    std::vector<std::shared_ptr<Token>>& type_quantifiers) {
     bool collect_atleast_one = false;
     while (!ts.eos()) {
         auto kind = ts.token()->kind();
@@ -359,16 +363,17 @@ bool collect_type_quantifiers(
 }
 
 bool collect_decl_head_info(
-    TokenStream& ts,
+    Context& ctx, TokenStream& ts,
     std::vector<std::shared_ptr<Token>>& storage_class_specifiers,
     std::vector<std::shared_ptr<Token>>& type_quantifiers) {
     bool collect_atleast_one = false;
     while (true) {
-        if (collect_storage_class_specifiers(ts, storage_class_specifiers)) {
+        if (collect_storage_class_specifiers(ctx, ts,
+                                             storage_class_specifiers)) {
             collect_atleast_one = true;
             continue;
         }
-        if (collect_type_quantifiers(ts, type_quantifiers)) {
+        if (collect_type_quantifiers(ctx, ts, type_quantifiers)) {
             collect_atleast_one = true;
             continue;
         }
@@ -377,7 +382,7 @@ bool collect_decl_head_info(
     return collect_atleast_one;
 }
 
-bool collect_builtin_types(TokenStream& ts,
+bool collect_builtin_types(Context& ctx, TokenStream& ts,
                            std::vector<std::shared_ptr<Token>>& builtin_types) {
     bool collect_atleast_one = false;
     while (!ts.eos()) {
@@ -398,6 +403,7 @@ bool collect_builtin_types(TokenStream& ts,
 }
 
 std::optional<StorageClassSpecifier> verify_storage_class_specifiers(
+    Context& ctx,
     std::vector<std::shared_ptr<Token>>& storage_class_specifiers) {
     std::optional<std::shared_ptr<Token>> flatten;
     for (const auto& s : storage_class_specifiers) {
@@ -436,19 +442,22 @@ std::optional<StorageClassSpecifier> verify_storage_class_specifiers(
 }
 
 std::pair<std::optional<Const>, std::optional<Volatile>>
-verify_type_quantifiers(std::vector<std::shared_ptr<Token>>& type_quantifiers) {
+verify_type_quantifiers(Context& ctx,
+                        std::vector<std::shared_ptr<Token>>& type_quantifiers) {
     std::optional<Const> const_kw;
     std::optional<Volatile> volatile_kw;
     for (const auto& q : type_quantifiers) {
         if (q->kind() == TokenKind::Const) {
             if (const_kw.has_value()) {
-                // TODO: report warning
+                report(ctx,
+                       SimpleWarning("in type", "multiple const", q->span()));
             } else {
                 const_kw.emplace(Const(q->span()));
             }
         } else if (q->kind() == TokenKind::Volatile) {
             if (volatile_kw.has_value()) {
-                // TODO: report warning
+                report(ctx, SimpleWarning("in type", "multiple volatile",
+                                          q->span()));
             } else {
                 volatile_kw.emplace(Volatile(q->span()));
             }
@@ -460,16 +469,22 @@ verify_type_quantifiers(std::vector<std::shared_ptr<Token>>& type_quantifiers) {
 }
 
 std::shared_ptr<BuiltinTypeSpecifier> verify_builtin_types(
-    std::vector<std::shared_ptr<Token>>& builtin_types) {
+    Context& ctx, std::vector<std::shared_ptr<Token>>& builtin_types) {
     using k1 = TokenKind;
     using k2 = BuiltinTypeSpecifierKind;
 
     std::multiset<TokenKind> kinds;
     for (const auto& t : builtin_types) {
-        if (t->kind() == TokenKind::Signed ||
-            t->kind() == TokenKind::Unsigned) {
+        if (t->kind() == TokenKind::Signed) {
             if (kinds.find(t->kind()) != kinds.end()) {
-                // TODO: report warning
+                report(ctx,
+                       SimpleWarning("in type", "multiple signed", t->span()));
+                continue;
+            }
+        } else if (t->kind() == TokenKind::Unsigned) {
+            if (kinds.find(t->kind()) != kinds.end()) {
+                report(ctx, SimpleWarning("in type", "multiple unsigned",
+                                          t->span()));
                 continue;
             }
         }
@@ -522,10 +537,10 @@ std::shared_ptr<BuiltinTypeSpecifier> verify_builtin_types(
 }
 
 std::pair<std::optional<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
-parse_decl_head(TokenStream& ts) {
+parse_decl_head(Context& ctx, TokenStream& ts) {
     std::vector<std::shared_ptr<Token>> storage_class_specifiers;
     std::vector<std::shared_ptr<Token>> type_quantifiers;
-    collect_decl_head_info(ts, storage_class_specifiers, type_quantifiers);
+    collect_decl_head_info(ctx, ts, storage_class_specifiers, type_quantifiers);
     check(ts);
     if (ts.token()->kind() == TokenKind::Identifier) {
         auto id = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
@@ -533,44 +548,48 @@ parse_decl_head(TokenStream& ts) {
             std::make_shared<TypedefNameTypeSpecifier>(id->value(), id->span());
         ts.advance();
 
-        collect_decl_head_info(ts, storage_class_specifiers, type_quantifiers);
+        collect_decl_head_info(ctx, ts, storage_class_specifiers,
+                               type_quantifiers);
         auto storage =
-            verify_storage_class_specifiers(storage_class_specifiers);
+            verify_storage_class_specifiers(ctx, storage_class_specifiers);
         auto [const_kw, volatile_kw] =
-            verify_type_quantifiers(type_quantifiers);
+            verify_type_quantifiers(ctx, type_quantifiers);
 
         return {storage,
                 std::make_shared<ConcreteType>(spec, const_kw, volatile_kw)};
     } else if (ts.token()->kind() == TokenKind::Enum) {
-        auto spec = parse_enum(ts);
+        auto spec = parse_enum(ctx, ts);
 
-        collect_decl_head_info(ts, storage_class_specifiers, type_quantifiers);
+        collect_decl_head_info(ctx, ts, storage_class_specifiers,
+                               type_quantifiers);
         auto storage =
-            verify_storage_class_specifiers(storage_class_specifiers);
+            verify_storage_class_specifiers(ctx, storage_class_specifiers);
         auto [const_kw, volatile_kw] =
-            verify_type_quantifiers(type_quantifiers);
+            verify_type_quantifiers(ctx, type_quantifiers);
 
         return {storage,
                 std::make_shared<ConcreteType>(spec, const_kw, volatile_kw)};
     } else if (ts.token()->kind() == TokenKind::Union) {
-        auto spec = parse_union(ts);
+        auto spec = parse_union(ctx, ts);
 
-        collect_decl_head_info(ts, storage_class_specifiers, type_quantifiers);
+        collect_decl_head_info(ctx, ts, storage_class_specifiers,
+                               type_quantifiers);
         auto storage =
-            verify_storage_class_specifiers(storage_class_specifiers);
+            verify_storage_class_specifiers(ctx, storage_class_specifiers);
         auto [const_kw, volatile_kw] =
-            verify_type_quantifiers(type_quantifiers);
+            verify_type_quantifiers(ctx, type_quantifiers);
 
         return {storage,
                 std::make_shared<ConcreteType>(spec, const_kw, volatile_kw)};
     } else if (ts.token()->kind() == TokenKind::Struct) {
-        auto spec = parse_struct(ts);
+        auto spec = parse_struct(ctx, ts);
 
-        collect_decl_head_info(ts, storage_class_specifiers, type_quantifiers);
+        collect_decl_head_info(ctx, ts, storage_class_specifiers,
+                               type_quantifiers);
         auto storage =
-            verify_storage_class_specifiers(storage_class_specifiers);
+            verify_storage_class_specifiers(ctx, storage_class_specifiers);
         auto [const_kw, volatile_kw] =
-            verify_type_quantifiers(type_quantifiers);
+            verify_type_quantifiers(ctx, type_quantifiers);
 
         return {storage,
                 std::make_shared<ConcreteType>(spec, const_kw, volatile_kw)};
@@ -579,24 +598,25 @@ parse_decl_head(TokenStream& ts) {
         while (true) {
             bool collect_atleast_one = false;
             collect_atleast_one |= collect_decl_head_info(
-                ts, storage_class_specifiers, type_quantifiers);
-            collect_atleast_one |= collect_builtin_types(ts, builtin_types);
+                ctx, ts, storage_class_specifiers, type_quantifiers);
+            collect_atleast_one |=
+                collect_builtin_types(ctx, ts, builtin_types);
             if (!collect_atleast_one) {
                 break;
             }
         }
-        auto spec = verify_builtin_types(builtin_types);
+        auto spec = verify_builtin_types(ctx, builtin_types);
         auto storage =
-            verify_storage_class_specifiers(storage_class_specifiers);
+            verify_storage_class_specifiers(ctx, storage_class_specifiers);
         auto [const_kw, volatile_kw] =
-            verify_type_quantifiers(type_quantifiers);
+            verify_type_quantifiers(ctx, type_quantifiers);
 
         return {storage,
                 std::make_shared<ConcreteType>(spec, const_kw, volatile_kw)};
     }
 }
 
-VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
+VariableOrFunctionDeclBody parse_decl_body(Context& ctx, TokenStream& ts,
                                            const std::shared_ptr<Type>& base) {
     std::shared_ptr<Type> type = base;
 
@@ -606,8 +626,9 @@ VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
             ts.advance();
 
             std::vector<std::shared_ptr<Token>> quantifiers;
-            collect_type_quantifiers(ts, quantifiers);
-            auto [const_kw, volatile_kw] = verify_type_quantifiers(quantifiers);
+            collect_type_quantifiers(ctx, ts, quantifiers);
+            auto [const_kw, volatile_kw] =
+                verify_type_quantifiers(ctx, quantifiers);
 
             type = std::make_shared<PointerType>(star, const_kw, volatile_kw,
                                                  type);
@@ -626,12 +647,12 @@ VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
             VariableDeclarationName name(id->value(), id->span());
             return VariableOrFunctionDeclBody(type, name);
         } else if (ts.token()->kind() == TokenKind::LParen) {
-            auto [lparen, params, rparen] = parse_fun_params(ts);
+            auto [lparen, params, rparen] = parse_fun_params(ctx, ts);
             FunctionDeclarationName name(id->value(), id->span());
             return VariableOrFunctionDeclBody(type,
                                               {name, lparen, params, rparen});
         } else if (ts.token()->kind() == TokenKind::LSquare) {
-            type = parse_arrays(ts, type);
+            type = parse_arrays(ctx, ts, type);
             VariableDeclarationName name(id->value(), id->span());
             return VariableOrFunctionDeclBody(type, name);
         } else {
@@ -666,31 +687,31 @@ VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
             auto state = ts.get_state();
 
             ts.set_state(inner_state);
-            auto ret = parse_decl_body(ts, type);
+            auto ret = parse_decl_body(ctx, ts, type);
             ts.set_state(state);
             return ret;
         } else if (ts.token()->kind() == TokenKind::LParen) {
-            auto [lparen, params, rparen] = parse_fun_params(ts);
+            auto [lparen, params, rparen] = parse_fun_params(ctx, ts);
             type = std::make_shared<FunctionType>(type, lparen, params, rparen);
             auto state = ts.get_state();
 
             ts.set_state(inner_state);
-            auto ret = parse_decl_body(ts, type);
+            auto ret = parse_decl_body(ctx, ts, type);
             ts.set_state(state);
             return ret;
         } else if (ts.token()->kind() == TokenKind::LSquare) {
-            type = parse_arrays(ts, type);
+            type = parse_arrays(ctx, ts, type);
             auto state = ts.get_state();
 
             ts.set_state(inner_state);
-            auto ret = parse_decl_body(ts, type);
+            auto ret = parse_decl_body(ctx, ts, type);
             ts.set_state(state);
             return ret;
         } else {
             auto state = ts.get_state();
 
             ts.set_state(inner_state);
-            auto ret = parse_decl_body(ts, type);
+            auto ret = parse_decl_body(ctx, ts, type);
             ts.set_state(state);
             return ret;
         }
@@ -699,7 +720,7 @@ VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
     }
 }
 
-std::shared_ptr<Type> parse_arrays(TokenStream& ts,
+std::shared_ptr<Type> parse_arrays(Context& ctx, TokenStream& ts,
                                    const std::shared_ptr<Type>& base) {
     auto type = base;
     while (!ts.eos()) {
@@ -712,7 +733,7 @@ std::shared_ptr<Type> parse_arrays(TokenStream& ts,
         std::optional<std::shared_ptr<Expression>> size;
         check(ts);
         if (ts.token()->kind() != TokenKind::RSquare) {
-            size = parse_cond_expr(ts);
+            size = parse_cond_expr(ctx, ts);
         }
 
         check(ts, TokenKind::RSquare, "]");
@@ -729,7 +750,7 @@ std::shared_ptr<Type> parse_arrays(TokenStream& ts,
 }
 
 std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
-    TokenStream& ts) {
+    Context& ctx, TokenStream& ts) {
     check(ts, TokenKind::LParen, "(");
     LParen lparen(ts.token()->span());
     ts.advance();
@@ -742,9 +763,9 @@ std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
             return {lparen, params, rparen};
         }
 
-        auto [storage, concrete] = parse_decl_head(ts);
+        auto [storage, concrete] = parse_decl_head(ctx, ts);
         std::shared_ptr<Type> base = concrete;
-        auto body = parse_decl_body(ts, base);
+        auto body = parse_decl_body(ctx, ts, base);
 
         if (body.is_function()) {
             throw ParseError("expected variable, but got function",
@@ -771,7 +792,8 @@ std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
     }
 }
 
-std::shared_ptr<VariableDeclarationInit> parse_var_decl_init(TokenStream& ts) {
+std::shared_ptr<VariableDeclarationInit> parse_var_decl_init(Context& ctx,
+                                                             TokenStream& ts) {
     check(ts);
     if (ts.token()->kind() == TokenKind::LCurly) {
         LCurly lcurly(ts.token()->span());
@@ -788,7 +810,7 @@ std::shared_ptr<VariableDeclarationInit> parse_var_decl_init(TokenStream& ts) {
                     lcurly, inits, rcurly);
             }
 
-            inits.emplace_back(parse_var_decl_init(ts));
+            inits.emplace_back(parse_var_decl_init(ctx, ts));
 
             check(ts);
             if (ts.token()->kind() == TokenKind::Comma) {
@@ -796,51 +818,52 @@ std::shared_ptr<VariableDeclarationInit> parse_var_decl_init(TokenStream& ts) {
             }
         }
     } else {
-        auto expr = parse_assign_expr(ts);
+        auto expr = parse_assign_expr(ctx, ts);
         return std::make_shared<VariableDeclarationInitExpr>(expr);
     }
 }
 
 // ==================== statement parser ====================
 
-std::shared_ptr<Statement> parse_stmt(TokenStream& ts) {
+std::shared_ptr<Statement> parse_stmt(Context& ctx, TokenStream& ts) {
     check(ts);
     if (ts.token()->kind() == TokenKind::Identifier) {
         ts.advance();
         if (!ts.eos() && ts.token()->kind() == TokenKind::Colon) {
-            return parse_labeled_stmt(ts);
+            return parse_labeled_stmt(ctx, ts);
         } else {
             ts.retrest();
-            return parse_expr_stmt(ts);
+            return parse_expr_stmt(ctx, ts);
         }
     } else if (ts.token()->kind() == TokenKind::Case) {
-        return parse_case_stmt(ts);
+        return parse_case_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::Default) {
-        return parse_default_stmt(ts);
+        return parse_default_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::LCurly) {
-        return parse_block_stmt(ts);
+        return parse_block_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::If) {
-        return parse_if_stmt(ts);
+        return parse_if_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::Switch) {
-        return parse_switch_stmt(ts);
+        return parse_switch_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::While) {
-        return parse_while_stmt(ts);
+        return parse_while_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::Do) {
-        return parse_do_while_stmt(ts);
+        return parse_do_while_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::For) {
-        return parse_for_stmt(ts);
+        return parse_for_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::Goto) {
-        return parse_goto_stmt(ts);
+        return parse_goto_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::Break) {
-        return parse_break_stmt(ts);
+        return parse_break_stmt(ctx, ts);
     } else if (ts.token()->kind() == TokenKind::Return) {
-        return parse_return_stmt(ts);
+        return parse_return_stmt(ctx, ts);
     } else {
-        return parse_expr_stmt(ts);
+        return parse_expr_stmt(ctx, ts);
     }
 }
 
-std::shared_ptr<LabeledStatement> parse_labeled_stmt(TokenStream& ts) {
+std::shared_ptr<LabeledStatement> parse_labeled_stmt(Context& ctx,
+                                                     TokenStream& ts) {
     check(ts, TokenKind::Identifier, "identifier");
     auto tk = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
     LabeledStatementLabel label(tk->value(), tk->span());
@@ -850,28 +873,29 @@ std::shared_ptr<LabeledStatement> parse_labeled_stmt(TokenStream& ts) {
     Colon colon(ts.token()->span());
     ts.advance();
 
-    auto stmt = parse_stmt(ts);
+    auto stmt = parse_stmt(ctx, ts);
 
     return std::make_shared<LabeledStatement>(label, colon, stmt);
 }
 
-std::shared_ptr<CaseStatement> parse_case_stmt(TokenStream& ts) {
+std::shared_ptr<CaseStatement> parse_case_stmt(Context& ctx, TokenStream& ts) {
     check(ts, TokenKind::Case, "case");
     Case case_kw(ts.token()->span());
     ts.advance();
 
-    auto expr = parse_expr(ts);
+    auto expr = parse_expr(ctx, ts);
 
     check(ts, TokenKind::Colon, ":");
     Colon colon(ts.token()->span());
     ts.advance();
 
-    auto stmt = parse_stmt(ts);
+    auto stmt = parse_stmt(ctx, ts);
 
     return std::make_shared<CaseStatement>(case_kw, expr, colon, stmt);
 }
 
-std::shared_ptr<DefaultStatement> parse_default_stmt(TokenStream& ts) {
+std::shared_ptr<DefaultStatement> parse_default_stmt(Context& ctx,
+                                                     TokenStream& ts) {
     check(ts, TokenKind::Default, "default");
     Default default_kw(ts.token()->span());
     ts.advance();
@@ -880,12 +904,13 @@ std::shared_ptr<DefaultStatement> parse_default_stmt(TokenStream& ts) {
     Colon colon(ts.token()->span());
     ts.advance();
 
-    auto stmt = parse_stmt(ts);
+    auto stmt = parse_stmt(ctx, ts);
 
     return std::make_shared<DefaultStatement>(default_kw, colon, stmt);
 }
 
-std::shared_ptr<BlockStatement> parse_block_stmt(TokenStream& ts) {
+std::shared_ptr<BlockStatement> parse_block_stmt(Context& ctx,
+                                                 TokenStream& ts) {
     check(ts, TokenKind::LCurly, "{");
     LCurly lcurly(ts.token()->span());
     ts.advance();
@@ -906,19 +931,19 @@ std::shared_ptr<BlockStatement> parse_block_stmt(TokenStream& ts) {
 
         auto state = ts.get_state();
         try {
-            auto stmt = parse_stmt(ts);
+            auto stmt = parse_stmt(ctx, ts);
             items.push_back(
                 std::make_shared<BlockStatementStatementItem>(stmt));
         } catch (ParseError e) {
             ts.set_state(state);
-            auto decl = parse_decl(ts);
+            auto decl = parse_decl(ctx, ts);
             items.push_back(
                 std::make_shared<BlockStatementDeclarationItem>(decl));
         }
     }
 }
 
-std::shared_ptr<IfStatement> parse_if_stmt(TokenStream& ts) {
+std::shared_ptr<IfStatement> parse_if_stmt(Context& ctx, TokenStream& ts) {
     check(ts, TokenKind::If, "if");
     If if_kw(ts.token()->span());
     ts.advance();
@@ -927,13 +952,13 @@ std::shared_ptr<IfStatement> parse_if_stmt(TokenStream& ts) {
     LParen lparen(ts.token()->span());
     ts.advance();
 
-    auto cond = parse_expr(ts);
+    auto cond = parse_expr(ctx, ts);
 
     check(ts, TokenKind::RParen, ")");
     RParen rparen(ts.token()->span());
     ts.advance();
 
-    auto then = parse_stmt(ts);
+    auto then = parse_stmt(ctx, ts);
 
     IfStatementIfBody if_body(if_kw, lparen, cond, rparen, then);
 
@@ -944,14 +969,15 @@ std::shared_ptr<IfStatement> parse_if_stmt(TokenStream& ts) {
     Else else_kw(ts.token()->span());
     ts.advance();
 
-    auto otherwise = parse_stmt(ts);
+    auto otherwise = parse_stmt(ctx, ts);
 
     IfStatementElseBody else_body = IfStatementElseBody(else_kw, otherwise);
 
     return std::make_shared<IfStatement>(if_body, else_body);
 }
 
-std::shared_ptr<SwitchStatement> parse_switch_stmt(TokenStream& ts) {
+std::shared_ptr<SwitchStatement> parse_switch_stmt(Context& ctx,
+                                                   TokenStream& ts) {
     check(ts, TokenKind::Switch, "switch");
     Switch switch_kw(ts.token()->span());
     ts.advance();
@@ -960,19 +986,20 @@ std::shared_ptr<SwitchStatement> parse_switch_stmt(TokenStream& ts) {
     LParen lparen(ts.token()->span());
     ts.advance();
 
-    auto comp = parse_expr(ts);
+    auto comp = parse_expr(ctx, ts);
 
     check(ts, TokenKind::RParen, ")");
     RParen rparen(ts.token()->span());
     ts.advance();
 
-    auto body = parse_stmt(ts);
+    auto body = parse_stmt(ctx, ts);
 
     return std::make_shared<SwitchStatement>(switch_kw, lparen, comp, rparen,
                                              body);
 }
 
-std::shared_ptr<WhileStatement> parse_while_stmt(TokenStream& ts) {
+std::shared_ptr<WhileStatement> parse_while_stmt(Context& ctx,
+                                                 TokenStream& ts) {
     check(ts, TokenKind::While, "while");
     While switch_kw(ts.token()->span());
     ts.advance();
@@ -981,24 +1008,25 @@ std::shared_ptr<WhileStatement> parse_while_stmt(TokenStream& ts) {
     LParen lparen(ts.token()->span());
     ts.advance();
 
-    auto cond = parse_expr(ts);
+    auto cond = parse_expr(ctx, ts);
 
     check(ts, TokenKind::RParen, ")");
     RParen rparen(ts.token()->span());
     ts.advance();
 
-    auto body = parse_stmt(ts);
+    auto body = parse_stmt(ctx, ts);
 
     return std::make_shared<WhileStatement>(switch_kw, lparen, cond, rparen,
                                             body);
 }
 
-std::shared_ptr<DoWhileStatement> parse_do_while_stmt(TokenStream& ts) {
+std::shared_ptr<DoWhileStatement> parse_do_while_stmt(Context& ctx,
+                                                      TokenStream& ts) {
     check(ts, TokenKind::Do, "do");
     Do do_kw(ts.token()->span());
     ts.advance();
 
-    auto body = parse_stmt(ts);
+    auto body = parse_stmt(ctx, ts);
 
     check(ts, TokenKind::While, "while");
     While while_kw(ts.token()->span());
@@ -1008,7 +1036,7 @@ std::shared_ptr<DoWhileStatement> parse_do_while_stmt(TokenStream& ts) {
     LParen lparen(ts.token()->span());
     ts.advance();
 
-    auto cond = parse_expr(ts);
+    auto cond = parse_expr(ctx, ts);
 
     check(ts, TokenKind::RParen, ")");
     RParen rparen(ts.token()->span());
@@ -1022,7 +1050,7 @@ std::shared_ptr<DoWhileStatement> parse_do_while_stmt(TokenStream& ts) {
                                               cond, rparen, semicolon);
 }
 
-std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts) {
+std::shared_ptr<ForStatement> parse_for_stmt(Context& ctx, TokenStream& ts) {
     check(ts, TokenKind::For, "for");
     For for_kw(ts.token()->span());
     ts.advance();
@@ -1036,7 +1064,7 @@ std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts) {
     if (ts.token()->kind() != TokenKind::Semicolon) {
         auto state = ts.get_state();
         try {
-            auto expr = parse_expr(ts);
+            auto expr = parse_expr(ctx, ts);
 
             check(ts, TokenKind::Semicolon, ";");
             Semicolon semicolon(ts.token()->span());
@@ -1046,7 +1074,7 @@ std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts) {
                 std::make_shared<ForStatementInitExpr>(expr, semicolon));
         } catch (ParseError e) {
             ts.set_state(state);
-            auto decl = parse_var_decl(ts);
+            auto decl = parse_var_decl(ctx, ts);
             init.emplace(std::make_shared<ForStatementInitDecl>(decl));
         }
     } else {
@@ -1059,7 +1087,7 @@ std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts) {
     std::optional<ForStatementCond> cond = std::nullopt;
     check(ts);
     if (ts.token()->kind() != TokenKind::Semicolon) {
-        auto expr = parse_expr(ts);
+        auto expr = parse_expr(ctx, ts);
 
         check(ts, TokenKind::Semicolon, ";");
         Semicolon semicolon(ts.token()->span());
@@ -1077,13 +1105,13 @@ std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts) {
     std::optional<std::shared_ptr<Expression>> update = std::nullopt;
     check(ts);
     if (ts.token()->kind() != TokenKind::RParen) {
-        update = parse_expr(ts);
+        update = parse_expr(ctx, ts);
     }
     check(ts, TokenKind::RParen, ")");
     RParen rparen(ts.token()->span());
     ts.advance();
 
-    auto body = parse_stmt(ts);
+    auto body = parse_stmt(ctx, ts);
 
     if (update.has_value()) {
         return std::make_shared<ForStatement>(for_kw, lparen, init.value(),
@@ -1095,7 +1123,7 @@ std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<GotoStatement> parse_goto_stmt(TokenStream& ts) {
+std::shared_ptr<GotoStatement> parse_goto_stmt(Context& ctx, TokenStream& ts) {
     check(ts, TokenKind::Goto, "goto");
     Goto goto_kw(ts.token()->span());
     ts.advance();
@@ -1112,7 +1140,8 @@ std::shared_ptr<GotoStatement> parse_goto_stmt(TokenStream& ts) {
     return std::make_shared<GotoStatement>(goto_kw, label, semicolon);
 }
 
-std::shared_ptr<ContinueStatement> parse_continue_stmt(TokenStream& ts) {
+std::shared_ptr<ContinueStatement> parse_continue_stmt(Context& ctx,
+                                                       TokenStream& ts) {
     check(ts, TokenKind::Continue, "continue");
     Continue continue_kw(ts.token()->span());
     ts.advance();
@@ -1124,7 +1153,8 @@ std::shared_ptr<ContinueStatement> parse_continue_stmt(TokenStream& ts) {
     return std::make_shared<ContinueStatement>(continue_kw, semicolon);
 }
 
-std::shared_ptr<BreakStatement> parse_break_stmt(TokenStream& ts) {
+std::shared_ptr<BreakStatement> parse_break_stmt(Context& ctx,
+                                                 TokenStream& ts) {
     check(ts, TokenKind::Break, "break");
     Break break_kw(ts.token()->span());
     ts.advance();
@@ -1136,12 +1166,13 @@ std::shared_ptr<BreakStatement> parse_break_stmt(TokenStream& ts) {
     return std::make_shared<BreakStatement>(break_kw, semicolon);
 }
 
-std::shared_ptr<ReturnStatement> parse_return_stmt(TokenStream& ts) {
+std::shared_ptr<ReturnStatement> parse_return_stmt(Context& ctx,
+                                                   TokenStream& ts) {
     check(ts, TokenKind::Return, "return");
     Return return_kw(ts.token()->span());
     ts.advance();
 
-    auto ret = parse_expr(ts);
+    auto ret = parse_expr(ctx, ts);
 
     check(ts, TokenKind::Semicolon, ";");
     Semicolon semicolon(ts.token()->span());
@@ -1150,14 +1181,15 @@ std::shared_ptr<ReturnStatement> parse_return_stmt(TokenStream& ts) {
     return std::make_shared<ReturnStatement>(return_kw, ret, semicolon);
 }
 
-std::shared_ptr<ExpressionStatement> parse_expr_stmt(TokenStream& ts) {
+std::shared_ptr<ExpressionStatement> parse_expr_stmt(Context& ctx,
+                                                     TokenStream& ts) {
     check(ts);
     if (ts.token()->kind() == TokenKind::Semicolon) {
         Semicolon semicolon(ts.token()->span());
         ts.advance();
         return std::make_shared<ExpressionStatement>(semicolon);
     } else {
-        auto expr = parse_expr(ts);
+        auto expr = parse_expr(ctx, ts);
 
         check(ts, TokenKind::Semicolon, ";");
         Semicolon semicolon(ts.token()->span());
@@ -1169,14 +1201,14 @@ std::shared_ptr<ExpressionStatement> parse_expr_stmt(TokenStream& ts) {
 
 // ==================== expression parser ====================
 
-std::shared_ptr<Expression> parse_expr(TokenStream& ts) {
-    auto lhs = parse_assign_expr(ts);
+std::shared_ptr<Expression> parse_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_assign_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::Comma) {
             InfixExpressionOp op(InfixExpressionOpKind::Comma,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_assign_expr(ts);
+            auto rhs = parse_assign_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1185,13 +1217,13 @@ std::shared_ptr<Expression> parse_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_assign_expr(TokenStream& ts) {
+std::shared_ptr<Expression> parse_assign_expr(Context& ctx, TokenStream& ts) {
     auto state = ts.get_state();
 
     std::shared_ptr<Expression> lhs;
     InfixExpressionOpKind kind;
     try {
-        lhs = parse_unary_expr(ts);
+        lhs = parse_unary_expr(ctx, ts);
         check(ts);
         switch (ts.token()->kind()) {
             case TokenKind::Assign:
@@ -1233,18 +1265,18 @@ std::shared_ptr<Expression> parse_assign_expr(TokenStream& ts) {
         }
     } catch (ParseError e) {
         ts.set_state(state);
-        return parse_cond_expr(ts);
+        return parse_cond_expr(ctx, ts);
     }
 
     InfixExpressionOp op(kind, ts.token()->span());
     ts.advance();
 
-    auto rhs = parse_assign_expr(ts);
+    auto rhs = parse_assign_expr(ctx, ts);
     return std::make_shared<InfixExpression>(lhs, op, rhs);
 }
 
-std::shared_ptr<Expression> parse_cond_expr(TokenStream& ts) {
-    auto cond = parse_logical_or_expr(ts);
+std::shared_ptr<Expression> parse_cond_expr(Context& ctx, TokenStream& ts) {
+    auto cond = parse_logical_or_expr(ctx, ts);
 
     if (ts.eos() || ts.token()->kind() != TokenKind::Question) {
         return cond;
@@ -1252,24 +1284,25 @@ std::shared_ptr<Expression> parse_cond_expr(TokenStream& ts) {
     auto exclamation = Exclamation(ts.token()->span());
     ts.advance();
 
-    auto then = parse_expr(ts);
+    auto then = parse_expr(ctx, ts);
 
     check(ts, TokenKind::Colon, ":");
     auto colon = Colon(ts.token()->span());
     ts.advance();
 
-    auto otherwise = parse_cond_expr(ts);
+    auto otherwise = parse_cond_expr(ctx, ts);
     return std::make_shared<ConditionalExpression>(cond, exclamation, then,
                                                    colon, otherwise);
 }
 
-std::shared_ptr<Expression> parse_logical_or_expr(TokenStream& ts) {
-    auto lhs = parse_logical_and_expr(ts);
+std::shared_ptr<Expression> parse_logical_or_expr(Context& ctx,
+                                                  TokenStream& ts) {
+    auto lhs = parse_logical_and_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::Or) {
             InfixExpressionOp op(InfixExpressionOpKind::Or, ts.token()->span());
             ts.advance();
-            auto rhs = parse_logical_and_expr(ts);
+            auto rhs = parse_logical_and_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1278,14 +1311,15 @@ std::shared_ptr<Expression> parse_logical_or_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_logical_and_expr(TokenStream& ts) {
-    auto lhs = parse_or_expr(ts);
+std::shared_ptr<Expression> parse_logical_and_expr(Context& ctx,
+                                                   TokenStream& ts) {
+    auto lhs = parse_or_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::And) {
             InfixExpressionOp op(InfixExpressionOpKind::And,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_or_expr(ts);
+            auto rhs = parse_or_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1294,14 +1328,14 @@ std::shared_ptr<Expression> parse_logical_and_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_or_expr(TokenStream& ts) {
-    auto lhs = parse_xor_expr(ts);
+std::shared_ptr<Expression> parse_or_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_xor_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::Vertical) {
             InfixExpressionOp op(InfixExpressionOpKind::BitOr,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_xor_expr(ts);
+            auto rhs = parse_xor_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1310,14 +1344,14 @@ std::shared_ptr<Expression> parse_or_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_xor_expr(TokenStream& ts) {
-    auto lhs = parse_and_expr(ts);
+std::shared_ptr<Expression> parse_xor_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_and_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::Hat) {
             InfixExpressionOp op(InfixExpressionOpKind::BitXor,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_and_expr(ts);
+            auto rhs = parse_and_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1326,14 +1360,14 @@ std::shared_ptr<Expression> parse_xor_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_and_expr(TokenStream& ts) {
-    auto lhs = parse_equality_expr(ts);
+std::shared_ptr<Expression> parse_and_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_equality_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::Ampersand) {
             InfixExpressionOp op(InfixExpressionOpKind::BitAnd,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_equality_expr(ts);
+            auto rhs = parse_equality_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1342,18 +1376,18 @@ std::shared_ptr<Expression> parse_and_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_equality_expr(TokenStream& ts) {
-    auto lhs = parse_relative_expr(ts);
+std::shared_ptr<Expression> parse_equality_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_relative_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::EQ) {
             InfixExpressionOp op(InfixExpressionOpKind::EQ, ts.token()->span());
             ts.advance();
-            auto rhs = parse_relative_expr(ts);
+            auto rhs = parse_relative_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else if (ts.token()->kind() == TokenKind::NE) {
             InfixExpressionOp op(InfixExpressionOpKind::NE, ts.token()->span());
             ts.advance();
-            auto rhs = parse_relative_expr(ts);
+            auto rhs = parse_relative_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1362,28 +1396,28 @@ std::shared_ptr<Expression> parse_equality_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_relative_expr(TokenStream& ts) {
-    auto lhs = parse_shift_expr(ts);
+std::shared_ptr<Expression> parse_relative_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_shift_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::LT) {
             InfixExpressionOp op(InfixExpressionOpKind::LT, ts.token()->span());
             ts.advance();
-            auto rhs = parse_shift_expr(ts);
+            auto rhs = parse_shift_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else if (ts.token()->kind() == TokenKind::GT) {
             InfixExpressionOp op(InfixExpressionOpKind::GT, ts.token()->span());
             ts.advance();
-            auto rhs = parse_shift_expr(ts);
+            auto rhs = parse_shift_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else if (ts.token()->kind() == TokenKind::LE) {
             InfixExpressionOp op(InfixExpressionOpKind::LE, ts.token()->span());
             ts.advance();
-            auto rhs = parse_shift_expr(ts);
+            auto rhs = parse_shift_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else if (ts.token()->kind() == TokenKind::GE) {
             InfixExpressionOp op(InfixExpressionOpKind::GE, ts.token()->span());
             ts.advance();
-            auto rhs = parse_shift_expr(ts);
+            auto rhs = parse_shift_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1392,20 +1426,20 @@ std::shared_ptr<Expression> parse_relative_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_shift_expr(TokenStream& ts) {
-    auto lhs = parse_additive_expr(ts);
+std::shared_ptr<Expression> parse_shift_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_additive_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::LShift) {
             InfixExpressionOp op(InfixExpressionOpKind::LShift,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_additive_expr(ts);
+            auto rhs = parse_additive_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else if (ts.token()->kind() == TokenKind::RShift) {
             InfixExpressionOp op(InfixExpressionOpKind::RShift,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_additive_expr(ts);
+            auto rhs = parse_additive_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1414,20 +1448,20 @@ std::shared_ptr<Expression> parse_shift_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_additive_expr(TokenStream& ts) {
-    auto lhs = parse_multiplicative_expr(ts);
+std::shared_ptr<Expression> parse_additive_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_multiplicative_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::Plus) {
             InfixExpressionOp op(InfixExpressionOpKind::Add,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_multiplicative_expr(ts);
+            auto rhs = parse_multiplicative_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else if (ts.token()->kind() == TokenKind::Minus) {
             InfixExpressionOp op(InfixExpressionOpKind::Sub,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_multiplicative_expr(ts);
+            auto rhs = parse_multiplicative_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1436,26 +1470,27 @@ std::shared_ptr<Expression> parse_additive_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_multiplicative_expr(TokenStream& ts) {
-    auto lhs = parse_cast_expr(ts);
+std::shared_ptr<Expression> parse_multiplicative_expr(Context& ctx,
+                                                      TokenStream& ts) {
+    auto lhs = parse_cast_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::Star) {
             InfixExpressionOp op(InfixExpressionOpKind::Mul,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_cast_expr(ts);
+            auto rhs = parse_cast_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else if (ts.token()->kind() == TokenKind::Slash) {
             InfixExpressionOp op(InfixExpressionOpKind::Div,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_cast_expr(ts);
+            auto rhs = parse_cast_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else if (ts.token()->kind() == TokenKind::Percent) {
             InfixExpressionOp op(InfixExpressionOpKind::Mod,
                                  ts.token()->span());
             ts.advance();
-            auto rhs = parse_cast_expr(ts);
+            auto rhs = parse_cast_expr(ctx, ts);
             lhs = std::make_shared<InfixExpression>(lhs, op, rhs);
         } else {
             break;
@@ -1464,21 +1499,21 @@ std::shared_ptr<Expression> parse_multiplicative_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
+std::shared_ptr<Expression> parse_cast_expr(Context& ctx, TokenStream& ts) {
     auto state = ts.get_state();
     std::optional<std::shared_ptr<CastExpression>> cast;
     std::optional<StorageClassSpecifier> storage;
     try {
         check(ts);
         if (ts.token()->kind() != TokenKind::LParen) {
-            return parse_unary_expr(ts);
+            return parse_unary_expr(ctx, ts);
         }
         LParen lparen(ts.token()->span());
         ts.advance();
 
-        auto [storage_, concrete] = parse_decl_head(ts);
+        auto [storage_, concrete] = parse_decl_head(ctx, ts);
         std::shared_ptr<Type> base = concrete;
-        auto body = parse_decl_body(ts, base);
+        auto body = parse_decl_body(ctx, ts, base);
         if (body.is_function()) {
             throw ParseError("expected variable, but got function",
                              body.span());
@@ -1489,13 +1524,13 @@ std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
         RParen rparen(ts.token()->span());
         ts.advance();
 
-        auto expr = parse_unary_expr(ts);
+        auto expr = parse_unary_expr(ctx, ts);
 
         cast = std::make_shared<CastExpression>(lparen, type, rparen, expr);
         if (storage_.has_value()) storage.emplace(storage_.value());
     } catch (ParseError e) {
         ts.set_state(state);
-        return parse_unary_expr(ts);
+        return parse_unary_expr(ctx, ts);
     }
 
     if (storage.has_value()) {
@@ -1506,54 +1541,54 @@ std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts) {
     }
 }
 
-std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
+std::shared_ptr<Expression> parse_unary_expr(Context& ctx, TokenStream& ts) {
     check(ts);
     if (ts.token()->kind() == TokenKind::PlusPlus) {
         UnaryExpressionOp op(UnaryExpressionOpKind::Inc, ts.token()->span());
         ts.advance();
-        auto expr = parse_unary_expr(ts);
+        auto expr = parse_unary_expr(ctx, ts);
         return std::make_shared<UnaryExpression>(op, expr);
     } else if (ts.token()->kind() == TokenKind::MinusMinus) {
         UnaryExpressionOp op(UnaryExpressionOpKind::Dec, ts.token()->span());
         ts.advance();
-        auto expr = parse_unary_expr(ts);
+        auto expr = parse_unary_expr(ctx, ts);
         return std::make_shared<UnaryExpression>(op, expr);
     } else if (ts.token()->kind() == TokenKind::Ampersand) {
         UnaryExpressionOp op(UnaryExpressionOpKind::Ref, ts.token()->span());
         ts.advance();
-        auto expr = parse_cast_expr(ts);
+        auto expr = parse_cast_expr(ctx, ts);
         return std::make_shared<UnaryExpression>(op, expr);
     } else if (ts.token()->kind() == TokenKind::Star) {
         UnaryExpressionOp op(UnaryExpressionOpKind::Deref, ts.token()->span());
         ts.advance();
-        auto expr = parse_cast_expr(ts);
+        auto expr = parse_cast_expr(ctx, ts);
         return std::make_shared<UnaryExpression>(op, expr);
     } else if (ts.token()->kind() == TokenKind::Plus) {
         UnaryExpressionOp op(UnaryExpressionOpKind::Plus, ts.token()->span());
         ts.advance();
-        auto expr = parse_cast_expr(ts);
+        auto expr = parse_cast_expr(ctx, ts);
         return std::make_shared<UnaryExpression>(op, expr);
     } else if (ts.token()->kind() == TokenKind::Minus) {
         UnaryExpressionOp op(UnaryExpressionOpKind::Minus, ts.token()->span());
         ts.advance();
-        auto expr = parse_cast_expr(ts);
+        auto expr = parse_cast_expr(ctx, ts);
         return std::make_shared<UnaryExpression>(op, expr);
     } else if (ts.token()->kind() == TokenKind::Tilde) {
         UnaryExpressionOp op(UnaryExpressionOpKind::BitInv, ts.token()->span());
         ts.advance();
-        auto expr = parse_cast_expr(ts);
+        auto expr = parse_cast_expr(ctx, ts);
         return std::make_shared<UnaryExpression>(op, expr);
     } else if (ts.token()->kind() == TokenKind::Not) {
         UnaryExpressionOp op(UnaryExpressionOpKind::Neg, ts.token()->span());
         ts.advance();
-        auto expr = parse_cast_expr(ts);
+        auto expr = parse_cast_expr(ctx, ts);
         return std::make_shared<UnaryExpression>(op, expr);
     } else if (ts.token()->kind() == TokenKind::Sizeof) {
         Sizeof sizeof_kw(ts.token()->span());
         ts.advance();
         auto state = ts.get_state();
         try {
-            auto expr = parse_unary_expr(ts);
+            auto expr = parse_unary_expr(ctx, ts);
             return std::make_shared<SizeofExprExpression>(sizeof_kw, expr);
         } catch (ParseError e) {
             ts.set_state(state);
@@ -1562,9 +1597,9 @@ std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
             LParen lparen(ts.token()->span());
             ts.advance();
 
-            auto [storage, concrete] = parse_decl_head(ts);
+            auto [storage, concrete] = parse_decl_head(ctx, ts);
             std::shared_ptr<Type> base = concrete;
-            auto body = parse_decl_body(ts, base);
+            auto body = parse_decl_body(ctx, ts, base);
             if (storage.has_value()) {
                 throw ParseError(
                     "class specifier in function param is not allowed",
@@ -1584,18 +1619,18 @@ std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts) {
                                                           type, rparen);
         }
     } else {
-        return parse_postfix_expr(ts);
+        return parse_postfix_expr(ctx, ts);
     }
 }
 
-std::shared_ptr<Expression> parse_postfix_expr(TokenStream& ts) {
-    auto lhs = parse_primary_expr(ts);
+std::shared_ptr<Expression> parse_postfix_expr(Context& ctx, TokenStream& ts) {
+    auto lhs = parse_primary_expr(ctx, ts);
     while (!ts.eos()) {
         if (ts.token()->kind() == TokenKind::LSquare) {
             LSquare lsquare(ts.token()->span());
             ts.advance();
 
-            auto index = parse_expr(ts);
+            auto index = parse_expr(ctx, ts);
 
             check(ts, TokenKind::RSquare, "]");
             RSquare rsquare(ts.token()->span());
@@ -1618,7 +1653,7 @@ std::shared_ptr<Expression> parse_postfix_expr(TokenStream& ts) {
                     break;
                 }
 
-                params.push_back(parse_assign_expr(ts));
+                params.push_back(parse_assign_expr(ctx, ts));
 
                 check(ts);
                 if (ts.token()->kind() == TokenKind::RParen) {
@@ -1676,7 +1711,7 @@ std::shared_ptr<Expression> parse_postfix_expr(TokenStream& ts) {
     return lhs;
 }
 
-std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts) {
+std::shared_ptr<Expression> parse_primary_expr(Context& ctx, TokenStream& ts) {
     check(ts);
     if (ts.token()->kind() == TokenKind::Identifier) {
         auto tk = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
@@ -1700,7 +1735,7 @@ std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts) {
         LParen lparen(ts.token()->span());
         ts.advance();
 
-        auto expr = parse_expr(ts);
+        auto expr = parse_expr(ctx, ts);
 
         check(ts, TokenKind::RParen, ")");
         RParen rparen(ts.token()->span());
@@ -1724,7 +1759,7 @@ std::optional<Program> parse(Context& ctx, std::istream& is,
     std::vector<std::shared_ptr<Declaration>> decls;
     while (!ts->eos()) {
         try {
-            decls.emplace_back(parse_decl(ts.value()));
+            decls.emplace_back(parse_decl(ctx, ts.value()));
         } catch (ParseError e) {
             report(ctx, e);
             return std::nullopt;

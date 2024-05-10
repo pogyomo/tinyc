@@ -28,9 +28,10 @@ namespace tinyc {
 
 // ==================== type parser ====================
 
-std::shared_ptr<EnumTypeSpecifier> parse_enum(TokenStream& ts);
-std::shared_ptr<UnionTypeSpecifier> parse_union(TokenStream& ts);
-std::shared_ptr<StructTypeSpecifier> parse_struct(TokenStream& ts);
+std::shared_ptr<EnumTypeSpecifier> parse_enum(Context& ctx, TokenStream& ts);
+std::shared_ptr<UnionTypeSpecifier> parse_union(Context& ctx, TokenStream& ts);
+std::shared_ptr<StructTypeSpecifier> parse_struct(Context& ctx,
+                                                  TokenStream& ts);
 
 // ==================== declaration parser ====================
 
@@ -119,57 +120,70 @@ private:
     const std::variant<Variable, Function> vs_;
 };
 
-std::shared_ptr<Declaration> parse_decl(TokenStream& ts);
-std::shared_ptr<VariablesDeclaration> parse_var_decl(TokenStream& ts);
-std::shared_ptr<FunctionDeclaration> parse_fun_decl(TokenStream& ts);
+std::shared_ptr<Declaration> parse_decl(Context& ctx, TokenStream& ts);
+std::shared_ptr<VariablesDeclaration> parse_var_decl(Context& ctx,
+                                                     TokenStream& ts);
+std::shared_ptr<FunctionDeclaration> parse_fun_decl(Context& ctx,
+                                                    TokenStream& ts);
 
 std::pair<std::optional<StorageClassSpecifier>, std::shared_ptr<ConcreteType>>
-parse_decl_head(TokenStream& ts);
-VariableOrFunctionDeclBody parse_decl_body(TokenStream& ts,
+parse_decl_head(Context& ctx, TokenStream& ts);
+VariableOrFunctionDeclBody parse_decl_body(Context& ctx, TokenStream& ts,
                                            const std::shared_ptr<Type>& base);
-std::shared_ptr<Type> parse_arrays(TokenStream& ts,
+std::shared_ptr<Type> parse_arrays(Context& ctx, TokenStream& ts,
                                    const std::shared_ptr<Type>& base);
 std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
-    TokenStream& ts);
-std::shared_ptr<VariableDeclarationInit> parse_var_decl_init(TokenStream& ts);
+    Context& ctx, TokenStream& ts);
+std::shared_ptr<VariableDeclarationInit> parse_var_decl_init(Context& ctx,
+                                                             TokenStream& ts);
 
 // ==================== statement parser ====================
 
-std::shared_ptr<Statement> parse_stmt(TokenStream& ts);
-std::shared_ptr<LabeledStatement> parse_labeled_stmt(TokenStream& ts);
-std::shared_ptr<CaseStatement> parse_case_stmt(TokenStream& ts);
-std::shared_ptr<DefaultStatement> parse_default_stmt(TokenStream& ts);
-std::shared_ptr<ExpressionStatement> parse_expr_stmt(TokenStream& ts);
-std::shared_ptr<BlockStatement> parse_block_stmt(TokenStream& ts);
-std::shared_ptr<IfStatement> parse_if_stmt(TokenStream& ts);
-std::shared_ptr<SwitchStatement> parse_switch_stmt(TokenStream& ts);
-std::shared_ptr<WhileStatement> parse_while_stmt(TokenStream& ts);
-std::shared_ptr<DoWhileStatement> parse_do_while_stmt(TokenStream& ts);
-std::shared_ptr<ForStatement> parse_for_stmt(TokenStream& ts);
-std::shared_ptr<GotoStatement> parse_goto_stmt(TokenStream& ts);
-std::shared_ptr<ContinueStatement> parse_continue_stmt(TokenStream& ts);
-std::shared_ptr<BreakStatement> parse_break_stmt(TokenStream& ts);
-std::shared_ptr<ReturnStatement> parse_return_stmt(TokenStream& ts);
+std::shared_ptr<Statement> parse_stmt(Context& ctx, TokenStream& ts);
+std::shared_ptr<LabeledStatement> parse_labeled_stmt(Context& ctx,
+                                                     TokenStream& ts);
+std::shared_ptr<CaseStatement> parse_case_stmt(Context& ctx, TokenStream& ts);
+std::shared_ptr<DefaultStatement> parse_default_stmt(Context& ctx,
+                                                     TokenStream& ts);
+std::shared_ptr<ExpressionStatement> parse_expr_stmt(Context& ctx,
+                                                     TokenStream& ts);
+std::shared_ptr<BlockStatement> parse_block_stmt(Context& ctx, TokenStream& ts);
+std::shared_ptr<IfStatement> parse_if_stmt(Context& ctx, TokenStream& ts);
+std::shared_ptr<SwitchStatement> parse_switch_stmt(Context& ctx,
+                                                   TokenStream& ts);
+std::shared_ptr<WhileStatement> parse_while_stmt(Context& ctx, TokenStream& ts);
+std::shared_ptr<DoWhileStatement> parse_do_while_stmt(Context& ctx,
+                                                      TokenStream& ts);
+std::shared_ptr<ForStatement> parse_for_stmt(Context& ctx, TokenStream& ts);
+std::shared_ptr<GotoStatement> parse_goto_stmt(Context& ctx, TokenStream& ts);
+std::shared_ptr<ContinueStatement> parse_continue_stmt(Context& ctx,
+                                                       TokenStream& ts);
+std::shared_ptr<BreakStatement> parse_break_stmt(Context& ctx, TokenStream& ts);
+std::shared_ptr<ReturnStatement> parse_return_stmt(Context& ctx,
+                                                   TokenStream& ts);
 
 // ==================== expression parser ====================
 
-std::shared_ptr<Expression> parse_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_assign_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_cond_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_logical_or_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_logical_and_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_or_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_xor_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_and_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_equality_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_relative_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_shift_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_additive_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_multiplicative_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_cast_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_unary_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_postfix_expr(TokenStream& ts);
-std::shared_ptr<Expression> parse_primary_expr(TokenStream& ts);
+std::shared_ptr<Expression> parse_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_assign_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_cond_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_logical_or_expr(Context& ctx,
+                                                  TokenStream& ts);
+std::shared_ptr<Expression> parse_logical_and_expr(Context& ctx,
+                                                   TokenStream& ts);
+std::shared_ptr<Expression> parse_or_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_xor_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_and_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_equality_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_relative_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_shift_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_additive_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_multiplicative_expr(Context& ctx,
+                                                      TokenStream& ts);
+std::shared_ptr<Expression> parse_cast_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_unary_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_postfix_expr(Context& ctx, TokenStream& ts);
+std::shared_ptr<Expression> parse_primary_expr(Context& ctx, TokenStream& ts);
 
 // ==================== program parser ====================
 
