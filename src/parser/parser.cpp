@@ -13,6 +13,7 @@
 
 #include "../lexer/lexer.h"
 #include "../report/report.h"
+#include "../report/reportable.h"
 #include "decl.h"
 #include "error.h"
 #include "node.h"
@@ -481,6 +482,9 @@ std::shared_ptr<BuiltinTypeSpecifier> verify_builtin_types(
                 auto e = SimpleWarning("in type", "multiple signed", t->span());
                 report(ctx, e);
                 continue;
+            } else if (kinds.find(TokenKind::Unsigned) != kinds.end()) {
+                throw ParseError("combine with signed is not allowed",
+                                 t->span());
             }
         } else if (t->kind() == TokenKind::Unsigned) {
             if (kinds.find(t->kind()) != kinds.end()) {
@@ -488,6 +492,9 @@ std::shared_ptr<BuiltinTypeSpecifier> verify_builtin_types(
                     SimpleWarning("in type", "multiple unsigned", t->span());
                 report(ctx, e);
                 continue;
+            } else if (kinds.find(TokenKind::Signed) != kinds.end()) {
+                throw ParseError("combine with unsigned is not allowed",
+                                 t->span());
             }
         }
         kinds.emplace(t->kind());
