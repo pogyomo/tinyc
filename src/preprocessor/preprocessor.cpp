@@ -10,7 +10,6 @@
 
 #include "../lexer/lexer.h"
 #include "../report/report.h"
-#include "error.h"
 #include "macro.h"
 
 namespace tinyc {
@@ -73,8 +72,8 @@ std::pair<std::string, std::shared_ptr<Macro>> parse_macro(TokenStream& ts,
     if (ts.eos() || ts.token()->kind() != TokenKind::Identifier ||
         ts.token()->lrow() != lrow) {
         ts.retrest();
-        throw PreProcessError("expected macro name after define",
-                              ts.token()->span());
+        throw SimpleError("expected macro name after define", std::nullopt,
+                          ts.token()->span());
     }
     auto id = std::static_pointer_cast<ValueToken<std::string>>(ts.token());
     auto name = id->value();
@@ -103,8 +102,8 @@ std::vector<std::vector<std::shared_ptr<Token>>> parse_macro_args(
     while (true) {
         if (ts.eos() || ts.token()->lrow() != lrow) {
             ts.retrest();
-            throw PreProcessError("unclosing function macro",
-                                  concat_spans({start, ts.token()->span()}));
+            throw SimpleError("unclosing function macro", std::nullopt,
+                              concat_spans({start, ts.token()->span()}));
         } else if (ts.token()->kind() == TokenKind::LParen) {
             unclosing_paren++;
             args.back().push_back(ts.token());
@@ -162,7 +161,7 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                     expanded->advance();
                 }
                 continue;
-            } catch (PreProcessError e) {
+            } catch (SimpleError e) {
                 report(ctx, e);
                 return std::nullopt;
             }
@@ -177,8 +176,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
         if (ts.eos() || ts.token()->kind() != TokenKind::Identifier ||
             ts.token()->lrow() != lrow) {
             ts.retrest();
-            report(ctx, PreProcessError("expected identifier after #",
-                                        ts.token()->span()));
+            report(ctx, SimpleError("expected identifier after #", std::nullopt,
+                                    ts.token()->span()));
             return std::nullopt;
         }
         auto directive =
@@ -189,7 +188,7 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             try {
                 auto [name, macro] = parse_macro(ts, start, lrow);
                 ctx.macro_table().add_macro(name, macro);
-            } catch (PreProcessError e) {
+            } catch (SimpleError e) {
                 report(ctx, e);
                 return std::nullopt;
             }
@@ -197,8 +196,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             if (ts.eos() || ts.token()->kind() != TokenKind::Identifier ||
                 ts.token()->lrow() != lrow) {
                 ts.retrest();
-                report(ctx, PreProcessError("expected macro name after undef",
-                                            ts.token()->span()));
+                report(ctx, SimpleError("expected macro name after undef",
+                                        std::nullopt, ts.token()->span()));
                 error_happend = true;
                 continue;
             }
@@ -212,8 +211,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             if (ts.eos() || ts.token()->kind() != TokenKind::Identifier ||
                 ts.token()->lrow() != lrow) {
                 ts.retrest();
-                report(ctx, PreProcessError("expected macro name after ifndef",
-                                            ts.token()->span()));
+                report(ctx, SimpleError("expected macro name after ifndef",
+                                        std::nullopt, ts.token()->span()));
                 error_happend = true;
                 continue;
             }
@@ -226,8 +225,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             if (ctx.macro_table().has_macro(macro_name)) {
                 while (true) {
                     if (ts.eos()) {
-                        report(ctx, PreProcessError("unclosing ifndef",
-                                                    ifndef_span));
+                        report(ctx, SimpleError("unclosing ifndef",
+                                                std::nullopt, ifndef_span));
                         return std::nullopt;
                     }
                     if (ts.token()->kind() != TokenKind::Sharp) {
@@ -238,8 +237,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                     ts.advance();
 
                     if (ts.eos()) {
-                        report(ctx, PreProcessError("unclosing ifndef",
-                                                    ifndef_span));
+                        report(ctx, SimpleError("unclosing ifndef",
+                                                std::nullopt, ifndef_span));
                         return std::nullopt;
                     }
                     if (ts.token()->kind() != TokenKind::Identifier ||
@@ -264,8 +263,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             if (ts.eos() || ts.token()->kind() != TokenKind::Identifier ||
                 ts.token()->lrow() != lrow) {
                 ts.retrest();
-                report(ctx, PreProcessError("expected macro name after ifdef",
-                                            ts.token()->span()));
+                report(ctx, SimpleError("expected macro name after ifdef",
+                                        std::nullopt, ts.token()->span()));
                 error_happend = true;
                 continue;
             }
@@ -278,8 +277,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             if (!ctx.macro_table().has_macro(macro_name)) {
                 while (true) {
                     if (ts.eos()) {
-                        report(ctx,
-                               PreProcessError("unclosing ifdef", ifdef_span));
+                        report(ctx, SimpleError("unclosing ifdef", std::nullopt,
+                                                ifdef_span));
                         return std::nullopt;
                     }
                     if (ts.token()->kind() != TokenKind::Sharp) {
@@ -290,8 +289,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                     ts.advance();
 
                     if (ts.eos()) {
-                        report(ctx,
-                               PreProcessError("unclosing ifdef", ifdef_span));
+                        report(ctx, SimpleError("unclosing ifdef", std::nullopt,
+                                                ifdef_span));
                         return std::nullopt;
                     }
                     if (ts.token()->kind() != TokenKind::Identifier ||
@@ -315,7 +314,7 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
         } else if (directive->value() == "endif") {
             if (waiting_if == 0) {
                 Span span = concat_spans({start, directive->span()});
-                report(ctx, PreProcessError("extra endif", span));
+                report(ctx, SimpleError("extra endif", std::nullopt, span));
                 return std::nullopt;
             }
             waiting_if--;
@@ -323,9 +322,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
             if (ts.eos() || ts.token()->kind() != TokenKind::String ||
                 ts.token()->lrow() != lrow) {
                 ts.retrest();
-                report(ctx,
-                       PreProcessError("expected path string after include",
-                                       ts.token()->span()));
+                report(ctx, SimpleError("expected path string after include",
+                                        std::nullopt, ts.token()->span()));
                 error_happend = true;
                 continue;
             }
@@ -338,8 +336,8 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
 
             std::ifstream fs(path);
             if (!fs) {
-                report(ctx,
-                       PreProcessError("failed to open this file", path_span));
+                report(ctx, SimpleError("failed to open this file",
+                                        std::nullopt, path_span));
                 error_happend = true;
                 continue;
             }
@@ -363,12 +361,12 @@ std::optional<TokenStream> preprocess(Context& ctx, TokenStream&& ts) {
                     what << " " << body[i]->debug();
             }
 
-            report(ctx, PreProcessError(what.str(), span));
+            report(ctx, SimpleError(what.str(), std::nullopt, span));
             return std::nullopt;
         } else {
             std::stringstream ss;
             ss << "unknown directive name: " << directive->value();
-            report(ctx, PreProcessError(ss.str(), directive->span()));
+            report(ctx, SimpleError(ss.str(), std::nullopt, directive->span()));
             error_happend = true;
             continue;
         }

@@ -15,7 +15,6 @@
 #include "../report/report.h"
 #include "../report/reportable.h"
 #include "decl.h"
-#include "error.h"
 #include "node.h"
 #include "stmt.h"
 #include "type/specifier/builtin.h"
@@ -30,7 +29,8 @@ namespace tinyc {
 void check(TokenStream& ts) {
     if (ts.eos()) {
         ts.retrest();
-        throw ParseError("expected token after this", ts.token()->span());
+        throw SimpleError("expected token after this", std::nullopt,
+                          ts.token()->span());
     }
 }
 
@@ -38,9 +38,11 @@ void check(TokenStream& ts, TokenKind kind, const std::string& msg) {
     check(ts);
     if (ts.token()->kind() == kind) return;
     if (ts.retrest())
-        throw ParseError("expected " + msg + " after this", ts.token()->span());
+        throw SimpleError("expected " + msg + " after this", std::nullopt,
+                          ts.token()->span());
     else
-        throw ParseError("expected this to be " + msg, ts.token()->span());
+        throw SimpleError("expected this to be " + msg, std::nullopt,
+                          ts.token()->span());
 }
 
 // ==================== type parser ====================
@@ -111,15 +113,15 @@ std::shared_ptr<EnumTypeSpecifier> parse_enum(Context& ctx, TokenStream& ts) {
                 }
                 continue;
             } else {
-                throw ParseError("expected , or } after enumerator",
-                                 ts.token()->span());
+                throw SimpleError("expected , or } after enumerator",
+                                  std::nullopt, ts.token()->span());
             }
         }
     } else if (name.has_value()) {
         return std::make_shared<NamedEnumTypeSpecifier>(enum_kw, name.value());
     } else {
-        throw ParseError("expected either block or identifier after `enum`",
-                         ts.token()->span());
+        throw SimpleError("expected either block or identifier after `enum`",
+                          std::nullopt, ts.token()->span());
     }
 }
 
@@ -159,9 +161,9 @@ std::shared_ptr<UnionTypeSpecifier> parse_union(Context& ctx, TokenStream& ts) {
             auto decl = parse_var_decl(ctx, ts);
             for (const auto& d : decl->decls()) {
                 if (d->class_specifier().has_value()) {
-                    throw ParseError(
+                    throw SimpleError(
                         "class specifier in union member is not allowed",
-                        d->span());
+                        std::nullopt, d->span());
                 }
             }
             decls.emplace_back(*decl);
@@ -170,8 +172,8 @@ std::shared_ptr<UnionTypeSpecifier> parse_union(Context& ctx, TokenStream& ts) {
         return std::make_shared<NamedUnionTypeSpecifier>(union_kw,
                                                          name.value());
     } else {
-        throw ParseError("expected either block or identifier after `union`",
-                         ts.token()->span());
+        throw SimpleError("expected either block or identifier after `union`",
+                          std::nullopt, ts.token()->span());
     }
 }
 
@@ -212,9 +214,9 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(Context& ctx,
             auto decl = parse_var_decl(ctx, ts);
             for (const auto& d : decl->decls()) {
                 if (d->class_specifier().has_value()) {
-                    throw ParseError(
+                    throw SimpleError(
                         "class specifier in struct member is not allowed",
-                        d->span());
+                        std::nullopt, d->span());
                 }
             }
             decls.emplace_back(*decl);
@@ -223,8 +225,8 @@ std::shared_ptr<StructTypeSpecifier> parse_struct(Context& ctx,
         return std::make_shared<NamedStructTypeSpecifier>(struct_kw,
                                                           name.value());
     } else {
-        throw ParseError("expected either block or identifier after `struct`",
-                         ts.token()->span());
+        throw SimpleError("expected either block or identifier after `struct`",
+                          std::nullopt, ts.token()->span());
     }
 }
 
@@ -241,8 +243,8 @@ std::shared_ptr<Declaration> parse_decl(Context& ctx, TokenStream& ts) {
         while (true) {
             auto body = parse_decl_body(ctx, ts, base);
             if (body.is_function()) {
-                throw ParseError("expected variable, but function found",
-                                 body.span());
+                throw SimpleError("expected variable, but function found",
+                                  std::nullopt, body.span());
             }
             auto type = body.type();
             auto name = body.variable();
@@ -275,8 +277,8 @@ std::shared_ptr<Declaration> parse_decl(Context& ctx, TokenStream& ts) {
                 return std::make_shared<VariablesDeclaration>(decls, semicolon);
             } else {
                 ts.retrest();
-                throw ParseError("expected , or ; after this",
-                                 ts.token()->span());
+                throw SimpleError("expected , or ; after this", std::nullopt,
+                                  ts.token()->span());
             }
         }
     } else {
@@ -302,7 +304,8 @@ std::shared_ptr<Declaration> parse_decl(Context& ctx, TokenStream& ts) {
             }
         } else {
             ts.retrest();
-            throw ParseError("expected ; or { after this", ts.token()->span());
+            throw SimpleError("expected ; or { after this", std::nullopt,
+                              ts.token()->span());
         }
     }
 }
@@ -313,7 +316,8 @@ std::shared_ptr<VariablesDeclaration> parse_var_decl(Context& ctx,
     if (decl->kind() == DeclarationKind::Variables) {
         return std::static_pointer_cast<VariablesDeclaration>(decl);
     } else {
-        throw ParseError("expected variables, but got function", decl->span());
+        throw SimpleError("expected variables, but got function", std::nullopt,
+                          decl->span());
     }
 }
 
@@ -323,7 +327,8 @@ std::shared_ptr<FunctionDeclaration> parse_fun_decl(Context& ctx,
     if (decl->kind() == DeclarationKind::Function) {
         return std::static_pointer_cast<FunctionDeclaration>(decl);
     } else {
-        throw ParseError("expected function, but got variables", decl->span());
+        throw SimpleError("expected function, but got variables", std::nullopt,
+                          decl->span());
     }
 }
 
@@ -413,13 +418,20 @@ std::optional<StorageClassSpecifier> verify_storage_class_specifiers(
             std::vector<Span> spans;
             for (const auto& s : storage_class_specifiers)
                 spans.emplace_back(s->span());
-            throw ParseError("more than one storage class",
-                             concat_spans(spans));
+            throw SimpleError("more than one storage class", std::nullopt,
+                              concat_spans(spans));
         }
     }
     if (!flatten.has_value()) {
         return std::nullopt;
     } else {
+        if (storage_class_specifiers.size() > 1) {
+            for (int i = 1; i < storage_class_specifiers.size(); i++) {
+                Span span = storage_class_specifiers[i]->span();
+                report(ctx, SimpleWarning("multiple storage class",
+                                          "remove this", span));
+            }
+        }
         auto kind = flatten.value()->kind();
         auto span = flatten.value()->span();
         if (kind == TokenKind::Auto) {
@@ -437,7 +449,7 @@ std::optional<StorageClassSpecifier> verify_storage_class_specifiers(
             return StorageClassSpecifier(StorageClassSpecifierKind::Typedef,
                                          span);
         } else {
-            throw ParseError("unknown storage class", span);
+            throw SimpleError("unknown storage class", std::nullopt, span);
         }
     }
 }
@@ -450,21 +462,23 @@ verify_type_quantifiers(Context& ctx,
     for (const auto& q : type_quantifiers) {
         if (q->kind() == TokenKind::Const) {
             if (const_kw.has_value()) {
-                auto e = SimpleWarning("in type", "multiple const", q->span());
+                auto e = SimpleWarning("multiple const", "remove this const",
+                                       q->span());
                 report(ctx, e);
             } else {
                 const_kw.emplace(Const(q->span()));
             }
         } else if (q->kind() == TokenKind::Volatile) {
             if (volatile_kw.has_value()) {
-                auto e =
-                    SimpleWarning("in type", "multiple volatile", q->span());
+                auto e = SimpleWarning("multiple volatile",
+                                       "remove this volatile", q->span());
                 report(ctx, e);
             } else {
                 volatile_kw.emplace(Volatile(q->span()));
             }
         } else {
-            throw ParseError("unknown type quantifier", q->span());
+            throw SimpleError("unknown type quantifier", std::nullopt,
+                              q->span());
         }
     }
     return {const_kw, volatile_kw};
@@ -479,22 +493,23 @@ std::shared_ptr<BuiltinTypeSpecifier> verify_builtin_types(
     for (const auto& t : builtin_types) {
         if (t->kind() == TokenKind::Signed) {
             if (kinds.find(t->kind()) != kinds.end()) {
-                auto e = SimpleWarning("in type", "multiple signed", t->span());
+                auto e = SimpleWarning("multiple signed", "remove this signed",
+                                       t->span());
                 report(ctx, e);
                 continue;
             } else if (kinds.find(TokenKind::Unsigned) != kinds.end()) {
-                throw ParseError("combine with signed is not allowed",
-                                 t->span());
+                throw SimpleError("combine with signed is not allowed",
+                                  std::nullopt, t->span());
             }
         } else if (t->kind() == TokenKind::Unsigned) {
             if (kinds.find(t->kind()) != kinds.end()) {
-                auto e =
-                    SimpleWarning("in type", "multiple unsigned", t->span());
+                auto e = SimpleWarning("multiple unsigned",
+                                       "remove this unsigned", t->span());
                 report(ctx, e);
                 continue;
             } else if (kinds.find(TokenKind::Signed) != kinds.end()) {
-                throw ParseError("combine with unsigned is not allowed",
-                                 t->span());
+                throw SimpleError("combine with unsigned is not allowed",
+                                  std::nullopt, t->span());
             }
         }
         kinds.emplace(t->kind());
@@ -541,7 +556,7 @@ std::shared_ptr<BuiltinTypeSpecifier> verify_builtin_types(
         auto kind = map.at(kinds);
         return std::make_shared<BuiltinTypeSpecifier>(kind, span);
     } catch (std::out_of_range e) {
-        throw ParseError("unknown type", span);
+        throw SimpleError("unknown type", std::nullopt, span);
     }
 }
 
@@ -675,8 +690,8 @@ VariableOrFunctionDeclBody parse_decl_body(Context& ctx, TokenStream& ts,
         int waiting_paren = 1;
         while (true) {
             if (ts.eos()) {
-                throw ParseError("unclosing parenthesis in type",
-                                 ts.last()->span());
+                throw SimpleError("unclosing parenthesis in type", std::nullopt,
+                                  ts.last()->span());
             }
             if (ts.token()->kind() == TokenKind::RParen) {
                 waiting_paren--;
@@ -777,8 +792,8 @@ std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
         auto body = parse_decl_body(ctx, ts, base);
 
         if (body.is_function()) {
-            throw ParseError("expected variable, but got function",
-                             body.span());
+            throw SimpleError("expected variable, but got function",
+                              std::nullopt, body.span());
         }
 
         auto param_type = body.type();
@@ -796,7 +811,8 @@ std::tuple<LParen, std::vector<FunctionParam>, RParen> parse_fun_params(
             ts.advance();
         } else {
             ts.retrest();
-            throw ParseError("expected ) or , after this", ts.token()->span());
+            throw SimpleError("expected ) or , after this", std::nullopt,
+                              ts.token()->span());
         }
     }
 }
@@ -930,7 +946,8 @@ std::shared_ptr<BlockStatement> parse_block_stmt(Context& ctx,
             std::vector<Span> spans;
             spans.emplace_back(lcurly.span());
             for (const auto& item : items) spans.emplace_back(item->span());
-            throw ParseError("unclosing block statement", concat_spans(spans));
+            throw SimpleError("unclosing block statement", std::nullopt,
+                              concat_spans(spans));
         }
         if (ts.token()->kind() == TokenKind::RCurly) {
             RCurly rcurly(ts.token()->span());
@@ -943,7 +960,7 @@ std::shared_ptr<BlockStatement> parse_block_stmt(Context& ctx,
             auto stmt = parse_stmt(ctx, ts);
             items.push_back(
                 std::make_shared<BlockStatementStatementItem>(stmt));
-        } catch (ParseError e) {
+        } catch (SimpleError e) {
             ts.set_state(state);
             auto decl = parse_decl(ctx, ts);
             items.push_back(
@@ -1081,7 +1098,7 @@ std::shared_ptr<ForStatement> parse_for_stmt(Context& ctx, TokenStream& ts) {
 
             init.emplace(
                 std::make_shared<ForStatementInitExpr>(expr, semicolon));
-        } catch (ParseError e) {
+        } catch (SimpleError e) {
             ts.set_state(state);
             auto decl = parse_var_decl(ctx, ts);
             init.emplace(std::make_shared<ForStatementInitDecl>(decl));
@@ -1269,10 +1286,10 @@ std::shared_ptr<Expression> parse_assign_expr(Context& ctx, TokenStream& ts) {
                 kind = InfixExpressionOpKind::ModAssign;
                 break;
             default:
-                throw ParseError("expected assign operator",
-                                 ts.token()->span());
+                throw SimpleError("expected assign operator", std::nullopt,
+                                  ts.token()->span());
         }
-    } catch (ParseError e) {
+    } catch (SimpleError e) {
         ts.set_state(state);
         return parse_cond_expr(ctx, ts);
     }
@@ -1524,8 +1541,8 @@ std::shared_ptr<Expression> parse_cast_expr(Context& ctx, TokenStream& ts) {
         std::shared_ptr<Type> base = concrete;
         auto body = parse_decl_body(ctx, ts, base);
         if (body.is_function()) {
-            throw ParseError("expected variable, but got function",
-                             body.span());
+            throw SimpleError("expected variable, but got function",
+                              std::nullopt, body.span());
         }
         auto type = body.type();
 
@@ -1537,14 +1554,14 @@ std::shared_ptr<Expression> parse_cast_expr(Context& ctx, TokenStream& ts) {
 
         cast = std::make_shared<CastExpression>(lparen, type, rparen, expr);
         if (storage_.has_value()) storage.emplace(storage_.value());
-    } catch (ParseError e) {
+    } catch (SimpleError e) {
         ts.set_state(state);
         return parse_unary_expr(ctx, ts);
     }
 
     if (storage.has_value()) {
-        throw ParseError("class specifier in cast is not allowed",
-                         storage->span());
+        throw SimpleError("class specifier in cast is not allowed",
+                          std::nullopt, storage->span());
     } else {
         return cast.value();
     }
@@ -1599,7 +1616,7 @@ std::shared_ptr<Expression> parse_unary_expr(Context& ctx, TokenStream& ts) {
         try {
             auto expr = parse_unary_expr(ctx, ts);
             return std::make_shared<SizeofExprExpression>(sizeof_kw, expr);
-        } catch (ParseError e) {
+        } catch (SimpleError e) {
             ts.set_state(state);
 
             check(ts, TokenKind::LParen, "(");
@@ -1610,13 +1627,13 @@ std::shared_ptr<Expression> parse_unary_expr(Context& ctx, TokenStream& ts) {
             std::shared_ptr<Type> base = concrete;
             auto body = parse_decl_body(ctx, ts, base);
             if (storage.has_value()) {
-                throw ParseError(
+                throw SimpleError(
                     "class specifier in function param is not allowed",
-                    storage->span());
+                    std::nullopt, storage->span());
             }
             if (body.is_function()) {
-                throw ParseError("expected variable, but got function",
-                                 body.span());
+                throw SimpleError("expected variable, but got function",
+                                  std::nullopt, body.span());
             }
             auto type = body.type();
 
@@ -1674,7 +1691,8 @@ std::shared_ptr<Expression> parse_postfix_expr(Context& ctx, TokenStream& ts) {
                 } else if (ts.token()->kind() == TokenKind::Comma) {
                     ts.advance();
                 } else {
-                    throw ParseError("expected ) or ,", ts.token()->span());
+                    throw SimpleError("expected ) or ,", std::nullopt,
+                                      ts.token()->span());
                 }
             }
         } else if (ts.token()->kind() == TokenKind::Dot) {
@@ -1758,8 +1776,8 @@ std::shared_ptr<Expression> parse_primary_expr(Context& ctx, TokenStream& ts) {
 
         return std::make_shared<SurroundedExpression>(lparen, expr, rparen);
     } else {
-        throw ParseError("expected one of identifier, integer or (",
-                         ts.token()->span());
+        throw SimpleError("expected one of identifier, integer or (",
+                          std::nullopt, ts.token()->span());
     }
 }
 
@@ -1775,7 +1793,7 @@ std::optional<Program> parse(Context& ctx, std::istream& is,
     while (!ts->eos()) {
         try {
             decls.emplace_back(parse_decl(ctx, ts.value()));
-        } catch (ParseError e) {
+        } catch (SimpleError e) {
             report(ctx, e);
             return std::nullopt;
         }

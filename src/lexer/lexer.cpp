@@ -12,7 +12,6 @@
 #include "../preprocessor/preprocessor.h"
 #include "../report/report.h"
 #include "../span.h"
-#include "error.h"
 #include "stream.h"
 #include "token.h"
 
@@ -85,14 +84,16 @@ bool is_ident_head(char c) { return std::isalpha(c) || c == '_'; }
 
 bool is_ident_rest(char c) { return std::isalnum(c) || c == '_'; }
 
-char consume_char(InputStream& is) {
+std::optional<char> consume_char(Context& ctx, InputStream& is) {
     char ch = is.ch();
     if (ch == '\\') {
         Span span(is.input().id(), is.pos(), is.pos());
         is.advance();
 
         if (is.eos()) {
-            throw LexError("no character after \\", span);
+            report(ctx,
+                   SimpleError("no character after \\", std::nullopt, span));
+            return std::nullopt;
         }
 
         ch = is.ch();
@@ -125,7 +126,9 @@ char consume_char(InputStream& is) {
         } else if (ch == '0') {
             return 0x00;
         } else {
-            throw LexError("unknown escape sequence", span);
+            report(ctx,
+                   SimpleError("unknown escape sequence", std::nullopt, span));
+            return std::nullopt;
         }
     } else {
         is.advance();
@@ -134,8 +137,9 @@ char consume_char(InputStream& is) {
 }
 
 // Extract a toke from non-empty `is`.
-// If unknown character found, throw `LexError` and skip the character.
-std::shared_ptr<Token> token(InputStream& is) {
+// If unknown character found, skip the character, reportt error, then return
+// std::nullopt.
+std::optional<std::shared_ptr<Token>> token(Context& ctx, InputStream& is) {
     int lrow = is.lrow();
     Span span = Span(is.input().id(), is.pos(), is.pos());
     if (is.accept("&&", span)) {
@@ -235,15 +239,20 @@ std::shared_ptr<Token> token(InputStream& is) {
     } else if (is.accept('\'', span)) {
         int lrow = is.lrow();
 
-        char ch = consume_char(is);
+        auto ch = consume_char(ctx, is);
+        if (!ch) {
+            return std::nullopt;
+        }
 
         span = Span(is.input().id(), span.start(), is.pos());
         if (is.eos() || is.ch() != '\'') {
-            throw LexError("unclosing character literal", span);
+            report(ctx, SimpleError("unclosing character literal", std::nullopt,
+                                    span));
+            return std::nullopt;
         } else {
             is.advance();
-            return std::make_shared<ValueToken<char>>(TokenKind::Character, ch,
-                                                      span, lrow);
+            return std::make_shared<ValueToken<char>>(TokenKind::Character,
+                                                      ch.value(), span, lrow);
         }
     } else if (is.accept('"', span)) {
         int lrow = is.lrow();
@@ -252,15 +261,20 @@ std::shared_ptr<Token> token(InputStream& is) {
         Position end = is.pos();
         while (true) {
             if (is.eos() || is.lrow() != lrow) {
-                throw LexError("unclosing string literal",
-                               Span(is.input().id(), span.start(), end));
+                report(ctx, SimpleError("unclosing string literal",
+                                        std::nullopt, span));
+                return std::nullopt;
             }
             end = is.pos();
             if (is.ch() == '"') {
                 is.advance();
                 break;
             } else {
-                s.push_back(consume_char(is));
+                auto ch = consume_char(ctx, is);
+                if (!ch) {
+                    return std::nullopt;
+                }
+                s.push_back(ch.value());
             }
         }
         return std::make_shared<ValueToken<std::string>>(
@@ -285,7 +299,9 @@ std::shared_ptr<Token> token(InputStream& is) {
 
         span = Span(span.id(), span.start(), end);
         if (buf.empty()) {
-            throw LexError("empty integer literal", span);
+            report(ctx,
+                   SimpleError("empty integer literal", std::nullopt, span));
+            return std::nullopt;
         }
         long long value = std::stoull(buf, nullptr, 16);
         return std::make_shared<ValueToken<unsigned long long>>(
@@ -331,7 +347,9 @@ std::shared_ptr<Token> token(InputStream& is) {
 
         span = Span(span.id(), span.start(), end);
         if (buf.empty()) {
-            throw LexError("empty integer literal", span);
+            report(ctx,
+                   SimpleError("empty integer literal", std::nullopt, span));
+            return std::nullopt;
         }
         auto value = std::stoull(buf);
         return std::make_shared<ValueToken<unsigned long long>>(
@@ -444,8 +462,8 @@ std::shared_ptr<Token> token(InputStream& is) {
     } else {
         std::stringstream ss;
         ss << "unexpected character '" << is.ch() << "' found";
-        is.advance();
-        throw LexError(ss.str(), span);
+        report(ctx, SimpleError(ss.str(), std::nullopt, span));
+        return std::nullopt;
     }
 }
 
@@ -459,11 +477,9 @@ std::optional<TokenStream> lex(Context& ctx, std::istream& is,
     std::vector<std::shared_ptr<Token>> ts;
     skips(is_);
     while (!is_.eos()) {
-        try {
-            ts.push_back(token(is_));
-        } catch (LexError e) {
-            report(ctx, e);
-            has_error = true;
+        auto tk = token(ctx, is_);
+        if (tk) {
+            ts.push_back(tk.value());
         }
         skips(is_);
     }

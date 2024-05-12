@@ -32,7 +32,7 @@ void start_color(std::ostream& os, ReportableLevel level) {
 
 void end_color(std::ostream& os) { os << "\e[0m"; }
 
-std::string info(const std::string& filename, const std::string& context,
+std::string info(const std::string& filename, const std::string& what,
                  Position start, ReportableLevel level) {
     std::stringstream ss;
     ss << filename << ":" << start.row() << ":" << start.offset() << ": ";
@@ -45,7 +45,7 @@ std::string info(const std::string& filename, const std::string& context,
         ss << "warning: ";
         end_color(ss);
     }
-    ss << context;
+    ss << what;
     return ss.str();
 }
 
@@ -54,7 +54,7 @@ void report(Context& ctx, const Reportable& r) {
     auto end = r.span().end();
     auto input = ctx.input_cache().fetch(r.span().id());
     auto name = input.name();
-    std::cerr << info(name, r.context(), start, r.level()) << std::endl;
+    std::cerr << info(name, r.what(), start, r.level()) << std::endl;
     if (start.row() == end.row()) {
         int width = digits(start.row());
         std::stringstream sep_start;
@@ -70,7 +70,8 @@ void report(Context& ctx, const Reportable& r) {
         start_color(std::cerr, r.level());
         std::cerr << '^' << std::string(end.offset() - start.offset(), '~');
         end_color(std::cerr);
-        std::cout << " " << r.what() << std::endl;
+        if (r.additional().has_value())
+            std::cerr << " " << r.additional().value() << std::endl;
     } else {
         int width = digits(std::max(start.row(), end.row()));
         std::stringstream sep_start;
@@ -101,7 +102,8 @@ void report(Context& ctx, const Reportable& r) {
         start_color(std::cerr, r.level());
         std::cerr << std::string(end.offset() + 1, '~');
         end_color(std::cerr);
-        std::cerr << " " << r.what() << std::endl;
+        if (r.additional().has_value())
+            std::cerr << " " << r.additional().value() << std::endl;
     }
     std::cerr << std::endl;
 }
