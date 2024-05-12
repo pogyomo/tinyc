@@ -9,6 +9,8 @@ public:
     TypedefNameTypeSpecifier(const std::string& name, Span span)
         : name_(name), span_(span) {}
 
+    inline const std::string& name() const { return name_; }
+
     inline TypeSpecifierKind kind() const override {
         return TypeSpecifierKind::TypedefName;
     }

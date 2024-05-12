@@ -337,14 +337,14 @@ private:
 class CallingExpression : public Expression {
 public:
     CallingExpression(const std::shared_ptr<Expression>& expr, LParen lparen,
-                      const std::vector<std::shared_ptr<Expression>>& params,
+                      const std::vector<std::shared_ptr<Expression>>& args,
                       RParen rparen)
-        : expr_(expr), lparen_(lparen), params_(params), rparen_(rparen) {}
+        : expr_(expr), lparen_(lparen), args_(args), rparen_(rparen) {}
 
     inline const std::shared_ptr<Expression>& expr() const { return expr_; }
 
-    inline const std::vector<std::shared_ptr<Expression>>& params() const {
-        return params_;
+    inline const std::vector<std::shared_ptr<Expression>>& args() const {
+        return args_;
     }
 
     inline const LParen& lparen() const { return lparen_; }
@@ -359,7 +359,7 @@ public:
         std::vector<Span> spans;
         spans.emplace_back(expr_->span());
         spans.emplace_back(lparen_.span());
-        for (const auto param : params_) {
+        for (const auto param : args_) {
             spans.emplace_back(param->span());
         }
         spans.emplace_back(rparen_.span());
@@ -367,13 +367,13 @@ public:
     }
 
     std::string debug() const override {
-        if (params_.size() == 0) {
+        if (args_.size() == 0) {
             return expr_->debug() + lparen_.debug() + rparen_.debug();
         }
         std::stringstream ss;
-        ss << expr_->debug() + lparen_.debug() << params_[0]->debug();
-        for (int i = 1; i < params_.size(); i++) {
-            ss << ", " << params_[i]->debug();
+        ss << expr_->debug() + lparen_.debug() << args_[0]->debug();
+        for (int i = 1; i < args_.size(); i++) {
+            ss << ", " << args_[i]->debug();
         }
         ss << rparen_.debug();
         return ss.str();
@@ -382,7 +382,7 @@ public:
 private:
     const std::shared_ptr<Expression> expr_;
     const LParen lparen_;
-    const std::vector<std::shared_ptr<Expression>> params_;
+    const std::vector<std::shared_ptr<Expression>> args_;
     const RParen rparen_;
 };
 

@@ -1668,25 +1668,25 @@ std::shared_ptr<Expression> parse_postfix_expr(Context& ctx, TokenStream& ts) {
             LParen lparen(ts.token()->span());
             ts.advance();
 
-            std::vector<std::shared_ptr<Expression>> params;
+            std::vector<std::shared_ptr<Expression>> args;
             while (true) {
                 check(ts);
                 if (ts.token()->kind() == TokenKind::RParen) {
                     RParen rparen(ts.token()->span());
                     ts.advance();
-                    lhs = std::make_shared<CallingExpression>(lhs, lparen,
-                                                              params, rparen);
+                    lhs = std::make_shared<CallingExpression>(lhs, lparen, args,
+                                                              rparen);
                     break;
                 }
 
-                params.push_back(parse_assign_expr(ctx, ts));
+                args.push_back(parse_assign_expr(ctx, ts));
 
                 check(ts);
                 if (ts.token()->kind() == TokenKind::RParen) {
                     RParen rparen(ts.token()->span());
                     ts.advance();
-                    lhs = std::make_shared<CallingExpression>(lhs, lparen,
-                                                              params, rparen);
+                    lhs = std::make_shared<CallingExpression>(lhs, lparen, args,
+                                                              rparen);
                     break;
                 } else if (ts.token()->kind() == TokenKind::Comma) {
                     ts.advance();
