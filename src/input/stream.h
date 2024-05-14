@@ -1,64 +1,36 @@
 #ifndef TINYC_INPUT_STREAM_H_
 #define TINYC_INPUT_STREAM_H_
 
-#include <string>
+#include <stdbool.h>
+#include <stdlib.h>
 
 #include "../span.h"
 #include "input.h"
 
-namespace tinyc {
+typedef struct {
+    input_t *input;
+    size_t lrow;
+    size_t row;
+    size_t offset;
+} istream_t;
 
-// A helper class for iterating `Input`.
-class InputStream {
-public:
-    InputStream(const Input& input)
-        : lrow_(0), row_(0), offset_(0), input_(input) {}
+// Construct a new istream from `input`.
+istream_t *istream_new(input_t *input);
 
-    // Returns the input this stream holding.
-    inline const Input& input() const { return input_; }
+// Returns non zero value if this stream reach to eos.
+bool istream_is_eos(istream_t *is);
 
-    // Returns true if no character is available from this stream.
-    inline bool eos() const { return row_ >= input_.lines().size(); }
+// Returns currently peeking character.
+char istream_get_char(istream_t *is);
 
-    // Returns currently peeking character.
-    // Calling this when `eos()` returns true, throw `out_of_range` exception.
-    char ch() const;
+// Returns currently peeking character's position in input.
+position_t istream_get_pos(istream_t *is);
 
-    // Returns currently peeking character's position in source code.
-    // Calling this when `eos()` returns true, throw `out_of_range` exception.
-    Position pos() const;
+// Advance position of this stream so that `istream_get_*` can get next item.
+void istream_advance(istream_t *is);
 
-    // Returns the logical row currently peeking character stay.
-    // Calling this when `eos()` returns true, throw `out_of_range` exception.
-    int lrow() const;
+int istream_accept(istream_t *is, char c, position_t *end);
 
-    // Advance the position of this stream to peek next character.
-    // Calling this when `eos()` returns true, nothing happen.
-    void advance();
-
-    // If first character this stream peeking is `c`, advance this stream, then
-    // returns true and set `span` to the span of accepted character.
-    bool accept(char c, Span& span);
-
-    // If first character this stream peeking is `c`, advance this stream, then
-    // returns true.
-    bool accept(char c);
-
-    // If first characters this stream peeking is `s`, advance this stream, then
-    // returns true and set `span` to the span of accepted characters.
-    bool accept(const std::string& s, Span& span);
-
-    // If first characters this stream peeking is `s`, advance this stream, then
-    // returns true
-    bool accept(const std::string& s);
-
-private:
-    int lrow_;
-    int row_;
-    int offset_;
-    const Input& input_;
-};
-
-}  // namespace tinyc
+int istream_accept_str(istream_t *is, char *s, position_t *end);
 
 #endif  // TINYC_INPUT_STREAM_H_

@@ -1,150 +1,73 @@
 #ifndef TINYC_LEXER_TOKEN_H_
 #define TINYC_LEXER_TOKEN_H_
 
-#include <string>
-
+#include "../collections/string.h"
 #include "../span.h"
 
-namespace tinyc {
+typedef enum {
+    INT_SUFFIX_NONE,
+    INT_SUFFIX_U,
+    INT_SUFFIX_L,
+    INT_SUFFIX_UL,
+    INT_SUFFIX_LL,
+    INT_SUFFIX_ULL,
+} int_suffix_t;
 
-enum class TokenKind {
-    // Operators
-    Or = 1,        // ||
-    And,           // &&
-    Vertical,      // |
-    Hat,           // ^
-    Ampersand,     // &
-    EQ,            // ==
-    NE,            // !=
-    LT,            // <
-    GT,            // >
-    LE,            // <=
-    GE,            // >=
-    LShift,        // <<
-    RShift,        // >>
-    Plus,          // +
-    PlusPlus,      // ++
-    Minus,         // -
-    MinusMinus,    // --
-    Star,          // *
-    Slash,         // /
-    Percent,       // %
-    LParen,        // (
-    RParen,        // )
-    LCurly,        // {
-    RCurly,        // }
-    LSquare,       // [
-    RSquare,       // ]
-    Semicolon,     // ;
-    Colon,         // :
-    Comma,         // ,
-    Tilde,         // ~
-    Not,           // !
-    Question,      // ?
-    Sharp,         // #
-    Dot,           // .
-    Arrow,         // ->
-    Assign,        // =
-    OrAssign,      // |=
-    XorAssign,     // ^=
-    AndAssign,     // &=
-    LShiftAssign,  // <<=
-    RShiftAssign,  // >>=
-    AddAssign,     // +=
-    SubAssign,     // -=
-    MulAssign,     // *=
-    DivAssign,     // /=
-    ModAssign,     // %=
+typedef enum {
+    INT_RADIX_OCTAL,
+    INT_RADIX_DECIMAL,
+    INT_RADIX_HEXADECIMAL,
+} int_radix_t;
 
-    // Keywords
-    Auto,      // auto
-    Break,     // break
-    Case,      // case
-    Char,      // char
-    Const,     // const
-    Continue,  // continue
-    Default,   // default
-    Do,        // do
-    Double,    // double
-    Else,      // else
-    Enum,      // enum
-    Extern,    // extern
-    Float,     // float
-    For,       // for
-    Goto,      // goto
-    If,        // if
-    Inline,    // inline
-    Int,       // int
-    Long,      // long
-    Register,  // register
-    Restrict,  // restrict
-    Return,    // return
-    Short,     // short
-    Signed,    // signed
-    Sizeof,    // sizeof
-    Static,    // static
-    Struct,    // struct
-    Switch,    // switch
-    Typedef,   // typedef
-    Union,     // union
-    Unsigned,  // unsigned
-    Void,      // void
-    Volatile,  // volatile
-    While,     // while
+typedef struct {
+    unsigned long long value;
+    int_suffix_t suffix;
+    int_radix_t radix;
+} integer_item_t;
 
-    // Literals
-    Integer,     // 10, -2, ...
-    Identifier,  // ident, Ident_20, ...
-    String,      // "hello world!", ...
-    Character,   // 'a', 'A', ...
-};
+typedef struct {
+    string_t *value;
+} identifier_item_t;
 
-// A base class of token which hold its kind and span in source code.
-class Token {
-public:
-    Token(TokenKind kind, Span span, int lrow)
-        : kind_(kind), span_(span), lrow_(lrow) {}
-    virtual ~Token() {}
-    virtual std::string debug() const = 0;
-    inline const TokenKind& kind() const { return kind_; }
-    inline const Span& span() const { return span_; }
-    inline const int lrow() const { return lrow_; }
+typedef struct {
+    string_t *value;
+} string_item_t;
 
-private:
-    const TokenKind kind_;
-    const Span span_;
-    int lrow_;
-};
+typedef struct {
+    char value;
+} character_item_t;
 
-// A class for symbol like +, <<, etc.
-class SymbolToken : public Token {
-public:
-    SymbolToken(TokenKind kind, Span span, int lrow)
-        : Token(kind, span, lrow) {}
-    std::string debug() const override;
-};
+typedef struct {
+} dummy_item_t;
 
-// A class for keyword like int, long, etc.
-class KeywordToken : public Token {
-public:
-    KeywordToken(TokenKind kind, Span span, int lrow)
-        : Token(kind, span, lrow) {}
-    std::string debug() const override;
-};
+typedef enum {
+    TK_LPAREN,
+    TK_RPAREN,
+    TK_INTEGER,
+    TK_IDENTIFIER,
+    TK_STRING,
+    TK_CHARACTER,
+} token_kind_t;
 
-// A class for literal like 10, ident, "str", etc.
-template <class T>
-class ValueToken : public Token {
-public:
-    ValueToken(TokenKind kind, T value, Span span, int lrow)
-        : Token(kind, span, lrow), value_(value) {}
-    inline const T& value() const { return value_; }
-    std::string debug() const override;
+typedef union {
+    integer_item_t integer;
+    identifier_item_t identifier;
+    string_item_t string;
+    character_item_t character;
+    dummy_item_t dummy;
+} token_item_t;
 
-private:
-    const T value_;
-};
+typedef struct {
+    int lrow;
+    span_t span;
+    token_kind_t kind;
+    token_item_t item;
+} token_t;
 
-}  // namespace tinyc
+token_t *token_simple(token_kind_t kind, span_t span);
+token_t *token_integer(integer_item_t item, span_t span);
+token_t *token_identifier(identifier_item_t item, span_t span);
+token_t *token_string(string_item_t item, span_t span);
+token_t *token_character(character_item_t item, span_t span);
 
-#endif  // TINYC_TOKEN_H_
+#endif  // TINYC_LEXER_TOKEN_H_

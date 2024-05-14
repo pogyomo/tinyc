@@ -1,60 +1,41 @@
 #ifndef TINYC_LEXER_STREAM_H_
 #define TINYC_LEXER_STREAM_H_
 
-#include <memory>
-#include <stdexcept>
-#include <vector>
+#include <stdlib.h>
 
+#include "../collections/vector.h"
 #include "token.h"
 
-namespace tinyc {
+typedef struct {
+    vector_t *tokens;
+    size_t pos;
+} tstream_t;
 
-class TokenStream {
-public:
-    using state_t = int;
+typedef size_t tstream_state_t;
 
-    TokenStream() : pos_(0), ts_() {}
+// Construct a new token stream from list of token.
+tstream_t *ts_new(vector_t *tokens);
 
-    TokenStream(const std::vector<std::shared_ptr<Token>>& ts)
-        : pos_(0), ts_(ts) {}
+// Returns non zero value if this stream reach to eos.
+int tstream_is_eos(tstream_t *ts);
 
-    // Returns true if no token available from this stream.
-    inline bool eos() const { return pos_ >= ts_.size(); }
+// Returns current peeking token.
+token_t *tstream_get_token(tstream_t *ts);
 
-    // Returns true if no token is exist in this stream.
-    inline bool empty() const { return ts_.empty(); }
+// Returns internal state of this stream which can be used at
+// `token_stream_set_state`.
+tstream_state_t tstream_get_state(tstream_t *ts);
 
-    // Returns current peeking token in this stream.
-    // Calling this when `eos()` or `empty()` returns true, throw `out_of_range`
-    // exception.
-    const std::shared_ptr<Token>& token() const;
+// Set internal state of this stream to `state` which `token_stream_get_state`
+// returns.
+void tstream_set_state(tstream_t *ts, tstream_state_t state);
 
-    // Returns last token in token stream.
-    // Calling this when `eos()` or `empty()` returns true, throw `out_of_range`
-    // exception.
-    const std::shared_ptr<Token>& last() const;
+// Advance the position of this stream so that next token is available at
+// `tstream_get_token`.
+void tstream_advance(tstream_t *ts);
 
-    // Get internal state to be used in `set_state`.
-    inline state_t get_state() { return pos_; }
-
-    // Set internal state to `state`.
-    inline void set_state(state_t state) { pos_ = state; }
-
-    // Advance the position in this stream.
-    // If `empty()` returns true, nothing happen and has no effect.
-    // This returns true if it success to advance the position.
-    bool advance();
-
-    // Retrest the position in this stream.
-    // If in the start of this stream, nothing happen and has no effect.
-    // This returns true if it success to retrest the position.
-    bool retrest();
-
-private:
-    int pos_;
-    const std::vector<std::shared_ptr<Token>> ts_;
-};
-
-}  // namespace tinyc
+// Advance the position of this stream so that previous token is available at
+// `tstream_get_token`.
+void tstream_retreat(tstream_t *ts);
 
 #endif  // TINYC_LEXER_STREAM_H_
