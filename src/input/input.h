@@ -10,7 +10,7 @@ typedef struct {
 } input_t;
 
 // Construct a new input from file specified by `path`.
-input_t *input_from_file(string_t *path);
+input_t *input_from_file(char *path);
 
 // Returns `row`-th line of `input`.
 string_t *input_get_line(input_t *input, size_t row);

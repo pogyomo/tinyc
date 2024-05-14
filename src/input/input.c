@@ -8,16 +8,15 @@
 #include "../collections/vector.h"
 #include "../panic.h"
 
-static string_t *extract_filename(string_t *path) {
-    char *filename = strrchr(path->str, '/');
-    if (!filename) panic("no file name in '%s'", path->str);
-    filename++;
-    return string_from_c_str(filename);
+static char *extract_filename(char *path) {
+    char *filename = strrchr(path, '/');
+    if (!filename) return path;
+    return ++filename;
 }
 
-input_t *input_from_file(string_t *path) {
-    FILE *fp = fopen(path->str, "r");
-    if (!fp) panic("failed to open '%s'", path->str);
+input_t *input_from_file(char *path) {
+    FILE *fp = fopen(path, "r");
+    if (!fp) panic("failed to open '%s'", path);
 
     char c;
     vector_t *lines = vector_new();
@@ -35,7 +34,7 @@ input_t *input_from_file(string_t *path) {
     input_t *input = malloc(sizeof(input_t));
     if (!input) panic_internal("failed to allocate memory");
     input->lines = lines;
-    input->name = extract_filename(path);
+    input->name = string_from(extract_filename(path));
     return input;
 }
 
