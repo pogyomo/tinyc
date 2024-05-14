@@ -34,6 +34,55 @@ static token_t *token_new(size_t lrow, span_t span, token_kind_t kind,
     return token;
 }
 
+// Skipe `//` style of comment.
+static bool skip_oneline_comment(istream_t *is) {
+    if (istream_eos(is)) return false;
+    size_t lrow = is->lrow;
+    if (istream_accept(is, "//", NULL)) {
+        while (!istream_eos(is) && is->lrow == lrow) istream_advance(is);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// Skipe `/*` `*/` style of comment.
+static bool skip_multiline_comment(context_t *ctx, istream_t *is,
+                                   icache_id_t id) {
+    if (istream_eos(is)) return false;
+
+    position_t start = istream_pos(is);
+    position_t end = istream_pos(is);
+    if (istream_accept(is, "/*", &end)) {
+        while (true) {
+            if (istream_eos(is)) {
+                span_t span = {id, start, end};
+                report_info_t info = {string_from("unclosing comment"),
+                                      string_new(), span};
+                report(ctx, REPORT_LEVEL_ERROR, info);
+            } else if (istream_accept(is, "*/", &end)) {
+                return true;
+            } else {
+                istream_advance(is);
+            }
+        }
+    } else {
+        return false;
+    }
+}
+
+// Skip all type of comments from the head of `ts`.
+static void skip_comments(context_t *ctx, istream_t *is, icache_id_t id) {
+    while (true) {
+        bool skipped = false;
+        skipped |= skip_oneline_comment(is);
+        skipped |= skip_multiline_comment(ctx, is, id);
+        if (!skipped) {
+            break;
+        }
+    }
+}
+
 // Go to next line or eos if current line is last.
 static void goto_nextline(istream_t *is) {
     size_t lrow = is->lrow;
@@ -508,13 +557,16 @@ tstream_t *lex_file(context_t *ctx, char *path) {
     bool error_happen = false;
     token_t *token = NULL;
     vector_t *tokens = vector_new();
+    skip_comments(ctx, is, id);
     while (!istream_eos(is)) {
         if ((token = read_punct(is, id))) {
             vector_push(tokens, token);
+            skip_comments(ctx, is, id);
             continue;
         };
         if ((token = read_ident_or_kw(is, id))) {
             vector_push(tokens, token);
+            skip_comments(ctx, is, id);
             continue;
         }
         if (istream_char(is) == '"') {
@@ -545,6 +597,7 @@ tstream_t *lex_file(context_t *ctx, char *path) {
             report(ctx, REPORT_LEVEL_ERROR, info);
             istream_advance(is);
         }
+        skip_comments(ctx, is, id);
     }
     if (error_happen) {
         return NULL;

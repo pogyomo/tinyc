@@ -89,6 +89,6 @@ bool istream_accept(istream_t *is, char *s, position_t *end) {
         acc_end = istream_pos(is);
         istream_advance(is);
     }
-    *end = acc_end;
+    if (end != NULL) *end = acc_end;
     return true;
 }

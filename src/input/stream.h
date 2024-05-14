@@ -43,8 +43,8 @@ position_t istream_pos(istream_t *is);
 void istream_advance(istream_t *is);
 
 // If current characters is `s`, advance position to skip `s`, then set `end` to
-// the last character's position of `s` in straem and return true.
-// Otherwise, nothing happen.
+// the last character's position of `s` in straem if `end` is not NULL and
+// return true. Otherwise, nothing happen.
 bool istream_accept(istream_t *is, char *s, position_t *end);
 
 #endif  // TINYC_INPUT_STREAM_H_
