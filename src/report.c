@@ -54,8 +54,10 @@ void report(context_t *ctx, report_level_t level, report_info_t info) {
         for (int i = 0; i < 2 + row_width; i++) fputc(' ', stderr);
         fputc('|', stderr);
         for (int i = 0; i < start.offset; i++) fputc(' ', stderr);
+        start_color(stderr, level);
         fputc('^', stderr);
         for (int i = start.offset + 1; i <= end.offset; i++) fputc('~', stderr);
+        end_color(stderr);
         fprintf(stderr, " %s\n", info.info->str);
     } else {
         string_t *sline = input_get_line(input, start.row);
