@@ -9,7 +9,7 @@
 #include "span.h"
 
 // Start to coloring the output to `os` depende on `level`.
-void start_color(FILE *os, report_level_t level) {
+static void start_color(FILE *os, report_level_t level) {
     if (level == REPORT_LEVEL_ERROR) {
         fputs("\e[31m", os);
     } else {
@@ -18,10 +18,10 @@ void start_color(FILE *os, report_level_t level) {
 }
 
 // Stop to coloring the output to `os`.
-void end_color(FILE *os) { fputs("\e[0m", os); }
+static void end_color(FILE *os) { fputs("\e[0m", os); }
 
 // Returns the number of digits in `n`.
-int digits(int n) {
+static int digits(int n) {
     if (n == 0) return 1;
     int res = 0;
     while (n > 0) {

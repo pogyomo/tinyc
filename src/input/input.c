@@ -8,7 +8,7 @@
 #include "../collections/vector.h"
 #include "../panic.h"
 
-string_t *extract_filename(string_t *path) {
+static string_t *extract_filename(string_t *path) {
     char *filename = strrchr(path->str, '/');
     if (!filename) panic("no file name in '%s'", path->str);
     filename++;

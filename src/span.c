@@ -2,7 +2,7 @@
 
 #include "panic.h"
 
-position_t min(position_t a, position_t b) {
+static position_t min(position_t a, position_t b) {
     if (a.row < b.row) {
         return a;
     } else if (b.row < a.row) {
@@ -16,7 +16,7 @@ position_t min(position_t a, position_t b) {
     }
 }
 
-position_t max(position_t a, position_t b) {
+static position_t max(position_t a, position_t b) {
     if (a.row > b.row) {
         return a;
     } else if (b.row > a.row) {
