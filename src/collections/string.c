@@ -18,9 +18,9 @@ static void heaplify(string_t *string) {
     strcpy(string->str, str);
 }
 
-string_t *string_new() { return string_from_c_str(""); }
+string_t *string_new() { return string_from(""); }
 
-string_t *string_from_c_str(char *s) {
+string_t *string_from(char *s) {
     string_t *string = malloc(sizeof(string_t));
     if (!string) panic("failed to allocate memory");
     string->str = s;
@@ -46,13 +46,20 @@ void string_push(string_t *string, char c) {
     string->str[string->len] = '\0';
 }
 
-void string_append(string_t *dst, const string_t *src) {
-    if (dst->is_static) heaplify(dst);
-    if (dst->len + src->len + 1 >= dst->cap) {
-        string_extend(dst, src->len + 100);
+void string_append(string_t *dst, const char *src) {
+    size_t src_len = strlen(src);
+    for (int i = 0; i < src_len; i++) {
+        string_push(dst, src[i]);
     }
-    strcpy(&dst->str[dst->len], src->str);
-    dst->len += src->len;
+    /*
+    size_t src_len = strlen(src);
+    if (dst->is_static) heaplify(dst);
+    if (dst->len + src_len + 1 >= dst->cap) {
+        string_extend(dst, src_len + 100);
+    }
+    strcpy(&dst->str[dst->len], src);
+    dst->len += src_len;
+    */
 }
 
 char string_pop(string_t *string) {
