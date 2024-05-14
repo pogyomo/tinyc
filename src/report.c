@@ -31,11 +31,6 @@ static int digits(int n) {
     return res;
 }
 
-report_info_t report_info_make(string_t *what, string_t *info, span_t span) {
-    report_info_t rinfo = {what, info, span};
-    return rinfo;
-}
-
 void report(context_t *ctx, report_level_t level, report_info_t info) {
     input_t *input = icache_fetch(ctx->cache, info.span.id);
     position_t start = info.span.start;

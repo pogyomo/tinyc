@@ -16,8 +16,6 @@ typedef struct {
     span_t span;
 } report_info_t;
 
-report_info_t report_info_make(string_t *what, string_t *info, span_t span);
-
 void report(context_t *ctx, report_level_t level, report_info_t info);
 
 #endif  // TINYC_REPORT_H_
