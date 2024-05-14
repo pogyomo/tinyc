@@ -17,7 +17,7 @@ vector_t *vector_new() {
 
 void vector_extend(vector_t *vector, size_t size) {
     vector->cap += size;
-    vector->buf = malloc(sizeof(void *) * vector->cap);
+    vector->buf = realloc(vector->buf, sizeof(void *) * vector->cap);
     if (!vector->buf) panic_internal("failed to extend vector");
 }
 
