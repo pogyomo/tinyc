@@ -175,22 +175,25 @@ static token_t *read_ident_or_kw(istream_t *is, icache_id_t id) {
     return token_new(lrow, span, TK_IDENTIFIER, s);
 }
 
-// Read a character used in string or character literal.
-// If failed, return false.
+// Read a character used in string or character literal and return true if
+// success.
+// `end` will hold a position of last character this function consume.
 static bool read_character(context_t *ctx, istream_t *is, icache_id_t id,
-                           char *ch) {
+                           char *ch, position_t *end) {
     char c = istream_char(is);
+    *end = istream_pos(is);
     istream_advance(is);
 
     if (c == '\\') {
         if (istream_eos(is)) {
-            span_t span = {id, istream_pos(is), istream_pos(is)};
+            span_t span = {id, *end, *end};
             report_info_t info = {string_from("expected character after \\"),
                                   string_new(), span};
             report(ctx, REPORT_LEVEL_ERROR, info);
             return false;
         }
         c = istream_char(is);
+        *end = istream_pos(is);
         if (c == 'a') {
             c = 0x07;
         } else if (c == 'b') {
@@ -254,7 +257,7 @@ static token_t *read_string_literal(context_t *ctx, istream_t *is,
         }
 
         char c;
-        if (!read_character(ctx, is, id, &c)) {
+        if (!read_character(ctx, is, id, &c, &end)) {
             goto_nextline(is);
             return NULL;
         }
@@ -289,7 +292,7 @@ static token_t *read_character_literal(context_t *ctx, istream_t *is,
         }
 
         char c;
-        if (!read_character(ctx, is, id, &c)) {
+        if (!read_character(ctx, is, id, &c, &end)) {
             goto_nextline(is);
             return NULL;
         }
