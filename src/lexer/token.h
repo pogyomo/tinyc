@@ -14,33 +14,13 @@ typedef enum {
 } int_suffix_t;
 
 typedef enum {
-    INT_RADIX_OCTAL,
-    INT_RADIX_DECIMAL,
-    INT_RADIX_HEXADECIMAL,
-} int_radix_t;
-
-typedef struct {
-    unsigned long long value;
-    int_suffix_t suffix;
-    int_radix_t radix;
-} integer_item_t;
-
-typedef struct {
-    string_t *value;
-} identifier_item_t;
-
-typedef struct {
-    string_t *value;
-} string_item_t;
-
-typedef struct {
-    char value;
-} character_item_t;
-
-typedef struct {
-} dummy_item_t;
+    FLOAT_SUFFIX_NONE,
+    FLOAT_SUFFIX_F,
+    FLOAT_SUFFIX_L,
+} float_suffix_t;
 
 typedef enum {
+    // Punctuations
     TK_OR,            // ||
     TK_AND,           // &&
     TK_VERTICAL,      // |
@@ -126,33 +106,28 @@ typedef enum {
 
     // Literals
     TK_INTEGER,     // 10, -2, ...
+    TK_FLOATING,    // 0.2, 1., 3e10, ...
     TK_IDENTIFIER,  // ident, Ident_20, ...
     TK_STRING,      // "hello world!", ...
     TK_CHARACTER,   // 'a', 'A', ...
 
     // Special
-    TK_SPACE,
+    TK_SPACE,  // whitespace
 } token_kind_t;
 
-typedef union {
-    integer_item_t integer;
-    identifier_item_t identifier;
-    string_item_t string;
-    character_item_t character;
-    dummy_item_t dummy;
-} token_item_t;
-
 typedef struct {
-    int lrow;
+    size_t lrow;
     span_t span;
     token_kind_t kind;
-    token_item_t item;
+    string_t *value;
+    int_suffix_t int_suffix;      // Used if kind == TK_INTEGER
+    float_suffix_t float_suffix;  // Used if kind == TK_FLOATING
 } token_t;
 
-token_t *token_simple(token_kind_t kind, span_t span);
-token_t *token_integer(integer_item_t item, span_t span);
-token_t *token_identifier(identifier_item_t item, span_t span);
-token_t *token_string(string_item_t item, span_t span);
-token_t *token_character(character_item_t item, span_t span);
+bool token_is_int_octal(token_t *token);
+bool token_is_int_decimal(token_t *token);
+bool token_is_int_hexadecimal(token_t *token);
+bool token_is_float_decimal(token_t *token);
+bool token_is_float_hexadecimal(token_t *token);
 
 #endif  // TINYC_LEXER_TOKEN_H_

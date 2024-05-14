@@ -13,6 +13,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/input/cache.c
     src/input/input.c
     src/input/stream.c
-    src/lexer/token.c
+    src/lexer/lexer.c
     src/lexer/stream.c
+    src/lexer/token.c
 )

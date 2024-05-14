@@ -5,6 +5,6 @@
 #include "stream.h"
 
 // Convert given file's context into token stream.
-tstream_t *lex_file(context_t *ctx, string_t *path);
+tstream_t *lex_file(context_t *ctx, char *path);
 
 #endif  // TINYC_LEXER_LEXER_H_
