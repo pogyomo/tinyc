@@ -14,7 +14,7 @@ typedef struct {
 string_t *string_new();
 
 // Construct string from null-terminated string `s`.
-string_t *string_from_str(char *s);
+string_t *string_from_c_str(char *s);
 
 // Extend this string so that extra `size` character this vector can hold.
 void string_extend(string_t *string, size_t size);

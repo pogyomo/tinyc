@@ -6,7 +6,7 @@
 
 typedef struct {
     vector_t *lines;
-    string_t *filename;
+    string_t *name;
 } input_t;
 
 // Construct a new input from file specified by `path`.

@@ -1,13 +1,15 @@
 #ifndef TINYC_SPAN_H_
 #define TINYC_SPAN_H_
 
+#include "input/cache.h"
+
 typedef struct {
     int row;
     int offset;
 } position_t;
 
 typedef struct {
-    int id;
+    icache_id_t id;
     position_t start;
     position_t end;
 } span_t;

@@ -1,6 +1,7 @@
 #ifndef TINYC_LEXER_STREAM_H_
 #define TINYC_LEXER_STREAM_H_
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "../collections/vector.h"
@@ -14,19 +15,19 @@ typedef struct {
 typedef size_t tstream_state_t;
 
 // Construct a new token stream from list of token.
-tstream_t *ts_new(vector_t *tokens);
+tstream_t *tstream_new(vector_t *tokens);
 
 // Returns non zero value if this stream reach to eos.
-int tstream_is_eos(tstream_t *ts);
+bool tstream_eos(tstream_t *ts);
 
 // Returns current peeking token.
-token_t *tstream_get_token(tstream_t *ts);
+token_t *tstream_token(tstream_t *ts);
 
 // Returns internal state of this stream which can be used at
-// `token_stream_set_state`.
-tstream_state_t tstream_get_state(tstream_t *ts);
+// `tstream_set_state`.
+tstream_state_t tstream_state(tstream_t *ts);
 
-// Set internal state of this stream to `state` which `token_stream_get_state`
+// Set internal state of this stream to `state` which `tstream_get_state`
 // returns.
 void tstream_set_state(tstream_t *ts, tstream_state_t state);
 
