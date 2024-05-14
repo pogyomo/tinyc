@@ -5,30 +5,40 @@
 
 #include "../panic.h"
 
+// Make `string->str` point to heap so that modification to it become possible.
+static void heaplify(string_t *string) {
+    if (!string->is_static) return;
+
+    string->cap = string->len + 101;
+    string->is_static = false;
+
+    char *str = string->str;
+    string->str = malloc(sizeof(char) * string->cap);
+    if (!string->str) panic_internal("failed to allocate memory");
+    strcpy(string->str, str);
+}
+
 string_t *string_new() { return string_from_c_str(""); }
 
 string_t *string_from_c_str(char *s) {
-    int len = strlen(s);
-    int cap = len + 100;
-    char *str = malloc(sizeof(char) * cap);
-    if (!str) panic_internal("failed to allocate memory");
-    strcpy(str, s);
-
     string_t *string = malloc(sizeof(string_t));
     if (!string) panic("failed to allocate memory");
-    string->str = str;
-    string->cap = cap;
-    string->len = len;
+    string->str = s;
+    string->cap = 0;
+    string->len = strlen(s);
+    string->is_static = true;
     return string;
 }
 
 void string_extend(string_t *string, size_t size) {
+    if (string->is_static) heaplify(string);
     string->cap += size;
     string->str = realloc(string->str, sizeof(char) * string->cap);
     if (!string->str) panic_internal("failed to extend string");
 }
 
 void string_push(string_t *string, char c) {
+    if (string->is_static) heaplify(string);
     if (string->len + 1 >= string->cap) {
         string_extend(string, 100);
     }
@@ -37,6 +47,7 @@ void string_push(string_t *string, char c) {
 }
 
 void string_append(string_t *dst, const string_t *src) {
+    if (dst->is_static) heaplify(dst);
     if (dst->len + src->len + 1 >= dst->cap) {
         string_extend(dst, src->len + 100);
     }
@@ -45,6 +56,7 @@ void string_append(string_t *dst, const string_t *src) {
 }
 
 char string_pop(string_t *string) {
+    if (string->is_static) heaplify(string);
     if (string->len == 0) panic_internal("pop from empty string");
     char c = string->str[--string->len];
     string->str[string->len] = '\0';

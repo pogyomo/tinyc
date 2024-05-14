@@ -1,13 +1,15 @@
 #ifndef TINYC_COLLECTIONS_STRING_H_
 #define TINYC_COLLECTIONS_STRING_H_
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 // A buffered string which can push/pop character from it.
 typedef struct {
     char *str;
-    int cap;
-    int len;
+    size_t cap;      // The capacity of `str`, or 0 if `str` is static string.
+    size_t len;      // The length of string in `str`.
+    bool is_static;  // true if `str` point to static string.
 } string_t;
 
 // Construct an empty string.
