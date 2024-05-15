@@ -32,7 +32,7 @@ static int digits(int n) {
 }
 
 void report(context_t *ctx, report_level_t level, report_info_t info) {
-    input_t *input = icache_fetch(ctx->cache, info.span.id);
+    input_t *input = icache_fetch(ctx->icache, info.span.id);
     position_t start = info.span.start;
     position_t end = info.span.end;
 

@@ -16,4 +16,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/lexer/lexer.c
     src/lexer/stream.c
     src/lexer/token.c
+    src/preprocessor/macro.c
+    src/preprocessor/preprocessor.c
+    src/preprocessor/table.c
 )

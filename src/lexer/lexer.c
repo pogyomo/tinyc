@@ -7,6 +7,7 @@
 #include "../input/input.h"
 #include "../input/stream.h"
 #include "../panic.h"
+#include "../preprocessor/preprocessor.h"
 #include "../report.h"
 #include "stream.h"
 #include "token.h"
@@ -98,25 +99,36 @@ static token_t *read_punct(istream_t *is, icache_id_t id) {
     } pairs[] = {
         {"&&", TK_AND},
         {"&=", TK_ANDASSIGN},
-        {"||", TK_OR},
-        {"&&", TK_AND},
-        {"|", TK_VERTICAL},
-        {"^", TK_HAT},
         {"&", TK_AMPERSAND},
+        {"||", TK_OR},
+        {"|=", TK_ORASSIGN},
+        {"|", TK_VERTICAL},
+        {"^=", TK_XORASSIGN},
+        {"^", TK_HAT},
         {"==", TK_EQ},
+        {"=", TK_ASSIGN},
         {"!=", TK_NE},
-        {"<", TK_LT},
-        {">", TK_GT},
-        {"<=", TK_LE},
-        {">=", TK_GE},
+        {"!", TK_NOT},
+        {"<<=", TK_LSHIFTASSIGN},
         {"<<", TK_LSHIFT},
+        {"<=", TK_LE},
+        {"<", TK_LT},
+        {">>=", TK_RSHIFTASSIGN},
         {">>", TK_RSHIFT},
-        {"+", TK_PLUS},
+        {">=", TK_GE},
+        {">", TK_GT},
         {"++", TK_PLUSPLUS},
-        {"-", TK_MINUS},
+        {"+=", TK_ADDASSIGN},
+        {"+", TK_PLUS},
+        {"->", TK_ARROW},
         {"--", TK_MINUSMINUS},
+        {"-=", TK_SUBASSIGN},
+        {"-", TK_MINUS},
+        {"*=", TK_MULASSIGN},
         {"*", TK_STAR},
+        {"/=", TK_DIVASSIGN},
         {"/", TK_SLASH},
+        {"%=", TK_MODASSIGN},
         {"%", TK_PERCENT},
         {"(", TK_LPAREN},
         {")", TK_RPAREN},
@@ -128,21 +140,8 @@ static token_t *read_punct(istream_t *is, icache_id_t id) {
         {":", TK_COLON},
         {",", TK_COMMA},
         {"~", TK_TILDE},
-        {"!", TK_NOT},
         {"?", TK_QUESTION},
         {"#", TK_SHARP},
-        {"->", TK_ARROW},
-        {"=", TK_ASSIGN},
-        {"|=", TK_ORASSIGN},
-        {"^=", TK_XORASSIGN},
-        {"&=", TK_ANDASSIGN},
-        {"<<=", TK_LSHIFTASSIGN},
-        {">>=", TK_RSHIFTASSIGN},
-        {"+=", TK_ADDASSIGN},
-        {"-=", TK_SUBASSIGN},
-        {"*=", TK_MULASSIGN},
-        {"/=", TK_DIVASSIGN},
-        {"%=", TK_MODASSIGN},
     };
     size_t lrow = is->lrow;
     position_t start = istream_pos(is);
@@ -551,7 +550,7 @@ static token_t *read_number_literal(context_t *ctx, istream_t *is,
 
 tstream_t *lex_file(context_t *ctx, char *path) {
     input_t *input = input_from_file(path);
-    icache_id_t id = icache_cache(ctx->cache, input);
+    icache_id_t id = icache_cache(ctx->icache, input);
     istream_t *is = istream_new(input);
 
     bool error_happen = false;
@@ -602,6 +601,6 @@ tstream_t *lex_file(context_t *ctx, char *path) {
     if (error_happen) {
         return NULL;
     } else {
-        return tstream_new(tokens);
+        return preprocess(ctx, tstream_new(tokens));
     }
 }

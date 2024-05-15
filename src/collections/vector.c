@@ -28,17 +28,23 @@ void vector_push(vector_t *vector, void *ptr) {
     vector->buf[vector->len++] = ptr;
 }
 
+void vector_append(vector_t *dst, const vector_t *src) {
+    for (int i = 0; i < src->len; i++) {
+        vector_push(dst, vector_at(src, i));
+    }
+}
+
 void *vector_pop(vector_t *vector) {
     if (vector->len == 0) panic_internal("pop from empty vector");
     return vector->buf[--vector->len];
 }
 
-void *vector_at(vector_t *vector, size_t n) {
+void *vector_at(const vector_t *vector, size_t n) {
     if (n >= vector->len) panic_internal("at called with exceed index");
     return vector->buf[n];
 }
 
-void *vector_top(vector_t *vector) {
+void *vector_top(const vector_t *vector) {
     if (vector->len == 0) panic_internal("top from empty vector");
     return vector->buf[vector->len - 1];
 }
