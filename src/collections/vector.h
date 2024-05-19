@@ -1,37 +1,35 @@
 #ifndef TINYC_COLLECTIONS_VECTOR_H_
 #define TINYC_COLLECTIONS_VECTOR_H_
 
-#include <stdlib.h>
+#include <stddef.h>
 
-// A extensible type of array.
+#define VECTOR(type) vector_t
+
+// A generic vector.
 typedef struct {
-    void **buf;
+    void *buf;
     size_t cap;
     size_t len;
+    size_t size;
 } vector_t;
 
-// Construct an empty vector.
-// `size` must be the size of element which this vector will hold.
-vector_t *vector_new();
+// Initialize `vector` to be ready to use.
+// `size` must be the value where `sizeof(type)` returns.
+void vector_init(vector_t *vector, size_t size);
 
-// Extend this vector so that extra `size` element this vector can hold.
-void vector_extend(vector_t *vector, size_t size);
-
-// Push the value inside `ptr` by just storing the given pointer.
-// The pointer must live long enough to the vector.
+// Push value inside of `ptr` to the tail of `vector`.
 void vector_push(vector_t *vector, void *ptr);
 
-// Append a vector `src` to `dst`.
-// `src` and `dst` must have same kind of pointer.
+// Append `src` to `dst`.
 void vector_append(vector_t *dst, const vector_t *src);
 
-// Pop a element from vector.
-void *vector_pop(vector_t *vector);
+// Remove a value from tail of `vector`.
+void vector_pop(vector_t *vector);
 
-// Get the element in specified index.
+// Returns reference to the `n`-th element of `vector`.
 void *vector_at(const vector_t *vector, size_t n);
 
-// Peek a top element in vector.
+// Returns reference to the last tail element of `vector`.
 void *vector_top(const vector_t *vector);
 
 #endif  // TINYC_COLLECTIONS_VECTOR_H_

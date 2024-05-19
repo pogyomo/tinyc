@@ -11,8 +11,8 @@ typedef enum {
 } report_level_t;
 
 typedef struct {
-    string_t *what;
-    string_t *info;
+    string_t what;
+    string_t info;
     span_t span;
 } report_info_t;
 

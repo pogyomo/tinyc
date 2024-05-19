@@ -4,12 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../input/input.h"
-#include "../input/stream.h"
-#include "../panic.h"
 #include "../preprocessor/preprocessor.h"
 #include "../report.h"
-#include "stream.h"
+#include "../stream.h"
 #include "token.h"
 
 // Returns true if `c` is octal digit.
@@ -24,15 +21,12 @@ static bool is_hexadecimal(char c) {
 }
 
 // Create a token with neccessary infomations.
-static token_t *token_new(size_t lrow, span_t span, token_kind_t kind,
-                          string_t *value) {
-    token_t *token = malloc(sizeof(token_t));
-    if (!token) panic_internal("failed to allocate memory");
-    token->lrow = lrow;
-    token->span = span;
+static void token_init(token_t *token, token_kind_t kind, string_t value,
+                       size_t lrow, span_t span) {
     token->kind = kind;
     token->value = value;
-    return token;
+    token->lrow = lrow;
+    token->span = span;
 }
 
 // Skipe `//` style of comment.
@@ -49,7 +43,7 @@ static bool skip_oneline_comment(istream_t *is) {
 
 // Skipe `/*` `*/` style of comment.
 static bool skip_multiline_comment(context_t *ctx, istream_t *is,
-                                   icache_id_t id) {
+                                   cache_id_t id) {
     if (istream_eos(is)) return false;
 
     position_t start = istream_pos(is);
@@ -58,9 +52,11 @@ static bool skip_multiline_comment(context_t *ctx, istream_t *is,
         while (true) {
             if (istream_eos(is)) {
                 span_t span = {id, start, end};
-                report_info_t info = {string_from("unclosing comment"),
-                                      string_new(), span};
-                report(ctx, REPORT_LEVEL_ERROR, info);
+                string_t what, info;
+                string_from(&what, "unclosing comment");
+                string_init(&info);
+                report(ctx, REPORT_LEVEL_ERROR,
+                       (report_info_t){what, info, span});
             } else if (istream_accept(is, "*/", &end)) {
                 return true;
             } else {
@@ -73,7 +69,7 @@ static bool skip_multiline_comment(context_t *ctx, istream_t *is,
 }
 
 // Skip all type of comments from the head of `ts`.
-static void skip_comments(context_t *ctx, istream_t *is, icache_id_t id) {
+static void skip_comments(context_t *ctx, istream_t *is, cache_id_t id) {
     while (true) {
         bool skipped = false;
         skipped |= skip_oneline_comment(is);
@@ -90,9 +86,9 @@ static void goto_nextline(istream_t *is) {
     while (!istream_eos(is) && is->lrow == lrow) istream_advance(is);
 }
 
-// Try to read a punctuation from `is`.
-// If failed, NULL will be returned.
-static token_t *read_punct(istream_t *is, icache_id_t id) {
+// Try to read a punctuation from `is` and initialize `token` with it.
+// If failed, return false.
+static bool read_punct(istream_t *is, cache_id_t id, token_t *token) {
     static struct {
         char *s;
         token_kind_t kind;
@@ -154,23 +150,29 @@ static token_t *read_punct(istream_t *is, icache_id_t id) {
             return NULL;
         } else {
             span_t span = {id, start, end};
-            return token_new(lrow, span, TK_DOT, string_from("."));
+            string_t value;
+            string_from(&value, ".");
+            token_init(token, TK_DOT, value, lrow, span);
+            return true;
         }
     } else {
         for (int i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) {
             if (istream_accept(is, pairs[i].s, &end)) {
                 span_t span = {id, start, end};
-                return token_new(lrow, span, pairs[i].kind,
-                                 string_from(pairs[i].s));
+                string_t value;
+                string_from(&value, pairs[i].s);
+                token_init(token, pairs[i].kind, value, lrow, span);
+                return true;
             }
         }
-        return NULL;
+        return false;
     }
 }
 
-// Try to read a identifier or keyword from `is`.
-// If failed, NULL will be returned.
-static token_t *read_ident_or_kw(istream_t *is, icache_id_t id) {
+// Try to read a identifier or keyword from `is` and initialize `toeken` with
+// it.
+// If failed, return false.
+static bool read_ident_or_kw(istream_t *is, cache_id_t id, token_t *token) {
     static struct {
         char *s;
         token_kind_t kind;
@@ -202,11 +204,12 @@ static token_t *read_ident_or_kw(istream_t *is, icache_id_t id) {
     position_t start = istream_pos(is);
     position_t end = istream_pos(is);
     char c;
-    string_t *s = string_new();
+    string_t s;
+    string_init(&s);
     while (!istream_eos(is) && is->lrow == lrow) {
         c = istream_char(is);
         if (isalnum(c) || c == '_') {
-            string_push(s, c);
+            string_push(&s, c);
             end = istream_pos(is);
             istream_advance(is);
         } else {
@@ -216,17 +219,19 @@ static token_t *read_ident_or_kw(istream_t *is, icache_id_t id) {
 
     span_t span = {id, start, end};
     for (int i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) {
-        if (strcmp(s->str, pairs[i].s) == 0) {
-            return token_new(lrow, span, pairs[i].kind, s);
+        if (strcmp(s.str, pairs[i].s) == 0) {
+            token_init(token, pairs[i].kind, s, lrow, span);
+            return true;
         }
     }
-    return token_new(lrow, span, TK_IDENTIFIER, s);
+    token_init(token, TK_IDENTIFIER, s, lrow, span);
+    return true;
 }
 
-// Read a character used in string or character literal and return true if
-// success.
+// Read a character used in string or character literal and store it to `ch`.
 // `end` will hold a position of last character this function consume.
-static bool read_character(context_t *ctx, istream_t *is, icache_id_t id,
+// Returns true if success.
+static bool read_character(context_t *ctx, istream_t *is, cache_id_t id,
                            char *ch, position_t *end) {
     char c = istream_char(is);
     *end = istream_pos(is);
@@ -235,9 +240,10 @@ static bool read_character(context_t *ctx, istream_t *is, icache_id_t id,
     if (c == '\\') {
         if (istream_eos(is)) {
             span_t span = {id, *end, *end};
-            report_info_t info = {string_from("expected character after \\"),
-                                  string_new(), span};
-            report(ctx, REPORT_LEVEL_ERROR, info);
+            string_t what, info;
+            string_from(&what, "expected character after \\");
+            string_init(&info);
+            report(ctx, REPORT_LEVEL_ERROR, (report_info_t){what, info, span});
             return false;
         }
         c = istream_char(is);
@@ -270,9 +276,10 @@ static bool read_character(context_t *ctx, istream_t *is, icache_id_t id,
             c = 0x00;
         } else {
             span_t span = {id, istream_pos(is), istream_pos(is)};
-            report_info_t info = {string_from("unknown escape sequence"),
-                                  string_new(), span};
-            report(ctx, REPORT_LEVEL_ERROR, info);
+            string_t what, info;
+            string_from(&what, "unknown escape sequence");
+            string_init(&info);
+            report(ctx, REPORT_LEVEL_ERROR, (report_info_t){what, info, span});
             return false;
         }
         istream_advance(is);
@@ -281,24 +288,28 @@ static bool read_character(context_t *ctx, istream_t *is, icache_id_t id,
     return true;
 }
 
-// Read string literal from 'is' by assuming first character in `is` is `"`.
-// If falied, report error and advance `is` to next line, then return NULL.
-static token_t *read_string_literal(context_t *ctx, istream_t *is,
-                                    icache_id_t id) {
+// Read string literal from 'is' by assuming first character in `is` is `"` and
+// initialize `token` with it.
+// If falied, report error and advance `is` to next line, then return false.
+static bool read_string_literal(context_t *ctx, istream_t *is, cache_id_t id,
+                                token_t *token) {
     size_t lrow = is->lrow;
     position_t start = istream_pos(is);
     position_t end = istream_pos(is);
     istream_advance(is);
 
-    string_t *s = string_new();
+    string_t s;
+    string_from(&s, "\"");
     while (true) {
         if (istream_eos(is) || is->lrow != lrow) {
             span_t span = {id, start, end};
-            report_info_t info = {string_from("unclosing string literal"),
-                                  string_new(), span};
-            report(ctx, REPORT_LEVEL_ERROR, info);
-            return NULL;
+            string_t what, info;
+            string_from(&what, "unclosing string literal");
+            string_init(&info);
+            report(ctx, REPORT_LEVEL_ERROR, (report_info_t){what, info, span});
+            return false;
         } else if (istream_char(is) == '"') {
+            string_push(&s, '"');
             end = istream_pos(is);
             istream_advance(is);
             break;
@@ -307,33 +318,38 @@ static token_t *read_string_literal(context_t *ctx, istream_t *is,
         char c;
         if (!read_character(ctx, is, id, &c, &end)) {
             goto_nextline(is);
-            return NULL;
+            return false;
         }
-        string_push(s, c);
+        string_push(&s, c);
     }
 
     span_t span = {id, start, end};
-    return token_new(lrow, span, TK_STRING, s);
+    token_init(token, TK_STRING, s, lrow, span);
+    return true;
 }
 
-// Read character literal from 'is' by assuming first character in `is` is `'`.
-// If falied, report error and advance `is` to next line, then return NULL.
-static token_t *read_character_literal(context_t *ctx, istream_t *is,
-                                       icache_id_t id) {
+// Read character literal from 'is' by assuming first character in `is` is `'`
+// and initialize `token` with it.
+// If falied, report error and advance `is` to next line, then return false.
+static bool read_character_literal(context_t *ctx, istream_t *is, cache_id_t id,
+                                   token_t *token) {
     size_t lrow = is->lrow;
     position_t start = istream_pos(is);
     position_t end = istream_pos(is);
     istream_advance(is);
 
-    string_t *s = string_new();
+    string_t s;
+    string_from(&s, "'");
     while (true) {
         if (istream_eos(is) || is->lrow != lrow) {
             span_t span = {id, start, end};
-            report_info_t info = {string_from("unclosing character literal"),
-                                  string_new(), span};
-            report(ctx, REPORT_LEVEL_ERROR, info);
-            return NULL;
+            string_t what, info;
+            string_from(&what, "unclosing character literal");
+            string_init(&info);
+            report(ctx, REPORT_LEVEL_ERROR, (report_info_t){what, info, span});
+            return false;
         } else if (istream_char(is) == '\'') {
+            string_push(&s, '\'');
             end = istream_pos(is);
             istream_advance(is);
             break;
@@ -342,13 +358,14 @@ static token_t *read_character_literal(context_t *ctx, istream_t *is,
         char c;
         if (!read_character(ctx, is, id, &c, &end)) {
             goto_nextline(is);
-            return NULL;
+            return false;
         }
-        string_push(s, c);
+        string_push(&s, c);
     }
 
     span_t span = {id, start, end};
-    return token_new(lrow, span, TK_STRING, s);
+    token_init(token, TK_CHARACTER, s, lrow, span);
+    return true;
 }
 
 // Read octal digits from current lines and append these to `s`.
@@ -435,172 +452,192 @@ static float_suffix_t read_float_suffix(istream_t *is, position_t *end) {
     }
 }
 
-static token_t *read_number_literal(context_t *ctx, istream_t *is,
-                                    icache_id_t id) {
+// Read integer or floating literal from `is` and initialize `token` with it.
+// If failed, return false.
+static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
+                                token_t *token) {
     size_t lrow = is->lrow;
     position_t start = istream_pos(is);
     position_t end = istream_pos(is);
 
     char c;
-    string_t *s = string_new();
+    string_t s;
+    string_init(&s);
     int radix;
     if (istream_accept(is, "0x", &end)) {
-        string_append(s, "0x");
-        read_hexadecimals(is, &end, s);
+        string_append(&s, "0x");
+        read_hexadecimals(is, &end, &s);
 
         if (istream_eos(is) || istream_char(is) != '.') {
+            if (s.len == 2 && strcmp(s.str, "0x") == 0) {
+                span_t span = {id, start, end};
+                string_t what, info;
+                string_from(&what, "unclosing character literal");
+                string_init(&info);
+                report(ctx, REPORT_LEVEL_ERROR,
+                       (report_info_t){what, info, span});
+                return false;
+            }
             int_suffix_t suffix = read_int_suffix(is, &end);
             span_t span = {id, start, end};
-            token_t *token = token_new(lrow, span, TK_INTEGER, s);
-            token->int_suffix = suffix;
-            return token;
+            token_init(token, TK_INTEGER, s, lrow, span);
+            token->int_.suffix = suffix;
+            return true;
         }
-        string_push(s, istream_char(is));
+        string_push(&s, istream_char(is));
         istream_advance(is);
 
-        read_hexadecimals(is, &end, s);
+        read_hexadecimals(is, &end, &s);
 
         if (!istream_eos(is)) {
             c = istream_char(is);
             if (istream_accept(is, "p", &end) ||
                 istream_accept(is, "P", &end)) {
-                string_push(s, c);
+                string_push(&s, c);
                 c = istream_char(is);
                 if (istream_accept(is, "+", &end) ||
                     istream_accept(is, "-", &end)) {
-                    string_push(s, c);
+                    string_push(&s, c);
                 }
-                read_hexadecimals(is, &end, s);
+                read_hexadecimals(is, &end, &s);
             }
         }
 
         float_suffix_t suffix = read_float_suffix(is, &end);
         span_t span = {id, start, end};
-        token_t *token = token_new(lrow, span, TK_FLOATING, s);
-        token->float_suffix = suffix;
-        return token;
+        token_init(token, TK_FLOATING, s, lrow, span);
+        token->float_.suffix = suffix;
+        return true;
     } else if (istream_accept(is, "0", &end)) {
-        string_push(s, '0');
-        read_octals(is, &end, s);
+        string_push(&s, '0');
+        read_octals(is, &end, &s);
         int_suffix_t suffix = read_int_suffix(is, &end);
         span_t span = {id, start, end};
-        token_t *token = token_new(lrow, span, TK_INTEGER, s);
-        token->int_suffix = suffix;
-        return token;
+        token_init(token, TK_INTEGER, s, lrow, span);
+        token->int_.suffix = suffix;
+        return true;
     } else if (istream_accept(is, ".", &end)) {
-        string_push(s, '.');
+        string_push(&s, '.');
 
-        read_decimals(is, &end, s);
+        read_decimals(is, &end, &s);
 
         if (!istream_eos(is)) {
             c = istream_char(is);
             if (istream_accept(is, "e", &end) ||
                 istream_accept(is, "E", &end)) {
-                string_push(s, c);
+                string_push(&s, c);
                 c = istream_char(is);
                 if (istream_accept(is, "+", &end) ||
                     istream_accept(is, "-", &end)) {
-                    string_push(s, c);
+                    string_push(&s, c);
                 }
-                read_decimals(is, &end, s);
+                read_decimals(is, &end, &s);
             }
         }
 
         float_suffix_t suffix = read_float_suffix(is, &end);
         span_t span = {id, start, end};
-        token_t *token = token_new(lrow, span, TK_FLOATING, s);
-        token->float_suffix = suffix;
-        return token;
+        token_init(token, TK_FLOATING, s, lrow, span);
+        token->float_.suffix = suffix;
+        return true;
     } else {
-        read_decimals(is, &end, s);
+        read_decimals(is, &end, &s);
 
         if (istream_eos(is) || istream_char(is) != '.') {
             int_suffix_t suffix = read_int_suffix(is, &end);
             span_t span = {id, start, end};
-            token_t *token = token_new(lrow, span, TK_INTEGER, s);
-            token->int_suffix = suffix;
-            return token;
+            token_init(token, TK_INTEGER, s, lrow, span);
+            token->int_.suffix = suffix;
+            return true;
         }
-        string_push(s, istream_char(is));
+        string_push(&s, istream_char(is));
         istream_advance(is);
 
-        read_decimals(is, &end, s);
+        read_decimals(is, &end, &s);
 
         if (!istream_eos(is)) {
             c = istream_char(is);
             if (istream_accept(is, "p", &end) ||
                 istream_accept(is, "P", &end)) {
-                string_push(s, c);
+                string_push(&s, c);
                 c = istream_char(is);
                 if (istream_accept(is, "+", &end) ||
                     istream_accept(is, "-", &end)) {
-                    string_push(s, c);
+                    string_push(&s, c);
                 }
-                read_decimals(is, &end, s);
+                read_decimals(is, &end, &s);
             }
         }
 
         float_suffix_t suffix = read_float_suffix(is, &end);
         span_t span = {id, start, end};
-        token_t *token = token_new(lrow, span, TK_FLOATING, s);
-        token->float_suffix = suffix;
-        return token;
+        token_init(token, TK_FLOATING, s, lrow, span);
+        token->float_.suffix = suffix;
+        return true;
     }
 }
 
-tstream_t *lex_file(context_t *ctx, char *path) {
-    input_t *input = input_from_file(path);
-    icache_id_t id = icache_cache(ctx->icache, input);
-    istream_t *is = istream_new(input);
+bool lex_file(context_t *ctx, char *path, vector_t *tokens) {
+    cache_id_t id = cache_file(&ctx->cache, path);
+    input_t *input = cache_fetch(&ctx->cache, id);
+    vector_init(tokens, sizeof(token_t));
 
-    bool error_happen = false;
-    token_t *token = NULL;
-    vector_t *tokens = vector_new();
-    skip_comments(ctx, is, id);
-    while (!istream_eos(is)) {
-        if ((token = read_punct(is, id))) {
-            vector_push(tokens, token);
-            skip_comments(ctx, is, id);
+    bool success = true;
+    istream_t is;
+    istream_init(&is, input);
+
+    skip_comments(ctx, &is, id);
+    token_t token;
+    while (!istream_eos(&is)) {
+        if (read_punct(&is, id, &token)) {
+            vector_push(tokens, &token);
+            skip_comments(ctx, &is, id);
             continue;
         };
-        if ((token = read_ident_or_kw(is, id))) {
-            vector_push(tokens, token);
-            skip_comments(ctx, is, id);
+        if (read_ident_or_kw(&is, id, &token)) {
+            vector_push(tokens, &token);
+            skip_comments(ctx, &is, id);
             continue;
         }
-        if (istream_char(is) == '"') {
-            if ((token = read_string_literal(ctx, is, id))) {
-                vector_push(tokens, token);
+        if (istream_char(&is) == '"') {
+            if (read_string_literal(ctx, &is, id, &token)) {
+                vector_push(tokens, &token);
             }
-        } else if (istream_char(is) == '\'') {
-            if ((token = read_character_literal(ctx, is, id))) {
-                vector_push(tokens, token);
+        } else if (istream_char(&is) == '\'') {
+            if (read_character_literal(ctx, &is, id, &token)) {
+                vector_push(tokens, &token);
             }
-        } else if (isdigit(istream_char(is)) || istream_char(is) == '.') {
-            if ((token = read_number_literal(ctx, is, id))) {
-                vector_push(tokens, token);
+        } else if (isdigit(istream_char(&is)) || istream_char(&is) == '.') {
+            if (read_number_literal(ctx, &is, id, &token)) {
+                vector_push(tokens, &token);
             }
-        } else if (isspace(istream_char(is))) {
-            int lrow = is->lrow;
-            span_t span = {id, istream_pos(is), istream_pos(is)};
-            string_t *s = string_new();
-            string_push(s, istream_char(is));
-            istream_advance(is);
-            vector_push(tokens, token_new(lrow, span, TK_SPACE, s));
+        } else if (isspace(istream_char(&is))) {
+            int lrow = is.lrow;
+            span_t span = {id, istream_pos(&is), istream_pos(&is)};
+            string_t s;
+            string_init(&s);
+            string_push(&s, istream_char(&is));
+            istream_advance(&is);
+            token_init(&token, TK_SPACE, s, lrow, span);
+            vector_push(tokens, &token);
         } else {
-            position_t start = istream_pos(is);
-            position_t end = istream_pos(is);
-            span_t span = {id, start, end};
-            report_info_t info = {string_from("unrecognizable character found"),
-                                  string_new(), span};
-            report(ctx, REPORT_LEVEL_ERROR, info);
-            istream_advance(is);
+            int lrow = is.lrow;
+            span_t span = {id, istream_pos(&is), istream_pos(&is)};
+            string_t s;
+            string_init(&s);
+            string_push(&s, istream_char(&is));
+            istream_advance(&is);
+            token_init(&token, TK_UNKNOWN, s, lrow, span);
+            vector_push(tokens, &token);
         }
-        skip_comments(ctx, is, id);
+        skip_comments(ctx, &is, id);
     }
-    if (error_happen) {
-        return NULL;
+    if (success) {
+        vector_t output;
+        success = preprocess(ctx, tokens, &output);
+        *tokens = output;
+        return success;
     } else {
-        return preprocess(ctx, tstream_new(tokens));
+        return false;
     }
 }

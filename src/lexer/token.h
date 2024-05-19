@@ -1,23 +1,10 @@
 #ifndef TINYC_LEXER_TOKEN_H_
 #define TINYC_LEXER_TOKEN_H_
 
+#include <stdbool.h>
+
 #include "../collections/string.h"
 #include "../span.h"
-
-typedef enum {
-    INT_SUFFIX_NONE,
-    INT_SUFFIX_U,
-    INT_SUFFIX_L,
-    INT_SUFFIX_UL,
-    INT_SUFFIX_LL,
-    INT_SUFFIX_ULL,
-} int_suffix_t;
-
-typedef enum {
-    FLOAT_SUFFIX_NONE,
-    FLOAT_SUFFIX_F,
-    FLOAT_SUFFIX_L,
-} float_suffix_t;
 
 typedef enum {
     // Punctuations
@@ -112,22 +99,51 @@ typedef enum {
     TK_CHARACTER,   // 'a', 'A', ...
 
     // Special
-    TK_SPACE,  // whitespace
+    TK_SPACE,    // whitespace
+    TK_UNKNOWN,  // unknown character
 } token_kind_t;
 
+typedef enum {
+    INT_RADIX_OCTAL,
+    INT_RADIX_DECIMAL,
+    INT_RADIX_HEXADECIMAL,
+} int_radix_t;
+
+typedef enum {
+    INT_SUFFIX_NONE,
+    INT_SUFFIX_U,
+    INT_SUFFIX_L,
+    INT_SUFFIX_UL,
+    INT_SUFFIX_LL,
+    INT_SUFFIX_ULL,
+} int_suffix_t;
+
+typedef enum {
+    FLOAT_RADIX_DECIMAL,
+    FLOAT_RADIX_HEXADECIMAL,
+} float_radix_t;
+
+typedef enum {
+    FLOAT_SUFFIX_NONE,
+    FLOAT_SUFFIX_F,
+    FLOAT_SUFFIX_L,
+} float_suffix_t;
+
 typedef struct {
+    token_kind_t kind;
+    union {
+        struct {
+            int_radix_t radix;
+            int_suffix_t suffix;
+        } int_;  // Used when kind == TK_INTEGER
+        struct {
+            float_radix_t radix;
+            float_suffix_t suffix;
+        } float_;  // Used when kind == TK_FLOATING
+    };
+    string_t value;  // Original string of this token.
     size_t lrow;
     span_t span;
-    token_kind_t kind;
-    string_t *value;
-    int_suffix_t int_suffix;      // Used if kind == TK_INTEGER
-    float_suffix_t float_suffix;  // Used if kind == TK_FLOATING
 } token_t;
-
-bool token_is_int_octal(token_t *token);
-bool token_is_int_decimal(token_t *token);
-bool token_is_int_hexadecimal(token_t *token);
-bool token_is_float_decimal(token_t *token);
-bool token_is_float_hexadecimal(token_t *token);
 
 #endif  // TINYC_LEXER_TOKEN_H_

@@ -1,81 +1,84 @@
 #include "string.h"
 
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../panic.h"
 
-// Make `string->str` point to heap so that modification to it become possible.
-static void heaplify(string_t *string) {
-    if (!string->is_static) return;
+#define STRING_INIT_CAP 100
+#define STRING_EXTEND_SIZE 100
 
-    string->cap = string->len + 101;
-    string->is_static = false;
+// Extend `string` so that extra `size` character the string can hold.
+static void extend(string_t *string, size_t size) {
+    string->cap += size;
+    string->str = realloc(string->str, string->cap);
+    if (!string->str) panic_internal("failed extend string");
+}
 
-    char *str = string->str;
+void string_init(string_t *string) {
+    string->len = 0;
+    string->cap = STRING_INIT_CAP + 1;
     string->str = malloc(sizeof(char) * string->cap);
     if (!string->str) panic_internal("failed to allocate memory");
-    strcpy(string->str, str);
+    string->str[0] = '\0';
 }
 
-string_t *string_new() { return string_from(""); }
-
-string_t *string_from(char *s) {
-    string_t *string = malloc(sizeof(string_t));
-    if (!string) panic("failed to allocate memory");
-    string->str = s;
-    string->cap = 0;
+void string_from(string_t *string, const char *s) {
     string->len = strlen(s);
-    string->is_static = true;
-    return string;
+    string->cap = string->len + 1;
+    string->str = malloc(sizeof(char) * string->cap);
+    if (!string->str) panic_internal("failed to allocate memory");
+    strcpy(string->str, s);
 }
 
-void string_extend(string_t *string, size_t size) {
-    if (string->is_static) heaplify(string);
-    string->cap += size;
-    string->str = realloc(string->str, sizeof(char) * string->cap);
-    if (!string->str) panic_internal("failed to extend string");
+void string_format(string_t *string, const char *restrict format, ...) {
+    va_list arg;
+
+    va_start(arg, format);
+    int len = vsnprintf(NULL, 0, format, arg);
+    va_end(arg);
+    if (len < 0) panic_internal("encoding error happen");
+
+    size_t cap = len + 1;
+    char *buffer = malloc(cap);
+    va_start(arg, format);
+    vsnprintf(buffer, cap, format, arg);
+    va_end(arg);
+
+    string->len = strlen(buffer);
+    string->cap = cap;
+    string->str = buffer;
 }
 
 void string_push(string_t *string, char c) {
-    if (string->is_static) heaplify(string);
-    if (string->len + 1 >= string->cap) {
-        string_extend(string, 100);
-    }
+    if (string->len + 1 + 1 >= string->cap)
+        extend(string, 1 + STRING_EXTEND_SIZE);
     string->str[string->len++] = c;
     string->str[string->len] = '\0';
 }
 
-void string_append(string_t *dst, const char *src) {
-    size_t src_len = strlen(src);
-    for (int i = 0; i < src_len; i++) {
-        string_push(dst, src[i]);
-    }
-    /*
-    size_t src_len = strlen(src);
-    if (dst->is_static) heaplify(dst);
-    if (dst->len + src_len + 1 >= dst->cap) {
-        string_extend(dst, src_len + 100);
-    }
-    strcpy(&dst->str[dst->len], src);
-    dst->len += src_len;
-    */
+void string_append(string_t *string, const char *s) {
+    size_t len = strlen(s);
+    if (string->len + len + 1 >= string->cap)
+        extend(string, len + STRING_EXTEND_SIZE);
+    strcpy(string->str + string->len, s);
 }
 
 char string_pop(string_t *string) {
-    if (string->is_static) heaplify(string);
     if (string->len == 0) panic_internal("pop from empty string");
     char c = string->str[--string->len];
     string->str[string->len] = '\0';
     return c;
 }
 
-char string_at(string_t *string, size_t n) {
-    if (n >= string->len) panic_internal("at called with exceed index");
+char string_at(const string_t *string, size_t n) {
+    if (n >= string->len) panic_internal("index exceed");
     return string->str[n];
 }
 
-char string_top(string_t *string) {
+char string_top(const string_t *string) {
     if (string->len == 0) panic_internal("top from empty string");
     return string->str[string->len - 1];
 }

@@ -1,25 +1,31 @@
 #include "macro.h"
 
-#include <stdlib.h>
+#include "../collections/string.h"
 
-#include "../panic.h"
-
-macro_t *macro_new_object(string_t *name, vector_t *body) {
-    macro_t *macro = malloc(sizeof(macro_t));
-    if (!macro) panic_internal("failed to allocate memory");
+void macro_object(macro_t *macro, vector_t body) {
     macro->kind = MACRO_OBJECT;
-    macro->name = name;
     macro->body = body;
-    macro->params = vector_new();
-    return macro;
+    vector_init(&macro->params, sizeof(string_t));
 }
 
-macro_t *macro_new_function(string_t *name, vector_t *body, vector_t *params) {
-    macro_t *macro = malloc(sizeof(macro_t));
-    if (!macro) panic_internal("failed to allocate memory");
+void macro_function(macro_t *macro, vector_t body, vector_t params) {
     macro->kind = MACRO_FUNCTION;
-    macro->name = name;
     macro->body = body;
     macro->params = params;
-    return macro;
+}
+
+void mtable_init(mtable_t *mtable) {
+    dict_init(&mtable->table, sizeof(macro_t));
+}
+
+void mtable_insert(mtable_t *mtable, const char *name, macro_t macro) {
+    dict_insert(&mtable->table, name, &macro);
+}
+
+void mtable_remove(mtable_t *mtable, const char *name) {
+    dict_remove(&mtable->table, name);
+}
+
+macro_t *mtable_find(mtable_t *mtable, const char *name) {
+    return dict_find(&mtable->table, name);
 }

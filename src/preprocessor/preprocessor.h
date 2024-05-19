@@ -1,11 +1,14 @@
 #ifndef TINYC_PREPROCESSOR_PREPROCESSOR_H_
 #define TINYC_PREPROCESSOR_PREPROCESSOR_H_
 
-#include "../context.h"
-#include "../lexer/stream.h"
+#include <stdbool.h>
 
-// Process directives in `ts` and return processed token stream.
-// If failed, report error and return NULL.
-tstream_t *preprocess(context_t *ctx, tstream_t *ts);
+#include "../context.h"
+
+// Do preprocess to given `input` and initialize `output` with it.
+// `input` and `output` must be different.
+// Returns false if error happen.
+bool preprocess(context_t *ctx, vector_t *restrict input,
+                vector_t *restrict output);
 
 #endif  // TINYC_PREPROCESSOR_PREPROCESSOR_H_

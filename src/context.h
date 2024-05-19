@@ -1,14 +1,14 @@
 #ifndef TINYC_CONTEXT_H_
 #define TINYC_CONTEXT_H_
 
-#include "input/cache.h"
-#include "preprocessor/table.h"
+#include "cache.h"
+#include "preprocessor/macro.h"
 
 typedef struct {
-    icache_t *icache;
-    mtable_t *mtable;
+    cache_t cache;
+    mtable_t mtable;
 } context_t;
 
-context_t *context_new();
+void context_init(context_t *ctx);
 
 #endif  // TINYC_CONTEXT_H_

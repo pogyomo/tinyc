@@ -2,10 +2,9 @@
 
 #include <stdio.h>
 
+#include "cache.h"
 #include "collections/string.h"
 #include "context.h"
-#include "input/cache.h"
-#include "input/input.h"
 #include "span.h"
 
 // Start to coloring the output to `os` depende on `level`.
@@ -32,11 +31,11 @@ static int digits(int n) {
 }
 
 void report(context_t *ctx, report_level_t level, report_info_t info) {
-    input_t *input = icache_fetch(ctx->icache, info.span.id);
+    input_t *input = cache_fetch(&ctx->cache, info.span.id);
     position_t start = info.span.start;
     position_t end = info.span.end;
 
-    fprintf(stderr, "%s:%d:%d: ", input->name->str, start.row, start.offset);
+    fprintf(stderr, "%s:%d:%d: ", input->name.str, start.row, start.offset);
     start_color(stderr, level);
     if (level == REPORT_LEVEL_ERROR) {
         fputs("error: ", stderr);
@@ -44,12 +43,12 @@ void report(context_t *ctx, report_level_t level, report_info_t info) {
         fputs("warning: ", stderr);
     }
     end_color(stderr);
-    fprintf(stderr, "%s\n", info.what->str);
+    fprintf(stderr, "%s\n", info.what.str);
 
     int row_width = digits(start.row) > digits(end.row) ? digits(start.row)
                                                         : digits(end.row);
     if (start.row == end.row) {
-        string_t *line = input_get_line(input, start.row);
+        string_t *line = input_at(input, start.row);
         fprintf(stderr, "  %d|%s\n", start.row, line->str);
         for (int i = 0; i < 2 + row_width; i++) fputc(' ', stderr);
         fputc('|', stderr);
@@ -58,9 +57,9 @@ void report(context_t *ctx, report_level_t level, report_info_t info) {
         fputc('^', stderr);
         for (int i = start.offset + 1; i <= end.offset; i++) fputc('~', stderr);
         end_color(stderr);
-        fprintf(stderr, " %s\n", info.info->str);
+        fprintf(stderr, " %s\n", info.info.str);
     } else {
-        string_t *sline = input_get_line(input, start.row);
+        string_t *sline = input_at(input, start.row);
         fputs("  ", stderr);
         for (int i = 0; i < row_width - digits(start.row); i++)
             fputc('0', stderr);
@@ -78,7 +77,7 @@ void report(context_t *ctx, report_level_t level, report_info_t info) {
         for (int i = 0; i < row_width; i++) fputc(' ', stderr);
         fputs(":\n", stderr);
 
-        string_t *eline = input_get_line(input, end.row);
+        string_t *eline = input_at(input, end.row);
         fputs("  ", stderr);
         for (int i = 0; i < row_width - digits(end.row); i++)
             fputc('0', stderr);
@@ -88,6 +87,6 @@ void report(context_t *ctx, report_level_t level, report_info_t info) {
         start_color(stderr, level);
         for (int i = 0; i <= end.offset; i++) fputc('~', stderr);
         end_color(stderr);
-        fprintf(stderr, " %s\n", info.info->str);
+        fprintf(stderr, " %s\n", info.info.str);
     }
 }

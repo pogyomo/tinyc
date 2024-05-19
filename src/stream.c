@@ -1,29 +1,12 @@
 #include "stream.h"
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
+#include "panic.h"
 
-#include "../panic.h"
-#include "../span.h"
-#include "input.h"
-
-istream_t *istream_new(input_t *input) {
-    istream_t *is = malloc(sizeof(istream_t));
-    if (!is) panic_internal("failed to allocate memory");
+void istream_init(istream_t *is, input_t *input) {
     is->input = input;
     is->lrow = 0;
     is->row = 0;
     is->offset = 0;
-    return is;
-}
-
-bool istream_eos(istream_t *is) { return is->input->lines->len <= is->row; }
-
-char istream_char(istream_t *is) {
-    if (istream_eos(is))
-        panic_internal("char called when istream reach to eos");
-    return string_at(input_get_line(is->input, is->row), is->offset);
 }
 
 istream_state_t istream_state(istream_t *is) {
@@ -37,6 +20,14 @@ void istream_set_state(istream_t *is, istream_state_t state) {
     is->offset = state.offset;
 }
 
+bool istream_eos(istream_t *is) { return is->input->lines.len <= is->row; }
+
+char istream_char(istream_t *is) {
+    if (istream_eos(is))
+        panic_internal("char called when istream reach to eos");
+    return string_at(input_at(is->input, is->row), is->offset);
+}
+
 position_t istream_pos(istream_t *is) {
     if (istream_eos(is)) panic_internal("pos called when istream reach to eos");
     position_t pos = {is->row, is->offset};
@@ -48,20 +39,20 @@ void istream_advance(istream_t *is) {
 
     bool continue_line = false;
     is->offset++;
-    if (is->offset + 1 == input_get_line(is->input, is->row)->len &&
+    if (is->offset + 1 == input_at(is->input, is->row)->len &&
         istream_char(is) == '\\') {
         continue_line = true;
         is->offset++;
     }
 
-    if (is->offset == input_get_line(is->input, is->row)->len) {
+    if (is->offset == input_at(is->input, is->row)->len) {
         if (!continue_line) {
             is->lrow++;
         }
         is->row++;
         is->offset = 0;
-        while (is->row < is->input->lines->len &&
-               input_get_line(is->input, is->row)->len == 0) {
+        while (is->row < is->input->lines.len &&
+               input_at(is->input, is->row)->len == 0) {
             is->lrow++;
             is->row++;
         }
@@ -91,4 +82,34 @@ bool istream_accept(istream_t *is, char *s, position_t *end) {
     }
     if (end != NULL) *end = acc_end;
     return true;
+}
+
+void tstream_init(tstream_t *ts, vector_t tokens) {
+    ts->tokens = tokens;
+    ts->pos = 0;
+}
+
+bool tstream_eos(tstream_t *ts) { return ts->tokens.len <= ts->pos; }
+
+token_t *tstream_token(tstream_t *ts) {
+    if (tstream_eos(ts)) {
+        panic_internal("get from token stream which reach to eos");
+    }
+    return vector_at(&ts->tokens, ts->pos);
+}
+
+tstream_state_t tstream_state(tstream_t *ts) { return ts->pos; }
+
+void tstream_set_state(tstream_t *ts, tstream_state_t state) {
+    ts->pos = state;
+}
+
+void tstream_advance(tstream_t *ts) {
+    if (tstream_eos(ts)) return;
+    ts->pos++;
+}
+
+void tstream_retreat(tstream_t *ts) {
+    if (ts->pos == 0) return;
+    ts->pos--;
 }

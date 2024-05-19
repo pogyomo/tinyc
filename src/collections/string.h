@@ -1,39 +1,37 @@
 #ifndef TINYC_COLLECTIONS_STRING_H_
 #define TINYC_COLLECTIONS_STRING_H_
 
-#include <stdbool.h>
-#include <stdlib.h>
+#include <stddef.h>
 
-// A buffered string which can push/pop character from it.
+// A buffered string.
 typedef struct {
     char *str;
-    size_t cap;      // The capacity of `str`, or 0 if `str` is static string.
-    size_t len;      // The length of string in `str`.
-    bool is_static;  // true if `str` point to static string.
+    size_t cap;
+    size_t len;
 } string_t;
 
-// Construct an empty string.
-string_t *string_new();
+// Initialize `string` to be ready to use.
+void string_init(string_t *string);
 
-// Construct string from null-terminated string `s`.
-string_t *string_from(char *s);
+// Initialize `string` with `s`.
+void string_from(string_t *string, const char *s);
 
-// Extend this string so that extra `size` character this vector can hold.
-void string_extend(string_t *string, size_t size);
+// Initialize `string` with formatted string.
+void string_format(string_t *string, const char *restrict format, ...);
 
-// Push a character to string.
+// Push a character `c` to the tail of `string`.
 void string_push(string_t *string, char c);
 
-// Append `src` to `dst`.
-void string_append(string_t *dst, const char *src);
+// Append string `s` to tail of `string`.
+void string_append(string_t *string, const char *s);
 
-// Pop a character from string.
+// Pop a character from tail of `string`.
 char string_pop(string_t *string);
 
-// Get the character in specified index.
-char string_at(string_t *string, size_t n);
+// Get n-th character in `string`.
+char string_at(const string_t *string, size_t n);
 
-// Peek a top element in string.
-char string_top(string_t *string);
+// Peek a character in tail of `string`.
+char string_top(const string_t *string);
 
 #endif  // TINYC_COLLECTIONS_STRING_H_
