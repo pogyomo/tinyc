@@ -1,6 +1,8 @@
 #include "cache.h"
 
+#include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "collections/string.h"
 #include "collections/vector.h"
@@ -8,7 +10,7 @@
 
 void input_from_file(input_t *input, char *path) {
     FILE *fp = fopen(path, "r");
-    if (!fp) panic_internal("failed to open file");
+    if (!fp) panic("failed to open file: %s", strerror(errno));
 
     string_from(&input->name, path);
     vector_init(&input->lines, sizeof(string_t));
