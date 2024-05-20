@@ -42,8 +42,10 @@ position_t istream_pos(istream_t *is);
 void istream_advance(istream_t *is);
 
 // If first n characters of `is` is `s`, advance position to skip these
-// character, set `end` to last character's position, then return true.
-bool istream_accept(istream_t *is, char *s, position_t *end);
+// character, set `end` to last character's position, append `s` to `buf`, then
+// return true.
+// You can set `end` and `buf` to NULL.
+bool istream_accept(istream_t *is, char *s, position_t *end, string_t *buf);
 
 // Stream of tokens.
 typedef struct {

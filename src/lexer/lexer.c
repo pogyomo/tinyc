@@ -33,7 +33,7 @@ static void token_init(token_t *token, token_kind_t kind, string_t value,
 static bool skip_oneline_comment(istream_t *is) {
     if (istream_eos(is)) return false;
     size_t lrow = is->lrow;
-    if (istream_accept(is, "//", NULL)) {
+    if (istream_accept(is, "//", NULL, NULL)) {
         while (!istream_eos(is) && is->lrow == lrow) istream_advance(is);
         return true;
     } else {
@@ -48,7 +48,7 @@ static bool skip_multiline_comment(context_t *ctx, istream_t *is,
 
     position_t start = istream_pos(is);
     position_t end = istream_pos(is);
-    if (istream_accept(is, "/*", &end)) {
+    if (istream_accept(is, "/*", &end, NULL)) {
         while (true) {
             if (istream_eos(is)) {
                 span_t span = {id, start, end};
@@ -57,7 +57,7 @@ static bool skip_multiline_comment(context_t *ctx, istream_t *is,
                 string_init(&info);
                 report(ctx, REPORT_LEVEL_ERROR,
                        (report_info_t){what, info, span});
-            } else if (istream_accept(is, "*/", &end)) {
+            } else if (istream_accept(is, "*/", &end, NULL)) {
                 return true;
             } else {
                 istream_advance(is);
@@ -144,7 +144,7 @@ static bool read_punct(istream_t *is, cache_id_t id, token_t *token) {
     position_t end = istream_pos(is);
 
     istream_state_t state = istream_state(is);
-    if (istream_accept(is, ".", &end)) {
+    if (istream_accept(is, ".", &end, NULL)) {
         if (!istream_eos(is) && is_decimal(istream_char(is))) {
             istream_set_state(is, state);
             return NULL;
@@ -157,7 +157,7 @@ static bool read_punct(istream_t *is, cache_id_t id, token_t *token) {
         }
     } else {
         for (int i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) {
-            if (istream_accept(is, pairs[i].s, &end)) {
+            if (istream_accept(is, pairs[i].s, &end, NULL)) {
                 span_t span = {id, start, end};
                 string_t value;
                 string_from(&value, pairs[i].s);
@@ -413,25 +413,31 @@ static void read_hexadecimals(istream_t *is, position_t *end, string_t *s) {
     }
 }
 
-static int_suffix_t read_int_suffix(istream_t *is, position_t *end) {
+static int_suffix_t read_int_suffix(istream_t *is, position_t *end,
+                                    string_t *s) {
     if (istream_eos(is)) return INT_SUFFIX_NONE;
-    if (istream_accept(is, "u", end) || istream_accept(is, "U", end)) {
-        if (istream_accept(is, "ll", end) || istream_accept(is, "LL", end)) {
+    if (istream_accept(is, "u", end, s) || istream_accept(is, "U", end, s)) {
+        if (istream_accept(is, "ll", end, s) ||
+            istream_accept(is, "LL", end, s)) {
             return INT_SUFFIX_ULL;
-        } else if (istream_accept(is, "l", end) ||
-                   istream_accept(is, "L", end)) {
+        } else if (istream_accept(is, "l", end, s) ||
+                   istream_accept(is, "L", end, s)) {
             return INT_SUFFIX_UL;
         } else {
             return INT_SUFFIX_U;
         }
-    } else if (istream_accept(is, "ll", end) || istream_accept(is, "LL", end)) {
-        if (istream_accept(is, "u", end) || istream_accept(is, "U", end)) {
+    } else if (istream_accept(is, "ll", end, s) ||
+               istream_accept(is, "LL", end, s)) {
+        if (istream_accept(is, "u", end, s) ||
+            istream_accept(is, "U", end, s)) {
             return INT_SUFFIX_ULL;
         } else {
             return INT_SUFFIX_LL;
         }
-    } else if (istream_accept(is, "l", end) || istream_accept(is, "L", end)) {
-        if (istream_accept(is, "u", end) || istream_accept(is, "U", end)) {
+    } else if (istream_accept(is, "l", end, s) ||
+               istream_accept(is, "L", end, s)) {
+        if (istream_accept(is, "u", end, s) ||
+            istream_accept(is, "U", end, s)) {
             return INT_SUFFIX_UL;
         } else {
             return INT_SUFFIX_L;
@@ -441,11 +447,13 @@ static int_suffix_t read_int_suffix(istream_t *is, position_t *end) {
     }
 }
 
-static float_suffix_t read_float_suffix(istream_t *is, position_t *end) {
+static float_suffix_t read_float_suffix(istream_t *is, position_t *end,
+                                        string_t *s) {
     if (istream_eos(is)) return FLOAT_SUFFIX_NONE;
-    if (istream_accept(is, "f", end) || istream_accept(is, "F", end)) {
+    if (istream_accept(is, "f", end, s) || istream_accept(is, "F", end, s)) {
         return FLOAT_SUFFIX_F;
-    } else if (istream_accept(is, "l", end) || istream_accept(is, "L", end)) {
+    } else if (istream_accept(is, "l", end, s) ||
+               istream_accept(is, "L", end, s)) {
         return FLOAT_SUFFIX_L;
     } else {
         return FLOAT_SUFFIX_NONE;
@@ -464,12 +472,13 @@ static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
     string_t s;
     string_init(&s);
     int radix;
-    if (istream_accept(is, "0x", &end)) {
-        string_append(&s, "0x");
+    if (istream_accept(is, "0x", &end, &s) ||
+        istream_accept(is, "0X", &end, &s)) {
         read_hexadecimals(is, &end, &s);
 
         if (istream_eos(is) || istream_char(is) != '.') {
-            if (s.len == 2 && strcmp(s.str, "0x") == 0) {
+            if (s.len == 2 &&
+                (strcmp(s.str, "0x") == 0 || strcmp(s.str, "0X") == 0)) {
                 span_t span = {id, start, end};
                 string_t what, info;
                 string_from(&what, "unclosing character literal");
@@ -478,7 +487,7 @@ static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
                        (report_info_t){what, info, span});
                 return false;
             }
-            int_suffix_t suffix = read_int_suffix(is, &end);
+            int_suffix_t suffix = read_int_suffix(is, &end, &s);
             span_t span = {id, start, end};
             token_init(token, TK_INTEGER, s, lrow, span);
             token->int_.suffix = suffix;
@@ -491,51 +500,48 @@ static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
 
         if (!istream_eos(is)) {
             c = istream_char(is);
-            if (istream_accept(is, "p", &end) ||
-                istream_accept(is, "P", &end)) {
+            if (istream_accept(is, "p", &end, NULL) ||
+                istream_accept(is, "P", &end, NULL)) {
                 string_push(&s, c);
                 c = istream_char(is);
-                if (istream_accept(is, "+", &end) ||
-                    istream_accept(is, "-", &end)) {
+                if (istream_accept(is, "+", &end, NULL) ||
+                    istream_accept(is, "-", &end, NULL)) {
                     string_push(&s, c);
                 }
                 read_hexadecimals(is, &end, &s);
             }
         }
 
-        float_suffix_t suffix = read_float_suffix(is, &end);
+        float_suffix_t suffix = read_float_suffix(is, &end, &s);
         span_t span = {id, start, end};
         token_init(token, TK_FLOATING, s, lrow, span);
         token->float_.suffix = suffix;
         return true;
-    } else if (istream_accept(is, "0", &end)) {
-        string_push(&s, '0');
+    } else if (istream_accept(is, "0", &end, &s)) {
         read_octals(is, &end, &s);
-        int_suffix_t suffix = read_int_suffix(is, &end);
+        int_suffix_t suffix = read_int_suffix(is, &end, &s);
         span_t span = {id, start, end};
         token_init(token, TK_INTEGER, s, lrow, span);
         token->int_.suffix = suffix;
         return true;
-    } else if (istream_accept(is, ".", &end)) {
-        string_push(&s, '.');
-
+    } else if (istream_accept(is, ".", &end, &s)) {
         read_decimals(is, &end, &s);
 
         if (!istream_eos(is)) {
             c = istream_char(is);
-            if (istream_accept(is, "e", &end) ||
-                istream_accept(is, "E", &end)) {
+            if (istream_accept(is, "e", &end, NULL) ||
+                istream_accept(is, "E", &end, NULL)) {
                 string_push(&s, c);
                 c = istream_char(is);
-                if (istream_accept(is, "+", &end) ||
-                    istream_accept(is, "-", &end)) {
+                if (istream_accept(is, "+", &end, NULL) ||
+                    istream_accept(is, "-", &end, NULL)) {
                     string_push(&s, c);
                 }
                 read_decimals(is, &end, &s);
             }
         }
 
-        float_suffix_t suffix = read_float_suffix(is, &end);
+        float_suffix_t suffix = read_float_suffix(is, &end, &s);
         span_t span = {id, start, end};
         token_init(token, TK_FLOATING, s, lrow, span);
         token->float_.suffix = suffix;
@@ -544,7 +550,7 @@ static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
         read_decimals(is, &end, &s);
 
         if (istream_eos(is) || istream_char(is) != '.') {
-            int_suffix_t suffix = read_int_suffix(is, &end);
+            int_suffix_t suffix = read_int_suffix(is, &end, &s);
             span_t span = {id, start, end};
             token_init(token, TK_INTEGER, s, lrow, span);
             token->int_.suffix = suffix;
@@ -557,19 +563,19 @@ static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
 
         if (!istream_eos(is)) {
             c = istream_char(is);
-            if (istream_accept(is, "p", &end) ||
-                istream_accept(is, "P", &end)) {
+            if (istream_accept(is, "p", &end, NULL) ||
+                istream_accept(is, "P", &end, NULL)) {
                 string_push(&s, c);
                 c = istream_char(is);
-                if (istream_accept(is, "+", &end) ||
-                    istream_accept(is, "-", &end)) {
+                if (istream_accept(is, "+", &end, NULL) ||
+                    istream_accept(is, "-", &end, NULL)) {
                     string_push(&s, c);
                 }
                 read_decimals(is, &end, &s);
             }
         }
 
-        float_suffix_t suffix = read_float_suffix(is, &end);
+        float_suffix_t suffix = read_float_suffix(is, &end, &s);
         span_t span = {id, start, end};
         token_init(token, TK_FLOATING, s, lrow, span);
         token->float_.suffix = suffix;

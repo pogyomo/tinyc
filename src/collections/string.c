@@ -64,6 +64,7 @@ void string_append(string_t *string, const char *s) {
     if (string->len + len + 1 >= string->cap)
         extend(string, len + STRING_EXTEND_SIZE);
     strcpy(string->str + string->len, s);
+    string->len += len;
 }
 
 char string_pop(string_t *string) {

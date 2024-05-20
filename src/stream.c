@@ -59,7 +59,7 @@ void istream_advance(istream_t *is) {
     }
 }
 
-bool istream_accept(istream_t *is, char *s, position_t *end) {
+bool istream_accept(istream_t *is, char *s, position_t *end, string_t *buf) {
     if (istream_eos(is)) {
         return false;
     }
@@ -81,6 +81,7 @@ bool istream_accept(istream_t *is, char *s, position_t *end) {
         istream_advance(is);
     }
     if (end != NULL) *end = acc_end;
+    if (buf != NULL) string_append(buf, s);
     return true;
 }
 
