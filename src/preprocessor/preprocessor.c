@@ -354,8 +354,10 @@ bool parse_directive(context_t *ctx, tstream_t *line, if_states_t *states,
         }
         return parse_macro_def(ctx, line);
     } else if (strcmp(directive_name.str, "ifndef") == 0) {
-        if (!if_states_empty(states) && if_states_top(states)->shold_skip)
+        if (!if_states_empty(states) && if_states_top(states)->shold_skip) {
+            if_states_push(states, (if_state_t){directive_span, true});
             return true;
+        }
 
         skip_spaces(line);
         if (!tstream_is(line, TK_IDENTIFIER)) {
@@ -374,8 +376,10 @@ bool parse_directive(context_t *ctx, tstream_t *line, if_states_t *states,
         if_states_push(states, (if_state_t){directive_span, shold_skip});
         return true;
     } else if (strcmp(directive_name.str, "ifdef") == 0) {
-        if (!if_states_empty(states) && if_states_top(states)->shold_skip)
+        if (!if_states_empty(states) && if_states_top(states)->shold_skip) {
+            if_states_push(states, (if_state_t){directive_span, true});
             return true;
+        }
 
         skip_spaces(line);
         if (!tstream_is(line, TK_IDENTIFIER)) {
