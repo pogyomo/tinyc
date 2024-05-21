@@ -11,7 +11,7 @@
 // Extend `vector` so that extra `size` value the vector can hold.
 static void extend(vector_t *vector, size_t size) {
     vector->cap += size * vector->size;
-    vector->buf = realloc(vector->buf, vector->cap);
+    vector->buf = realloc(vector->buf, vector->cap * vector->size);
     if (!vector->buf) panic_internal("failed extend vector");
 }
 
