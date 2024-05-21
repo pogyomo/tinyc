@@ -20,24 +20,26 @@ typedef struct {
     vector_t states;
 } if_states_t;
 
-void if_states_init(if_states_t *states) {
+static void if_states_init(if_states_t *states) {
     vector_init(&states->states, sizeof(if_states_t));
 }
 
-bool if_states_empty(if_states_t *states) { return states->states.len == 0; }
+static bool if_states_empty(if_states_t *states) {
+    return states->states.len == 0;
+}
 
-void if_states_push(if_states_t *states, if_state_t state) {
+static void if_states_push(if_states_t *states, if_state_t state) {
     vector_push(&states->states, &state);
 }
 
-void if_states_pop(if_states_t *states) { vector_pop(&states->states); }
+static void if_states_pop(if_states_t *states) { vector_pop(&states->states); }
 
-if_state_t *if_states_top(if_states_t *states) {
+static if_state_t *if_states_top(if_states_t *states) {
     if (states->states.len == 0) panic_internal("constraint is not hold");
     return vector_at(&states->states, states->states.len - 1);
 }
 
-void skip_spaces(tstream_t *ts) {
+static void skip_spaces(tstream_t *ts) {
     while (!tstream_eos(ts)) {
         if (tstream_token(ts)->kind == TK_SPACE) {
             tstream_advance(ts);
@@ -47,7 +49,7 @@ void skip_spaces(tstream_t *ts) {
     }
 }
 
-bool parse_macro_args(context_t *ctx, tstream_t *line, vector_t *args) {
+static bool parse_macro_args(context_t *ctx, tstream_t *line, vector_t *args) {
     int count;
     vector_t arg;
     span_t args_span;
@@ -102,7 +104,7 @@ bool parse_macro_args(context_t *ctx, tstream_t *line, vector_t *args) {
     return true;
 }
 
-bool parse_macro_def(context_t *ctx, tstream_t *line) {
+static bool parse_macro_def(context_t *ctx, tstream_t *line) {
     macro_t macro;
     string_t name;
     span_t macro_span;
@@ -188,7 +190,7 @@ bool parse_macro_def(context_t *ctx, tstream_t *line) {
     }
 }
 
-bool parse_normal(context_t *ctx, tstream_t *line, vector_t *output) {
+static bool parse_normal(context_t *ctx, tstream_t *line, vector_t *output) {
     while (!tstream_eos(line)) {
         token_t *name;
         macro_t *macro;
@@ -249,8 +251,8 @@ bool parse_normal(context_t *ctx, tstream_t *line, vector_t *output) {
     return true;
 }
 
-bool parse_directive(context_t *ctx, tstream_t *line, if_states_t *states,
-                     vector_t *output) {
+static bool parse_directive(context_t *ctx, tstream_t *line,
+                            if_states_t *states, vector_t *output) {
     if (!tstream_is(line, TK_SHARP)) {
         panic_internal("constraint is not hold");
     }
@@ -468,8 +470,8 @@ bool parse_directive(context_t *ctx, tstream_t *line, if_states_t *states,
     }
 }
 
-bool parse_line(context_t *ctx, tstream_t *line, if_states_t *states,
-                vector_t *output) {
+static bool parse_line(context_t *ctx, tstream_t *line, if_states_t *states,
+                       vector_t *output) {
     tstream_state_t state = tstream_state(line);
     skip_spaces(line);
 
