@@ -353,6 +353,22 @@ bool parse_directive(context_t *ctx, tstream_t *line, if_states_t *states,
             return false;
         }
         return parse_macro_def(ctx, line);
+    } else if (strcmp(directive_name.str, "undef") == 0) {
+        if (!if_states_empty(states) && if_states_top(states)->shold_skip)
+            return true;
+
+        skip_spaces(line);
+        if (!tstream_is(line, TK_IDENTIFIER)) {
+            string_t what, info;
+            string_from(&what, "expected macro name after undef");
+            string_init(&info);
+            report(ctx, REPORT_LEVEL_ERROR,
+                   (report_info_t){what, info, directive_span});
+            return false;
+        }
+        string_t macro_name = tstream_token(line)->repr;
+        mtable_remove(&ctx->mtable, macro_name.str);
+        return true;
     } else if (strcmp(directive_name.str, "ifndef") == 0) {
         if (!if_states_empty(states) && if_states_top(states)->shold_skip) {
             if_states_push(states, (if_state_t){directive_span, true});
