@@ -49,7 +49,7 @@ bool istream_accept(istream_t *is, char *s, position_t *end, string_t *buf);
 
 // Stream of tokens.
 typedef struct {
-    vector_t tokens;
+    vector_t *tokens;
     size_t pos;
 } tstream_t;
 
@@ -57,7 +57,7 @@ typedef struct {
 typedef size_t tstream_state_t;
 
 // Construct a new token stream from list of token.
-void tstream_init(tstream_t *ts, vector_t tokens);
+void tstream_init(tstream_t *ts, vector_t *tokens);
 
 // Returns non zero value if this stream reach to eos.
 bool tstream_eos(tstream_t *ts);

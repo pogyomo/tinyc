@@ -518,7 +518,7 @@ bool preprocess(context_t *ctx, vector_t *restrict input,
     if_states_t states;
     if_states_init(&states);
     for (int i = 0; i < lines.len; i++) {
-        line = *(vector_t *)vector_at(&lines, i);
+        vector_t *line = vector_at(&lines, i);
         tstream_init(&ts, line);
         success &= parse_line(ctx, &ts, &states, output);
     }

@@ -89,18 +89,18 @@ bool istream_accept(istream_t *is, char *s, position_t *end, string_t *buf) {
     return true;
 }
 
-void tstream_init(tstream_t *ts, vector_t tokens) {
+void tstream_init(tstream_t *ts, vector_t *tokens) {
     ts->tokens = tokens;
     ts->pos = 0;
 }
 
-bool tstream_eos(tstream_t *ts) { return ts->tokens.len <= ts->pos; }
+bool tstream_eos(tstream_t *ts) { return ts->tokens->len <= ts->pos; }
 
 token_t *tstream_token(tstream_t *ts) {
     if (tstream_eos(ts)) {
         panic_internal("get from token stream which reach to eos");
     }
-    return vector_at(&ts->tokens, ts->pos);
+    return vector_at(ts->tokens, ts->pos);
 }
 
 tstream_state_t tstream_state(tstream_t *ts) { return ts->pos; }
