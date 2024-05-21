@@ -62,6 +62,9 @@ void tstream_init(tstream_t *ts, vector_t tokens);
 // Returns non zero value if this stream reach to eos.
 bool tstream_eos(tstream_t *ts);
 
+// Returns true if current token's kind is `kind`.
+bool tstream_is(tstream_t *ts, token_kind_t kind);
+
 // Returns current peeking token.
 token_t *tstream_token(tstream_t *ts);
 

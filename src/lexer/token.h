@@ -141,9 +141,15 @@ typedef struct {
             float_suffix_t suffix;
         } float_;  // Used when kind == TK_FLOATING
     };
-    string_t value;  // Original string of this token.
+    string_t repr;  // Original string of this token.
     size_t lrow;
     span_t span;
 } token_t;
+
+// Returns string which head and tail `"` is removed from `value`.
+string_t token_string_inner(token_t *token);
+
+// Returns string which head and tail `'` is removed from `value`.
+string_t token_character_inner(token_t *token);
 
 #endif  // TINYC_LEXER_TOKEN_H_

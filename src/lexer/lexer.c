@@ -21,10 +21,10 @@ static bool is_hexadecimal(char c) {
 }
 
 // Create a token with neccessary infomations.
-static void token_init(token_t *token, token_kind_t kind, string_t value,
+static void token_init(token_t *token, token_kind_t kind, string_t repr,
                        size_t lrow, span_t span) {
     token->kind = kind;
-    token->value = value;
+    token->repr = repr;
     token->lrow = lrow;
     token->span = span;
 }
@@ -150,18 +150,18 @@ static bool read_punct(istream_t *is, cache_id_t id, token_t *token) {
             return NULL;
         } else {
             span_t span = {id, start, end};
-            string_t value;
-            string_from(&value, ".");
-            token_init(token, TK_DOT, value, lrow, span);
+            string_t repr;
+            string_from(&repr, ".");
+            token_init(token, TK_DOT, repr, lrow, span);
             return true;
         }
     } else {
         for (int i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) {
             if (istream_accept(is, pairs[i].s, &end, NULL)) {
                 span_t span = {id, start, end};
-                string_t value;
-                string_from(&value, pairs[i].s);
-                token_init(token, pairs[i].kind, value, lrow, span);
+                string_t repr;
+                string_from(&repr, pairs[i].s);
+                token_init(token, pairs[i].kind, repr, lrow, span);
                 return true;
             }
         }
@@ -204,12 +204,12 @@ static bool read_ident_or_kw(istream_t *is, cache_id_t id, token_t *token) {
     position_t start = istream_pos(is);
     position_t end = istream_pos(is);
     char c;
-    string_t s;
-    string_init(&s);
+    string_t repr;
+    string_init(&repr);
     while (!istream_eos(is) && is->lrow == lrow) {
         c = istream_char(is);
         if (isalnum(c) || c == '_') {
-            string_push(&s, c);
+            string_push(&repr, c);
             end = istream_pos(is);
             istream_advance(is);
         } else {
@@ -219,12 +219,12 @@ static bool read_ident_or_kw(istream_t *is, cache_id_t id, token_t *token) {
 
     span_t span = {id, start, end};
     for (int i = 0; i < sizeof(pairs) / sizeof(pairs[0]); i++) {
-        if (strcmp(s.str, pairs[i].s) == 0) {
-            token_init(token, pairs[i].kind, s, lrow, span);
+        if (strcmp(repr.str, pairs[i].s) == 0) {
+            token_init(token, pairs[i].kind, repr, lrow, span);
             return true;
         }
     }
-    token_init(token, TK_IDENTIFIER, s, lrow, span);
+    token_init(token, TK_IDENTIFIER, repr, lrow, span);
     return true;
 }
 
@@ -298,8 +298,8 @@ static bool read_string_literal(context_t *ctx, istream_t *is, cache_id_t id,
     position_t end = istream_pos(is);
     istream_advance(is);
 
-    string_t s;
-    string_from(&s, "\"");
+    string_t repr;
+    string_from(&repr, "\"");
     while (true) {
         if (istream_eos(is) || is->lrow != lrow) {
             span_t span = {id, start, end};
@@ -309,7 +309,7 @@ static bool read_string_literal(context_t *ctx, istream_t *is, cache_id_t id,
             report(ctx, REPORT_LEVEL_ERROR, (report_info_t){what, info, span});
             return false;
         } else if (istream_char(is) == '"') {
-            string_push(&s, '"');
+            string_push(&repr, '"');
             end = istream_pos(is);
             istream_advance(is);
             break;
@@ -320,11 +320,11 @@ static bool read_string_literal(context_t *ctx, istream_t *is, cache_id_t id,
             goto_nextline(is);
             return false;
         }
-        string_push(&s, c);
+        string_push(&repr, c);
     }
 
     span_t span = {id, start, end};
-    token_init(token, TK_STRING, s, lrow, span);
+    token_init(token, TK_STRING, repr, lrow, span);
     return true;
 }
 
@@ -338,8 +338,8 @@ static bool read_character_literal(context_t *ctx, istream_t *is, cache_id_t id,
     position_t end = istream_pos(is);
     istream_advance(is);
 
-    string_t s;
-    string_from(&s, "'");
+    string_t repr;
+    string_from(&repr, "'");
     while (true) {
         if (istream_eos(is) || is->lrow != lrow) {
             span_t span = {id, start, end};
@@ -349,7 +349,7 @@ static bool read_character_literal(context_t *ctx, istream_t *is, cache_id_t id,
             report(ctx, REPORT_LEVEL_ERROR, (report_info_t){what, info, span});
             return false;
         } else if (istream_char(is) == '\'') {
-            string_push(&s, '\'');
+            string_push(&repr, '\'');
             end = istream_pos(is);
             istream_advance(is);
             break;
@@ -360,11 +360,11 @@ static bool read_character_literal(context_t *ctx, istream_t *is, cache_id_t id,
             goto_nextline(is);
             return false;
         }
-        string_push(&s, c);
+        string_push(&repr, c);
     }
 
     span_t span = {id, start, end};
-    token_init(token, TK_CHARACTER, s, lrow, span);
+    token_init(token, TK_CHARACTER, repr, lrow, span);
     return true;
 }
 
@@ -469,16 +469,16 @@ static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
     position_t end = istream_pos(is);
 
     char c;
-    string_t s;
-    string_init(&s);
+    string_t repr;
+    string_init(&repr);
     int radix;
-    if (istream_accept(is, "0x", &end, &s) ||
-        istream_accept(is, "0X", &end, &s)) {
-        read_hexadecimals(is, &end, &s);
+    if (istream_accept(is, "0x", &end, &repr) ||
+        istream_accept(is, "0X", &end, &repr)) {
+        read_hexadecimals(is, &end, &repr);
 
         if (istream_eos(is) || istream_char(is) != '.') {
-            if (s.len == 2 &&
-                (strcmp(s.str, "0x") == 0 || strcmp(s.str, "0X") == 0)) {
+            if (repr.len == 2 &&
+                (strcmp(repr.str, "0x") == 0 || strcmp(repr.str, "0X") == 0)) {
                 span_t span = {id, start, end};
                 string_t what, info;
                 string_from(&what, "unclosing character literal");
@@ -487,97 +487,97 @@ static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
                        (report_info_t){what, info, span});
                 return false;
             }
-            int_suffix_t suffix = read_int_suffix(is, &end, &s);
+            int_suffix_t suffix = read_int_suffix(is, &end, &repr);
             span_t span = {id, start, end};
-            token_init(token, TK_INTEGER, s, lrow, span);
+            token_init(token, TK_INTEGER, repr, lrow, span);
             token->int_.suffix = suffix;
             return true;
         }
-        string_push(&s, istream_char(is));
+        string_push(&repr, istream_char(is));
         istream_advance(is);
 
-        read_hexadecimals(is, &end, &s);
+        read_hexadecimals(is, &end, &repr);
 
         if (!istream_eos(is)) {
             c = istream_char(is);
             if (istream_accept(is, "p", &end, NULL) ||
                 istream_accept(is, "P", &end, NULL)) {
-                string_push(&s, c);
+                string_push(&repr, c);
                 c = istream_char(is);
                 if (istream_accept(is, "+", &end, NULL) ||
                     istream_accept(is, "-", &end, NULL)) {
-                    string_push(&s, c);
+                    string_push(&repr, c);
                 }
-                read_hexadecimals(is, &end, &s);
+                read_hexadecimals(is, &end, &repr);
             }
         }
 
-        float_suffix_t suffix = read_float_suffix(is, &end, &s);
+        float_suffix_t suffix = read_float_suffix(is, &end, &repr);
         span_t span = {id, start, end};
-        token_init(token, TK_FLOATING, s, lrow, span);
+        token_init(token, TK_FLOATING, repr, lrow, span);
         token->float_.suffix = suffix;
         return true;
-    } else if (istream_accept(is, "0", &end, &s)) {
-        read_octals(is, &end, &s);
-        int_suffix_t suffix = read_int_suffix(is, &end, &s);
+    } else if (istream_accept(is, "0", &end, &repr)) {
+        read_octals(is, &end, &repr);
+        int_suffix_t suffix = read_int_suffix(is, &end, &repr);
         span_t span = {id, start, end};
-        token_init(token, TK_INTEGER, s, lrow, span);
+        token_init(token, TK_INTEGER, repr, lrow, span);
         token->int_.suffix = suffix;
         return true;
-    } else if (istream_accept(is, ".", &end, &s)) {
-        read_decimals(is, &end, &s);
+    } else if (istream_accept(is, ".", &end, &repr)) {
+        read_decimals(is, &end, &repr);
 
         if (!istream_eos(is)) {
             c = istream_char(is);
             if (istream_accept(is, "e", &end, NULL) ||
                 istream_accept(is, "E", &end, NULL)) {
-                string_push(&s, c);
+                string_push(&repr, c);
                 c = istream_char(is);
                 if (istream_accept(is, "+", &end, NULL) ||
                     istream_accept(is, "-", &end, NULL)) {
-                    string_push(&s, c);
+                    string_push(&repr, c);
                 }
-                read_decimals(is, &end, &s);
+                read_decimals(is, &end, &repr);
             }
         }
 
-        float_suffix_t suffix = read_float_suffix(is, &end, &s);
+        float_suffix_t suffix = read_float_suffix(is, &end, &repr);
         span_t span = {id, start, end};
-        token_init(token, TK_FLOATING, s, lrow, span);
+        token_init(token, TK_FLOATING, repr, lrow, span);
         token->float_.suffix = suffix;
         return true;
     } else {
-        read_decimals(is, &end, &s);
+        read_decimals(is, &end, &repr);
 
         if (istream_eos(is) || istream_char(is) != '.') {
-            int_suffix_t suffix = read_int_suffix(is, &end, &s);
+            int_suffix_t suffix = read_int_suffix(is, &end, &repr);
             span_t span = {id, start, end};
-            token_init(token, TK_INTEGER, s, lrow, span);
+            token_init(token, TK_INTEGER, repr, lrow, span);
             token->int_.suffix = suffix;
             return true;
         }
-        string_push(&s, istream_char(is));
+        string_push(&repr, istream_char(is));
         istream_advance(is);
 
-        read_decimals(is, &end, &s);
+        read_decimals(is, &end, &repr);
 
         if (!istream_eos(is)) {
             c = istream_char(is);
             if (istream_accept(is, "p", &end, NULL) ||
                 istream_accept(is, "P", &end, NULL)) {
-                string_push(&s, c);
+                string_push(&repr, c);
                 c = istream_char(is);
                 if (istream_accept(is, "+", &end, NULL) ||
                     istream_accept(is, "-", &end, NULL)) {
-                    string_push(&s, c);
+                    string_push(&repr, c);
                 }
-                read_decimals(is, &end, &s);
+                read_decimals(is, &end, &repr);
             }
         }
 
-        float_suffix_t suffix = read_float_suffix(is, &end, &s);
+        float_suffix_t suffix = read_float_suffix(is, &end, &repr);
         span_t span = {id, start, end};
-        token_init(token, TK_FLOATING, s, lrow, span);
+        token_init(token, TK_FLOATING, repr, lrow, span);
         token->float_.suffix = suffix;
         return true;
     }
@@ -620,20 +620,20 @@ bool lex_file(context_t *ctx, char *path, vector_t *tokens) {
         } else if (isspace(istream_char(&is))) {
             int lrow = is.lrow;
             span_t span = {id, istream_pos(&is), istream_pos(&is)};
-            string_t s;
-            string_init(&s);
-            string_push(&s, istream_char(&is));
+            string_t repr;
+            string_init(&repr);
+            string_push(&repr, istream_char(&is));
             istream_advance(&is);
-            token_init(&token, TK_SPACE, s, lrow, span);
+            token_init(&token, TK_SPACE, repr, lrow, span);
             vector_push(tokens, &token);
         } else {
             int lrow = is.lrow;
             span_t span = {id, istream_pos(&is), istream_pos(&is)};
-            string_t s;
-            string_init(&s);
-            string_push(&s, istream_char(&is));
+            string_t repr;
+            string_init(&repr);
+            string_push(&repr, istream_char(&is));
             istream_advance(&is);
-            token_init(&token, TK_UNKNOWN, s, lrow, span);
+            token_init(&token, TK_UNKNOWN, repr, lrow, span);
             vector_push(tokens, &token);
         }
         skip_comments(ctx, &is, id);

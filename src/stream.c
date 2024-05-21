@@ -22,6 +22,10 @@ void istream_set_state(istream_t *is, istream_state_t state) {
 
 bool istream_eos(istream_t *is) { return is->input->lines.len <= is->row; }
 
+bool tstream_is(tstream_t *ts, token_kind_t kind) {
+    return tstream_eos(ts) ? false : tstream_token(ts)->kind == kind;
+}
+
 char istream_char(istream_t *is) {
     if (istream_eos(is))
         panic_internal("char called when istream reach to eos");

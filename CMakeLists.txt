@@ -17,6 +17,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/collections/string.c
     src/collections/vector.c
     src/lexer/lexer.c
+    src/lexer/token.c
     src/preprocessor/macro.c
     src/preprocessor/preprocessor.c
     src/parser/parser.c
