@@ -194,7 +194,9 @@ bool parse_normal(context_t *ctx, tstream_t *line, vector_t *output) {
         macro_t *macro;
 
         if (!tstream_is(line, TK_IDENTIFIER)) {
-            vector_push(output, tstream_token(line));
+            if (!tstream_is(line, TK_SPACE)) {
+                vector_push(output, tstream_token(line));
+            }
             tstream_advance(line);
             continue;
         }
