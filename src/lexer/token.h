@@ -141,7 +141,8 @@ typedef struct {
             float_suffix_t suffix;
         } float_;  // Used when kind == TK_FLOATING
     };
-    string_t repr;  // Original string of this token.
+    string_t repr;       // Original string of this token.
+    string_t printable;  // A printable type of `repr`.
     size_t lrow;
     span_t span;
 } token_t;

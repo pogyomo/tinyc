@@ -4,6 +4,7 @@
 #include "context.h"
 #include "lexer/lexer.h"
 #include "lexer/token.h"
+
 int main() {
     context_t ctx;
     context_init(&ctx);
@@ -13,6 +14,6 @@ int main() {
     }
     for (int i = 0; i < tokens.len; i++) {
         token_t *token = vector_at(&tokens, i);
-        printf("%s", token->repr.str);
+        printf("%s ", token->printable.str);
     }
 }

@@ -20,6 +20,40 @@ static bool is_hexadecimal(char c) {
     return '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F';
 }
 
+// Convert non-printable characters to printable string and store it to `buf`.
+static void to_printable(char c, char *buf) {
+    if (c == 0x07) {
+        strcpy(buf, "\\a");
+    } else if (c == 0x08) {
+        strcpy(buf, "\\b");
+    } else if (c == 0x1B) {
+        strcpy(buf, "\\e");
+    } else if (c == 0x0C) {
+        strcpy(buf, "\\f");
+    } else if (c == 0x0A) {
+        strcpy(buf, "\\n");
+    } else if (c == 0x0D) {
+        strcpy(buf, "\\r");
+    } else if (c == 0x09) {
+        strcpy(buf, "\\t");
+    } else if (c == 0x0B) {
+        strcpy(buf, "\\v");
+    } else if (c == 0x5C) {
+        strcpy(buf, "\\\\");
+    } else if (c == 0x27) {
+        strcpy(buf, "\\'");
+    } else if (c == 0x22) {
+        strcpy(buf, "\\\"");
+    } else if (c == 0x3F) {
+        strcpy(buf, "\\?");
+    } else if (c == 0x00) {
+        strcpy(buf, "\\0");
+    } else {
+        buf[0] = c;
+        buf[1] = '\0';
+    }
+}
+
 // Create a token with neccessary infomations.
 static void token_init(token_t *token, token_kind_t kind, string_t repr,
                        size_t lrow, span_t span) {
@@ -27,6 +61,28 @@ static void token_init(token_t *token, token_kind_t kind, string_t repr,
     token->repr = repr;
     token->lrow = lrow;
     token->span = span;
+
+    char buf[3];
+    if (kind == TK_STRING) {
+        string_init(&token->printable);
+        string_push(&token->printable, '"');
+        for (int i = 1; i < repr.len - 1; i++) {
+            to_printable(string_at(&repr, i), buf);
+            string_append(&token->printable, buf);
+        }
+        string_push(&token->printable, '"');
+    } else if (kind == TK_CHARACTER) {
+        char *s;
+        string_init(&token->printable);
+        string_push(&token->printable, '\'');
+        for (int i = 1; i < repr.len - 1; i++) {
+            to_printable(string_at(&repr, i), buf);
+            string_append(&token->printable, buf);
+        }
+        string_push(&token->printable, '\'');
+    } else {
+        token->printable = repr;
+    }
 }
 
 // Skipe `//` style of comment.
