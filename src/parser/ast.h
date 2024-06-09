@@ -212,8 +212,6 @@ typedef struct expr {
     span_t span;
 } expr_t;
 
-expr_t *expr_alloc();
-
 // ==================== statement ====================
 
 typedef struct {
@@ -310,8 +308,6 @@ typedef struct stmt {
     span_t span;
 } stmt_t;
 
-stmt_t *stmt_alloc();
-
 // ==================== declaration ====================
 
 typedef struct decl {
@@ -340,8 +336,6 @@ typedef struct decl {
     };
     span_t span;
 } decl_t;
-
-decl_t *decl_alloc();
 
 // ==================== type ====================
 
@@ -388,7 +382,5 @@ typedef struct type {
     };
     span_t span;
 } type_t;
-
-type_t *type_alloc();
 
 #endif  // TINYC_PARSER_AST_H_
