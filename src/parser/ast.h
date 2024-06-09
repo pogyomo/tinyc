@@ -26,14 +26,14 @@ typedef struct {
             expr_t *expr;
         } index;
         struct {
-            string_t *name;
+            string_t name;
             span_t span;
         } member;
     };
 } desig_t;
 
 typedef struct {
-    vector_t *desigs;  // Vector of type `desig_t`.
+    vector_t desigs;  // Vector of type `desig_t`.
     init_t *init;
 } init_list_item_t;
 
@@ -47,7 +47,7 @@ typedef struct init {
             expr_t *expr;
         } expr;
         struct {
-            vector_t *items;  // Vector of type `init_list_item_t`.
+            vector_t items;  // Vector of type `init_list_item_t`.
         } list;
     };
     span_t span;
@@ -158,7 +158,7 @@ typedef struct expr {
         } index;
         struct {
             expr_t *expr;
-            vector_t *args;  // Vector of type `expr_t *`.
+            vector_t args;  // Vector of type `expr_t *`.
         } call;
         struct {
             expr_t *cond;
@@ -181,10 +181,10 @@ typedef struct expr {
         } cast;
         struct {
             type_t *type;
-            init_t *init;  // init.kind == INITIALIZER_LIST.
+            init_t *init;  // init->kind must be INIT_LIST.
         } compound;
         struct {
-            string_t *value;
+            string_t value;
             enum {
                 EXPR_INT_SUFFIX_NONE,
                 EXPR_INT_SUFFIX_U,
@@ -200,17 +200,19 @@ typedef struct expr {
             } radix;
         } integer;
         struct {
-            string_t *value;
+            string_t value;
         } ident;
         struct {
-            string_t *value;
+            string_t value;
         } string;
         struct {
-            string_t *value;
+            string_t value;
         } character;
     };
     span_t span;
 } expr_t;
+
+expr_t *expr_alloc();
 
 // ==================== statement ====================
 
@@ -261,7 +263,7 @@ typedef struct stmt {
             expr_t *expr;
         } expr;
         struct {
-            vector_t *items;  // Vector of type `stmt_block_item_t`.
+            vector_t items;  // Vector of type `stmt_block_item_t`.
         } block;
         struct {
             expr_t *cond;
@@ -297,7 +299,7 @@ typedef struct stmt {
         } for_;
         struct {
             struct {
-                string_t *name;
+                string_t name;
                 span_t span;
             } label;
         } goto_;
@@ -307,6 +309,8 @@ typedef struct stmt {
     };
     span_t span;
 } stmt_t;
+
+stmt_t *stmt_alloc();
 
 // ==================== declaration ====================
 
@@ -336,6 +340,8 @@ typedef struct decl {
     };
     span_t span;
 } decl_t;
+
+decl_t *decl_alloc();
 
 // ==================== type ====================
 
@@ -370,17 +376,19 @@ typedef struct type {
         } pointer;
         struct {
             type_t *ret;
-            vector_t *params;  // Vector of type `decl_t *`.
+            vector_t params;  // Vector of type `decl_t *`.
         } function;
         struct {
             type_t *of;
             expr_t *size;  // NULL if no size specified.
         } array;
         struct {
-            vector_t *decls;  // Vector of type `decl_t *`.
+            vector_t decls;  // Vector of type `decl_t *`.
         } field;  // Used when kind == TYPE_STRUCT || kind == TYPE_UNION.
     };
     span_t span;
 } type_t;
+
+type_t *type_alloc();
 
 #endif  // TINYC_PARSER_AST_H_
