@@ -1,8 +1,8 @@
 #include "vector.h"
 
-#include <stdlib.h>
 #include <string.h>
 
+#include "../memory.h"
 #include "../panic.h"
 
 #define VECTOR_INIT_CAP 100
@@ -11,8 +11,7 @@
 // Extend `vector` so that extra `size` value the vector can hold.
 static void extend(vector_t *vector, size_t size) {
     vector->cap += size * vector->size;
-    vector->buf = realloc(vector->buf, vector->cap * vector->size);
-    if (!vector->buf) panic_internal("failed extend vector");
+    vector->buf = realloc_panic(vector->buf, vector->cap * vector->size);
 }
 
 // Returns pointer where n-th value will be stored.
@@ -24,8 +23,7 @@ void vector_init(vector_t *vector, size_t size) {
     vector->size = size;
     vector->len = 0;
     vector->cap = VECTOR_INIT_CAP;
-    vector->buf = malloc(vector->size * vector->cap);
-    if (!vector->buf) panic_internal("failed to allocate memory");
+    vector->buf = malloc_panic(vector->size * vector->cap);
 }
 
 void vector_push(vector_t *vector, void *ptr) {

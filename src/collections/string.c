@@ -2,9 +2,9 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "../memory.h"
 #include "../panic.h"
 
 #define STRING_INIT_CAP 100
@@ -13,23 +13,20 @@
 // Extend `string` so that extra `size` character the string can hold.
 static void extend(string_t *string, size_t size) {
     string->cap += size;
-    string->str = realloc(string->str, string->cap);
-    if (!string->str) panic_internal("failed extend string");
+    string->str = realloc_panic(string->str, string->cap);
 }
 
 void string_init(string_t *string) {
     string->len = 0;
     string->cap = STRING_INIT_CAP + 1;
-    string->str = malloc(sizeof(char) * string->cap);
-    if (!string->str) panic_internal("failed to allocate memory");
+    string->str = malloc_panic(sizeof(char) * string->cap);
     string->str[0] = '\0';
 }
 
 void string_from(string_t *string, const char *s) {
     string->len = strlen(s);
     string->cap = string->len + 1;
-    string->str = malloc(sizeof(char) * string->cap);
-    if (!string->str) panic_internal("failed to allocate memory");
+    string->str = malloc_panic(sizeof(char) * string->cap);
     strcpy(string->str, s);
 }
 
@@ -42,7 +39,7 @@ void string_format(string_t *string, const char *restrict format, ...) {
     if (len < 0) panic_internal("encoding error happen");
 
     size_t cap = len + 1;
-    char *buffer = malloc(cap);
+    char *buffer = malloc_panic(cap);
     va_start(arg, format);
     vsnprintf(buffer, cap, format, arg);
     va_end(arg);

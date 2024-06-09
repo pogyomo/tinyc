@@ -1,9 +1,8 @@
 #include "dict.h"
 
-#include <stdlib.h>
 #include <string.h>
 
-#include "../panic.h"
+#include "../memory.h"
 #include "string.h"
 
 #define DICT_INIT_CAP 100
@@ -22,7 +21,7 @@ static size_t hash(const char *s) {
 void dict_init(dict_t *dict, size_t size) {
     dict->size = size;
     dict->cap = DICT_INIT_CAP;
-    dict->entries = calloc(1, sizeof(dict_entry_t *) * dict->cap);
+    dict->entries = calloc_panic(1, sizeof(dict_entry_t *) * dict->cap);
 }
 
 void dict_insert(dict_t *dict, const char *key, const void *ptr) {
@@ -37,12 +36,10 @@ void dict_insert(dict_t *dict, const char *key, const void *ptr) {
                 return;
             }
         }
-        entry->next = malloc(sizeof(dict_entry_t) + dict->size);
-        if (!entry->next) panic_internal("failed to allocate memory");
+        entry->next = malloc_panic(sizeof(dict_entry_t) + dict->size);
         entry = entry->next;
     } else {
-        dict->entries[i] = malloc(sizeof(dict_entry_t) + dict->size);
-        if (!dict->entries[i]) panic_internal("failed to allocate memory");
+        dict->entries[i] = malloc_panic(sizeof(dict_entry_t) + dict->size);
         entry = dict->entries[i];
     }
     entry->next = NULL;
