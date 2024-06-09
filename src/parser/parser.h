@@ -1,8 +1,6 @@
 #ifndef TINYC_PARSER_PARSER_H_
 #define TINYC_PARSER_PARSER_H_
 
-#include <stdbool.h>
-
 #include "../context.h"
 
 // Parse given file as list of declaration and initialize `decls` with it.

@@ -312,7 +312,7 @@ static bool parse_directive(context_t *ctx, tstream_t *line,
         } else if (tstream_is(line, TK_STRING)) {
             directive_span =
                 concat_span(directive_span, tstream_token(line)->span);
-            string_t path = token_string_inner(tstream_token(line));
+            string_t path = token_string_body(tstream_token(line));
             vector_push(&path_list, &path);
         } else {
             string_t what, info;

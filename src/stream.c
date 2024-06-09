@@ -26,6 +26,16 @@ bool tstream_is(tstream_t *ts, token_kind_t kind) {
     return tstream_eos(ts) ? false : tstream_token(ts)->kind == kind;
 }
 
+bool tstream_expect(tstream_t *ts, token_kind_t kind, span_t *span) {
+    if (tstream_is(ts, kind)) {
+        if (span != NULL) *span = tstream_token(ts)->span;
+        tstream_advance(ts);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 char istream_char(istream_t *is) {
     if (istream_eos(is))
         panic_internal("char called when istream reach to eos");
@@ -97,10 +107,15 @@ void tstream_init(tstream_t *ts, vector_t *tokens) {
 bool tstream_eos(tstream_t *ts) { return ts->tokens->len <= ts->pos; }
 
 token_t *tstream_token(tstream_t *ts) {
-    if (tstream_eos(ts)) {
+    if (tstream_eos(ts))
         panic_internal("get from token stream which reach to eos");
-    }
     return vector_at(ts->tokens, ts->pos);
+}
+
+token_t *tstream_last(tstream_t *ts) {
+    if (ts->tokens->len == 0)
+        panic_internal("tstream_last must not be called when it's empty");
+    return vector_at(ts->tokens, ts->tokens->len - 1);
 }
 
 tstream_state_t tstream_state(tstream_t *ts) { return ts->pos; }

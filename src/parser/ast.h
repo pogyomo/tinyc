@@ -5,6 +5,7 @@
 
 #include "../collections/string.h"
 #include "../collections/vector.h"
+#include "../lexer/token.h"
 #include "../span.h"
 
 // Forward declarations
@@ -68,6 +69,7 @@ typedef struct expr {
         EXPR_CAST,
         EXPR_COMPOUND,
         EXPR_INTEGER,
+        EXPR_FLOATING,
         EXPR_IDENT,
         EXPR_STRING,
         EXPR_CHARACTER,
@@ -148,7 +150,7 @@ typedef struct expr {
                 span_t span;
             } op;
             struct {
-                string_t *name;
+                string_t name;
                 span_t span;
             } field;
         } access;
@@ -166,15 +168,11 @@ typedef struct expr {
             expr_t *else_;
         } cond;
         struct {
-            enum {
-                EXPR_SIZEOF_EXPR,
-                EXPR_SIZEOF_TYPE,
-            } kind;
-            union {
-                expr_t *expr;
-                type_t *type;
-            };
-        } sizeof_;
+            expr_t *expr;
+        } sizeof_expr;
+        struct {
+            type_t *type;
+        } sizeof_type;
         struct {
             type_t *type;
             expr_t *expr;
@@ -184,33 +182,30 @@ typedef struct expr {
             init_t *init;  // init->kind must be INIT_LIST.
         } compound;
         struct {
-            string_t value;
-            enum {
-                EXPR_INT_SUFFIX_NONE,
-                EXPR_INT_SUFFIX_U,
-                EXPR_INT_SUFFIX_L,
-                EXPR_INT_SUFFIX_UL,
-                EXPR_INT_SUFFIX_LL,
-                EXPR_INT_SUFFIX_ULL,
-            } suffix;
-            enum {
-                EXPR_INT_RADIX_OCT,
-                EXPR_INT_RADIX_DEC,
-                EXPR_INT_RADIX_HEX,
-            } radix;
+            unsigned long long value;
+            int_suffix_t suffix;
+            int_radix_t radix;
         } integer;
+        struct {
+            double value;
+            float_suffix_t suffix;
+            float_radix_t radix;
+        } floating;
         struct {
             string_t value;
         } ident;
         struct {
-            string_t value;
+            string_t value;  // Holds inner value of "...".
         } string;
         struct {
-            string_t value;
+            string_t value;  // Holds inner value of '...'.
         } character;
     };
     span_t span;
 } expr_t;
+
+// Allocate proper size of memory for `expr_t`.
+expr_t *expr_alloc();
 
 // ==================== statement ====================
 
@@ -227,7 +222,7 @@ typedef struct {
 
 typedef struct stmt {
     enum {
-        STMT_LABEL,
+        STMT_LABELED,
         STMT_CASE,
         STMT_DEFAULT,
         STMT_EXPR,
@@ -245,11 +240,11 @@ typedef struct stmt {
     union {
         struct {
             struct {
-                string_t *name;
+                string_t name;
                 span_t span;
             } label;
             stmt_t *stmt;
-        } label;
+        } labeled;
         struct {
             expr_t *expr;
             stmt_t *stmt;
@@ -258,7 +253,7 @@ typedef struct stmt {
             stmt_t *stmt;
         } default_;
         struct {
-            expr_t *expr;
+            expr_t *expr;  // NULL if this statement is empty statement.
         } expr;
         struct {
             vector_t items;  // Vector of type `stmt_block_item_t`.
@@ -302,13 +297,32 @@ typedef struct stmt {
             } label;
         } goto_;
         struct {
-            expr_t *expr;
+            expr_t *expr;  // NULL if no return value specified.
         } return_;
     };
     span_t span;
 } stmt_t;
 
+// Allocate proper size of memory for `stmt_t`.
+stmt_t *stmt_alloc();
+
 // ==================== declaration ====================
+
+typedef struct {
+    enum {
+        DECL_STORAGE_CLASS_TYPEDEF,
+        DECL_STORAGE_CLASS_EXTERN,
+        DECL_STORAGE_CLASS_STATIC,
+        DECL_STORAGE_CLASS_AUTO,
+        DECL_STORAGE_CLASS_REGISTER,
+    } kind;
+    span_t span;
+} decl_storage_class_t;
+
+typedef struct {
+    type_t *type;
+    decl_storage_class_t *storage_class;  // NULL if no storage class specified.
+} decl_base_t;
 
 typedef struct decl {
     enum {
@@ -317,7 +331,6 @@ typedef struct decl {
     } kind;
     union {
         struct {
-            type_t *type;
             struct {
                 string_t *name;  // NULL if no name exist.
                 span_t span;
@@ -325,17 +338,20 @@ typedef struct decl {
             init_t *init;  // NULL if no initializer exist.
         } var;
         struct {
-            type_t *ret;
             struct {
                 string_t *name;  // NULL if no name exist.
                 span_t span;
             } name;
-            vector_t *params;  // Vector of type `decl_t *`.
+            vector_t params;  // Vector of type `decl_t *`.
             stmt_t *body;
         } fun;
     };
+    decl_base_t base;
     span_t span;
 } decl_t;
+
+// Allocate proper size of memory for `decl_t`.
+decl_t *decl_alloc();
 
 // ==================== type ====================
 
@@ -382,5 +398,8 @@ typedef struct type {
     };
     span_t span;
 } type_t;
+
+// Allocate proper size of memory for `type_t`.
+type_t *type_alloc();
 
 #endif  // TINYC_PARSER_AST_H_

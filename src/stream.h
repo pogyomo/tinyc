@@ -65,8 +65,15 @@ bool tstream_eos(tstream_t *ts);
 // Returns true if current token's kind is `kind`.
 bool tstream_is(tstream_t *ts, token_kind_t kind);
 
+// Returns true and advance stream if current token's kind is `kind`.
+// `span` will be the token's span if it kind is `kind`.
+bool tstream_expect(tstream_t *ts, token_kind_t kind, span_t *span);
+
 // Returns current peeking token.
 token_t *tstream_token(tstream_t *ts);
+
+// Returns last token in this stream.
+token_t *tstream_last(tstream_t *ts);
 
 // Returns internal state of this stream which can be used at
 // `tstream_set_state`.

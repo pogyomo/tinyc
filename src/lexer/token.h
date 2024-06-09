@@ -147,10 +147,19 @@ typedef struct {
     span_t span;
 } token_t;
 
+// Returns string which suffix is removed.
+string_t token_integer_body(token_t *token);
+
+// Returns string which suffix is removed.
+string_t token_floating_body(token_t *token);
+
 // Returns string which head and tail `"` is removed from `value`.
-string_t token_string_inner(token_t *token);
+string_t token_string_body(token_t *token);
 
 // Returns string which head and tail `'` is removed from `value`.
-string_t token_character_inner(token_t *token);
+string_t token_character_body(token_t *token);
+
+// Returns string which describe what `kind` is.
+char *token_kind_to_string(token_kind_t kind);
 
 #endif  // TINYC_LEXER_TOKEN_H_
