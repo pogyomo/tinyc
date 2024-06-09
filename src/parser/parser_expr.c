@@ -1,5 +1,6 @@
 #include "parser_expr.h"
 
+#include <errno.h>
 #include <stdlib.h>
 
 #include "../report.h"
@@ -666,14 +667,32 @@ bool parse_primary_expr(context_t *ctx, tstream_t *ts, expr_t *expr) {
         return true;
     } else if (token->kind == TK_INTEGER) {
         expr->kind = EXPR_INTEGER;
+        errno = 0;
         expr->integer.value = strtoull(token_integer_body(token).str, NULL, 0);
+        if (errno == ERANGE) {
+            string_t what, info;
+            string_from(&what, "failed to convert this integer literal");
+            string_init(&info);
+            report(ctx, REPORT_LEVEL_ERROR,
+                   (report_info_t){what, info, token->span});
+            return false;
+        }
         expr->integer.radix = token->int_.radix;
         expr->integer.suffix = token->int_.suffix;
         expr->span = token->span;
         return true;
     } else if (token->kind == TK_FLOATING) {
         expr->kind = EXPR_FLOATING;
+        errno = 0;
         expr->floating.value = strtod(token_floating_body(token).str, NULL);
+        if (errno == ERANGE) {
+            string_t what, info;
+            string_from(&what, "failed to convert this floating literal");
+            string_init(&info);
+            report(ctx, REPORT_LEVEL_ERROR,
+                   (report_info_t){what, info, token->span});
+            return false;
+        }
         expr->floating.radix = token->float_.radix;
         expr->floating.suffix = token->float_.suffix;
         expr->span = token->span;
