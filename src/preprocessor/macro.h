@@ -22,7 +22,7 @@ void macro_function(macro_t *macro, vector_t body, vector_t params);
 
 // A collection of macros.
 typedef struct {
-    dict_t table;  // Dictionary where value is `macro_t`.
+    DICT(macro_t) table;
 } mtable_t;
 
 // Initialize `mtable` to be empty.

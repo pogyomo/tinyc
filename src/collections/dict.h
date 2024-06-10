@@ -5,6 +5,8 @@
 
 #include "string.h"
 
+#define DICT(value) dict_t
+
 // An entry of dictionary.
 typedef struct dict_entry {
     struct dict_entry *next;
