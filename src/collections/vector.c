@@ -1,5 +1,6 @@
 #include "vector.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "../memory.h"
@@ -53,4 +54,8 @@ void *vector_at(const vector_t *vector, size_t n) {
 void *vector_top(const vector_t *vector) {
     if (vector->len == 0) panic_internal("top from empty vector");
     return ptr_at(vector, vector->len - 1);
+}
+
+void vector_sort(vector_t *vector, int (*cmp)(const void *, const void *)) {
+    qsort(vector->buf, vector->len, vector->size, cmp);
 }

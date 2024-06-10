@@ -487,8 +487,8 @@ static bool parse_line(context_t *ctx, tstream_t *line, if_states_t *states,
     }
 }
 
-bool preprocess(context_t *ctx, vector_t *restrict input,
-                vector_t *restrict output) {
+bool preprocess(context_t *ctx, VECTOR_REF(token_t) restrict input,
+                VECTOR_REF(token_t) restrict output) {
     if (input->len == 0) {
         *output = *input;
         return true;
@@ -497,7 +497,8 @@ bool preprocess(context_t *ctx, vector_t *restrict input,
 
     size_t lrow;
     token_t *token;
-    vector_t lines, line;
+    VECTOR(VECTOR(token_t)) lines;
+    VECTOR(token_t) line;
     vector_init(&lines, sizeof(vector_t));
     vector_init(&line, sizeof(token_t));
     token = vector_at(input, 0);
@@ -520,7 +521,7 @@ bool preprocess(context_t *ctx, vector_t *restrict input,
     if_states_t states;
     if_states_init(&states);
     for (int i = 0; i < lines.len; i++) {
-        vector_t *line = vector_at(&lines, i);
+        VECTOR_REF(VECTOR(token_t)) line = vector_at(&lines, i);
         tstream_init(&ts, line);
         success &= parse_line(ctx, &ts, &states, output);
     }

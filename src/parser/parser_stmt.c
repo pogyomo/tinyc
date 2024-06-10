@@ -117,10 +117,10 @@ bool parse_block_stmt(context_t *ctx, tstream_t *ts, stmt_t *stmt) {
     span_t first, last;
     TRY(expect_kind(ctx, ts, TK_LCURLY, &first));
 
-    vector_t items;
+    VECTOR(stmt_block_item_t) items;
     vector_init(&items, sizeof(stmt_block_item_t));
     stmt_t *item_s;
-    decl_t *item_d;
+    VECTOR(decl_t *) item_ds;
     tstream_state_t state;
     while (true) {
         TRY(check_eos(ctx, ts));
@@ -129,7 +129,7 @@ bool parse_block_stmt(context_t *ctx, tstream_t *ts, stmt_t *stmt) {
         }
 
         state = tstream_state(ts);
-        if (!parse_decl(ctx, ts, item_d)) {
+        if (!parse_decls(ctx, ts, &item_ds)) {
             tstream_set_state(ts, state);
             TRY(parse_stmt(ctx, ts, item_s));
             stmt_block_item_t item;
@@ -139,8 +139,10 @@ bool parse_block_stmt(context_t *ctx, tstream_t *ts, stmt_t *stmt) {
         } else {
             stmt_block_item_t item;
             item.kind = STMT_BLOCK_ITEM_DECL;
-            item.decl = item_d;
-            vector_push(&items, &item);
+            for (size_t i = 0; i < item_ds.len; i++) {
+                item.decl = *(decl_t **)vector_at(&item_ds, i);
+                vector_push(&items, &item);
+            }
         }
     }
 
@@ -249,12 +251,10 @@ bool parse_for_stmt(context_t *ctx, tstream_t *ts, stmt_t *stmt) {
     TRY(expect_kind(ctx, ts, TK_FOR, &first));
     TRY(expect_kind(ctx, ts, TK_LPAREN, NULL));
 
-    decl_t *init_d = NULL;
+    VECTOR(decl_t *) init_ds;
     expr_t *init_e = NULL;
     tstream_state_t state = tstream_state(ts);
-    init_d = decl_alloc();
-    if (!parse_decl(ctx, ts, init_d)) {
-        init_d = NULL;
+    if (!parse_decls(ctx, ts, &init_ds)) {
         init_e = expr_alloc();
         tstream_set_state(ts, state);
         TRY(parse_expr(ctx, ts, init_e));
@@ -272,9 +272,9 @@ bool parse_for_stmt(context_t *ctx, tstream_t *ts, stmt_t *stmt) {
     TRY(parse_stmt(ctx, ts, body));
 
     stmt->kind = STMT_FOR;
-    if (init_d != NULL) {
-        stmt->for_.init.kind = STMT_IF_INIT_DECL;
-        stmt->for_.init.decl = init_d;
+    if (init_e == NULL) {
+        stmt->for_.init.kind = STMT_IF_INIT_DECLS;
+        stmt->for_.init.decls = init_ds;
     } else {
         stmt->for_.init.kind = STMT_IF_INIT_EXPR;
         stmt->for_.init.expr = init_e;

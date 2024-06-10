@@ -575,7 +575,7 @@ bool parse_postfix_expr(context_t *ctx, tstream_t *ts, expr_t *expr) {
             e = tmp;
         } else if (tstream_expect(ts, TK_LPAREN, &op_span)) {
             span_t rspan;
-            vector_t args;
+            VECTOR(expr_t *) args;
             vector_init(&args, sizeof(expr_t *));
             while (true) {
                 TRY(check_eos(ctx, ts));

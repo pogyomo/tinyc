@@ -5,7 +5,6 @@
 
 // Parse given file as list of declaration and initialize `decls` with it.
 // Returns false if error happen.
-// `decls` is the vector of type `decl_t`.
-bool parse_file(context_t *ctx, char *path, vector_t *decls);
+bool parse_file(context_t *ctx, char *path, VECTOR_REF(decl_t *) decls);
 
 #endif  // TINYC_PARSER_PARSER_H_

@@ -49,7 +49,7 @@ bool istream_accept(istream_t *is, char *s, position_t *end, string_t *buf);
 
 // Stream of tokens.
 typedef struct {
-    vector_t *tokens;
+    VECTOR_REF(token_t) tokens;
     size_t pos;
 } tstream_t;
 

@@ -10,8 +10,8 @@ typedef struct {
         MACRO_OBJECT,
         MACRO_FUNCTION,
     } kind;
-    vector_t body;    // Vector with `token_t`.
-    vector_t params;  // Vector with `string_t`. Empty if kind == MACRO_OBJECT.
+    VECTOR(token_t) body;
+    VECTOR(string_t) params;  // Empty if kind == MACRO_OBJECT.
 } macro_t;
 
 // Initialize `macro` as object macro.

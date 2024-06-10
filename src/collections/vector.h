@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #define VECTOR(type) vector_t
+#define VECTOR_REF(type) vector_ref_t
 
 // A generic vector.
 typedef struct {
@@ -12,6 +13,9 @@ typedef struct {
     size_t len;
     size_t size;
 } vector_t;
+
+// Reference to `vector_t`
+typedef vector_t *vector_ref_t;
 
 // Initialize `vector` to be ready to use.
 // `size` must be the value where `sizeof(type)` returns.
@@ -31,5 +35,8 @@ void *vector_at(const vector_t *vector, size_t n);
 
 // Returns reference to the last tail element of `vector`.
 void *vector_top(const vector_t *vector);
+
+// Sort `vector` with provided comparision functoin.
+void vector_sort(vector_t *vector, int (*cmp)(const void *, const void *));
 
 #endif  // TINYC_COLLECTIONS_VECTOR_H_

@@ -7,7 +7,7 @@
 
 // Parse given `ts` as statement and initialize `decl` with it.
 // Returns false if error happen.
-bool parse_decl(context_t *ctx, tstream_t *ts, decl_t *decl);
+bool parse_decls(context_t *ctx, tstream_t *ts, VECTOR_REF(decl_t *) decls);
 
 // Parse given `ts` as variable declaration by assuming its base type is `base`
 // and initialize `decl` with it.

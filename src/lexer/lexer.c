@@ -639,7 +639,7 @@ static bool read_number_literal(context_t *ctx, istream_t *is, cache_id_t id,
     }
 }
 
-bool lex_file(context_t *ctx, char *path, vector_t *tokens) {
+bool lex_file(context_t *ctx, char *path, VECTOR_REF(token_t) tokens) {
     cache_id_t id = cache_file(&ctx->cache, path);
     input_t *input = cache_fetch(&ctx->cache, id);
     vector_init(tokens, sizeof(token_t));
@@ -695,7 +695,7 @@ bool lex_file(context_t *ctx, char *path, vector_t *tokens) {
         skip_comments(ctx, &is, id);
     }
     if (success) {
-        vector_t output;
+        VECTOR(token_t) output;
         success = preprocess(ctx, tokens, &output);
         *tokens = output;
         return success;

@@ -6,8 +6,8 @@
 
 // A struct holding a input like file as newline-splitted lines.
 typedef struct {
-    vector_t lines;  // Vector with `string_t`.
-    string_t name;   // Name of this input.
+    VECTOR(string_t) lines;
+    string_t name;  // Name of this input.
 } input_t;
 
 // Initialize `input` with file in `path`.
@@ -18,7 +18,7 @@ string_t *input_at(input_t *input, size_t n);
 
 // A struct to manage inputs with unique id.
 typedef struct {
-    vector_t caches;  // Vector with `input_t`.
+    VECTOR(input_t) caches;
 } cache_t;
 
 // A unique id associated with a input.

@@ -8,7 +8,7 @@
 // Do preprocess to given `input` and initialize `output` with it.
 // `input` and `output` must be different.
 // Returns false if error happen.
-bool preprocess(context_t *ctx, vector_t *restrict input,
-                vector_t *restrict output);
+bool preprocess(context_t *ctx, VECTOR_REF(token_t) restrict input,
+                VECTOR_REF(token_t) restrict output);
 
 #endif  // TINYC_PREPROCESSOR_PREPROCESSOR_H_

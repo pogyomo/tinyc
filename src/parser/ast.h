@@ -34,7 +34,7 @@ typedef struct {
 } desig_t;
 
 typedef struct {
-    vector_t desigs;  // Vector of type `desig_t`.
+    VECTOR(desig_t) desigs;
     init_t *init;
 } init_list_item_t;
 
@@ -48,7 +48,7 @@ typedef struct init {
             expr_t *expr;
         } expr;
         struct {
-            vector_t items;  // Vector of type `init_list_item_t`.
+            VECTOR(init_list_item_t) items;
         } list;
     };
     span_t span;
@@ -160,7 +160,7 @@ typedef struct expr {
         } index;
         struct {
             expr_t *expr;
-            vector_t args;  // Vector of type `expr_t *`.
+            VECTOR(expr_t *) args;
         } call;
         struct {
             expr_t *cond;
@@ -256,7 +256,7 @@ typedef struct stmt {
             expr_t *expr;  // NULL if this statement is empty statement.
         } expr;
         struct {
-            vector_t items;  // Vector of type `stmt_block_item_t`.
+            VECTOR(stmt_block_item_t) items;
         } block;
         struct {
             expr_t *cond;
@@ -279,11 +279,11 @@ typedef struct stmt {
             struct {
                 enum {
                     STMT_IF_INIT_EXPR,
-                    STMT_IF_INIT_DECL,
+                    STMT_IF_INIT_DECLS,
                 } kind;
                 union {
                     expr_t *expr;
-                    decl_t *decl;
+                    VECTOR(decl_t *) decls;
                 };
             } init;
             expr_t *cond;
@@ -342,7 +342,7 @@ typedef struct decl {
                 string_t *name;  // NULL if no name exist.
                 span_t span;
             } name;
-            vector_t params;  // Vector of type `decl_t *`.
+            VECTOR(decl_t *) params;
             stmt_t *body;
         } fun;
     };
@@ -355,46 +355,64 @@ decl_t *decl_alloc();
 
 // ==================== type ====================
 
+typedef struct {
+    string_t name;
+    expr_t *value;  // NULL if no value assigned to this `name`.
+    span_t span;
+} enumerator_t;
+
+typedef enum {
+    TYPE_POINTER,
+    TYPE_FUNCTION,
+    TYPE_ARRAY,
+    TYPE_STRUCT,
+    TYPE_UNION,
+    TYPE_ENUM,
+    TYPE_VOID,
+    TYPE_CHAR,
+    TYPE_UCHAR,
+    TYPE_SHORT,
+    TYPE_USHORT,
+    TYPE_INT,
+    TYPE_UINT,
+    TYPE_LONG,
+    TYPE_ULONG,
+    TYPE_LONGLONG,
+    TYPE_ULONGLONG,
+    TYPE_FLOAT,
+    TYPE_DOUBLE,
+    TYPE_LONGDOUBLE,
+} type_kind_t;
+
 typedef struct type {
-    enum {
-        TYPE_POINTER,
-        TYPE_FUNCTION,
-        TYPE_ARRAY,
-        TYPE_STRUCT,
-        TYPE_UNION,
-        TYPE_VOID,
-        TYPE_CHAR,
-        TYPE_UCHAR,
-        TYPE_SHORT,
-        TYPE_USHORT,
-        TYPE_INT,
-        TYPE_UINT,
-        TYPE_LONG,
-        TYPE_ULONG,
-        TYPE_LONGLONG,
-        TYPE_ULONGLONG,
-        TYPE_FLOAT,
-        TYPE_DOUBLE,
-        TYPE_LONGDOUBLE,
-    } kind;
+    type_kind_t kind;
     bool is_const;
+    bool is_restrict;
     bool is_volatile;
     union {
         struct {
             type_t *of;
-            bool is_restrict;
         } pointer;
         struct {
             type_t *ret;
-            vector_t params;  // Vector of type `decl_t *`.
+            VECTOR(decl_t *) params;
         } function;
         struct {
             type_t *of;
             expr_t *size;  // NULL if no size specified.
         } array;
         struct {
-            vector_t decls;  // Vector of type `decl_t *`.
-        } field;  // Used when kind == TYPE_STRUCT || kind == TYPE_UNION.
+            string_t *name;               // NULL if no name specified.
+            VECTOR_REF(decl_t *) fields;  // NULL if no fields provided.
+        } struct_;
+        struct {
+            string_t *name;               // NULL if no name specified.
+            VECTOR_REF(decl_t *) fields;  // NULL if no fields provided
+        } union_;
+        struct {
+            string_t *name;                   // NULL if no name specified.
+            VECTOR_REF(enumerator_t) fields;  // NULL if no field provided.
+        } enum_;
     };
     span_t span;
 } type_t;
