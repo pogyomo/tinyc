@@ -149,7 +149,7 @@ static struct token *convert_pp_number(struct context *ctx,
 
     // At first, try to parse pp-number as integer.
 
-    char *s = cpp_token->pp_number_val.str;
+    char *s = cpp_token->pp_number.value.str;
     int radix = 0;
     if (startwith(s, "0x") || startwith(s, "0X")) {
         radix = 16;
@@ -185,14 +185,14 @@ static struct token *convert_pp_number(struct context *ctx,
         int_suffix = TK_INT_NONE;
     }
 
-    if (cpp_token->pp_number_val.str + cpp_token->pp_number_val.len == s) {
+    if (cpp_token->pp_number.value.str + cpp_token->pp_number.value.len == s) {
         // `strtoull` parses integer correctly.
         struct token *token = token_new(TK_INT, &cpp_token->span);
-        token->int_val = int_val;
-        token->int_radix = radix == 16 ? TK_INT_HEX
-                           : 10        ? TK_INT_DEC
-                                       : TK_INT_OCT;
-        token->int_suffix = int_suffix;
+        token->int_.value = int_val;
+        token->int_.radix = radix == 16 ? TK_INT_HEX
+                            : 10        ? TK_INT_DEC
+                                        : TK_INT_OCT;
+        token->int_.suffix = int_suffix;
         return token;
     } else {
         bool is_suffix = true;
@@ -215,7 +215,7 @@ static struct token *convert_pp_number(struct context *ctx,
     // Decimal floating constant can start with '0'.
     radix = radix == 8 ? 10 : radix;
 
-    s = cpp_token->pp_number_val.str;
+    s = cpp_token->pp_number.value.str;
 
     long double float_val = strtold(s, &s);
 
@@ -228,12 +228,12 @@ static struct token *convert_pp_number(struct context *ctx,
         float_suffix = TK_FLOAT_NONE;
     }
 
-    if (cpp_token->pp_number_val.str + cpp_token->pp_number_val.len == s) {
+    if (cpp_token->pp_number.value.str + cpp_token->pp_number.value.len == s) {
         // `strtold` parses floating number correctly.
         struct token *token = token_new(TK_FLOAT, &cpp_token->span);
-        token->float_val = float_val;
-        token->float_radix = radix == 16 ? TK_FLOAT_HEX : TK_FLOAT_DEC;
-        token->float_suffix = float_suffix;
+        token->float_.value = float_val;
+        token->float_.radix = radix == 16 ? TK_FLOAT_HEX : TK_FLOAT_DEC;
+        token->float_.suffix = float_suffix;
         return token;
     } else {
         bool is_suffix = true;
@@ -264,35 +264,35 @@ static struct token *convert_cpp_token_to_token(struct context *ctx,
     if (cpp_token->kind == CPP_TK_IDENT) {
         for (size_t i = 0; i < sizeof keywords / sizeof keywords[0]; i++) {
             size_t len = strlen(keywords[i].name);
-            if (!startwith(cpp_token->ident_val.str, keywords[i].name))
+            if (!startwith(cpp_token->ident.value.str, keywords[i].name))
                 continue;
 
             token = token_new(TK_KEYWORD, &cpp_token->span);
-            token->keyword_kind = keywords[i].kind;
+            token->keyword.kind = keywords[i].kind;
             return token;
         }
         token = token_new(TK_IDENT, &cpp_token->span);
-        token->ident_val = cpp_token->ident_val;
+        token->ident.value = cpp_token->ident.value;
         return token;
     } else if (cpp_token->kind == CPP_TK_PP_NUMBER) {
         return convert_pp_number(ctx, cpp_token);
     } else if (cpp_token->kind == CPP_TK_CHAR) {
         token = token_new(TK_CHAR, &cpp_token->span);
-        escape(cpp_token->char_val.str, &token->char_val);
+        escape(cpp_token->char_.value.str, &token->char_.value);
         return token;
     } else if (cpp_token->kind == CPP_TK_STRING) {
-        if (cpp_token->has_backslash) {
+        if (cpp_token->string.has_backslash) {
             struct report_info info = {REPORT_ERROR, cpp_token->span,
                                        "floating backslash exists", ""};
             report(ctx, &info);
             return NULL;
         }
         token = token_new(TK_STRING, &cpp_token->span);
-        escape(cpp_token->string_val.str, &token->string_val);
+        escape(cpp_token->string.value.str, &token->string.value);
         return token;
     } else if (cpp_token->kind == CPP_TK_PUNCT) {
         struct token *token = token_new(TK_PUNCT, &cpp_token->span);
-        token->punct_kind = cpp_token->punct_kind;
+        token->punct.kind = cpp_token->punct.kind;
         return token;
     } else {
         struct report_info info = {REPORT_ERROR, cpp_token->span,

@@ -1,5 +1,8 @@
 // Copyrignts (C) 2024 pogyomo. Released under the MIT license.
 
+// This file contains the definition of token, which is the minimal lexical
+// element in c compiler, and will be used to parse the c program.
+
 #ifndef TINYC_LEX_TOKEN_H_
 #define TINYC_LEX_TOKEN_H_
 
@@ -139,29 +142,43 @@ struct token {
     struct span span;
 
     // Used when kind == TK_IDENT
-    struct string ident_val;
+    struct token_ident {
+        struct string value;
+    } ident;
 
     // Used when kind == TK_CHAR
-    struct string char_val;  // escaped ... in '...'.
+    struct token_char {
+        struct string value;  // escaped ... in '...'.
+    } char_;
 
     // Used when kind == TK_STRING
-    struct string string_val;  // escaped ... in "...".
+    struct token_string {
+        struct string value;  // escaped ... in "...".
+    } string;
 
     // Used when kind == TK_PUNCT
-    enum token_punct_kind punct_kind;
+    struct token_punct {
+        enum token_punct_kind kind;
+    } punct;
 
     // Used when kind == TK_KEYWORD
-    enum token_keyword_kind keyword_kind;
+    struct token_keyword {
+        enum token_keyword_kind kind;
+    } keyword;
 
     // Used when kind == TK_INT
-    enum token_int_radix int_radix;
-    enum token_int_suffix int_suffix;
-    unsigned long long int_val;
+    struct token_int {
+        enum token_int_radix radix;
+        enum token_int_suffix suffix;
+        unsigned long long value;
+    } int_;
 
     // Used when kind == TK_FLOAT
-    enum token_float_radix float_radix;
-    enum token_float_suffix float_suffix;
-    long double float_val;
+    struct token_float {
+        enum token_float_radix radix;
+        enum token_float_suffix suffix;
+        long double value;
+    } float_;
 };
 
 // Allocate memory for `token`, then return pointer to it.

@@ -1,5 +1,8 @@
 // Copyrignts (C) 2024 pogyomo. Released under the MIT license.
 
+// This file contains the definition of preprocessing token, which is generated
+// and used in preprocessing phase.
+
 #ifndef TINYC_CPP_TOKEN_H_
 #define TINYC_CPP_TOKEN_H_
 
@@ -35,23 +38,35 @@ struct cpp_token {
     struct span span;
 
     // Used when kind == CPP_TK_IDENT
-    struct string ident_val;
+    struct cpp_token_ident {
+        struct string value;
+    } ident;
 
     // Used when kind == CPP_TK_PP_NUMBER
-    struct string pp_number_val;
+    struct cpp_token_pp_number {
+        struct string value;
+    } pp_number;
 
     // Used when kind == CPP_TK_CHAR
-    struct string char_val;  // unescaped ... in '...'.
+    struct cpp_token_char {
+        struct string value;  // unescaped ... in '...'.
+    } char_;
 
     // Used when kind == CPP_TK_STRING
-    struct string string_val;  // unescaped ... in "...".
-    bool has_backslash;
+    struct cpp_token_string {
+        struct string value;  // unescaped ... in "...".
+        bool has_backslash;
+    } string;
 
     // Used when kind == CPP_TK_PUNCT
-    enum token_punct_kind punct_kind;
+    struct cpp_token_punct {
+        enum token_punct_kind kind;
+    } punct;
 
     // Used when kind == CPP_TK_UNKNOWN
-    char unknown_val;
+    struct cpp_token_unknown {
+        char value;
+    } unknown;
 };
 
 // Allocate memory for `struct cpp_token` and return pointer to it.

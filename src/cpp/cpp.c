@@ -89,7 +89,7 @@ bool tokenize(struct cpp_context *ctx, const char *s,
             if (stream_accept_s(&st, puncts[i].name, &end)) {
                 struct span span = {ctx->id, start, end};
                 prev->next = cpp_token_new(CPP_TK_PUNCT, &span);
-                prev->next->punct_kind = puncts[i].kind;
+                prev->next->punct.kind = puncts[i].kind;
                 prev = prev->next;
                 found = true;
                 break;
@@ -148,7 +148,7 @@ bool tokenize(struct cpp_context *ctx, const char *s,
 
             struct span span = {ctx->id, start, end};
             prev->next = cpp_token_new(CPP_TK_IDENT, &span);
-            prev->next->ident_val = buf;
+            prev->next->ident.value = buf;
             prev = prev->next;
         } else if (isdigit(stream_char(&st)) || stream_char(&st) == '.') {
             struct string buf;
@@ -159,7 +159,7 @@ bool tokenize(struct cpp_context *ctx, const char *s,
                 if (stream_eos(&st) || !isdigit(stream_char(&st))) {
                     struct span span = {ctx->id, start, end};
                     prev->next = cpp_token_new(CPP_TK_PUNCT, &span);
-                    prev->pp_number_val = buf;
+                    prev->pp_number.value = buf;
                     prev = prev->next;
                     continue;
                 }
@@ -189,7 +189,7 @@ bool tokenize(struct cpp_context *ctx, const char *s,
 
             struct span span = {ctx->id, start, end};
             prev->next = cpp_token_new(CPP_TK_PP_NUMBER, &span);
-            prev->next->pp_number_val = buf;
+            prev->next->pp_number.value = buf;
             prev = prev->next;
         } else if (stream_accept_c(&st, '\'', &end)) {
             // TODO: imcomplete
@@ -211,7 +211,7 @@ bool tokenize(struct cpp_context *ctx, const char *s,
             }
             struct span span = {ctx->id, start, end};
             prev->next = cpp_token_new(CPP_TK_CHAR, &span);
-            prev->next->char_val = buf;
+            prev->next->char_.value = buf;
             prev = prev->next;
         } else if (stream_accept_c(&st, '"', &end)) {
             // TODO: imcomplete
@@ -233,7 +233,7 @@ bool tokenize(struct cpp_context *ctx, const char *s,
             }
             struct span span = {ctx->id, start, end};
             prev->next = cpp_token_new(CPP_TK_STRING, &span);
-            prev->next->string_val = buf;
+            prev->next->string.value = buf;
             prev = prev->next;
         } else {
             stream_advance(&st, &end);
