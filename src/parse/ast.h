@@ -470,38 +470,58 @@ struct expr {
 
 // One or more declaration in a line.
 struct decl {
-    struct decl *next;  // A declaration may contains multiple declarations.
-    enum decl_kind {
-        DECL_FUN,
-        DECL_VAR,
-    } kind;
-    struct span span;
-    struct type *type;
+    struct storage_class {
+        enum storage_class_kind {
+            STORAGE_CLASS_TYPEDEF,
+            STORAGE_CLASS_EXTERN,
+            STORAGE_CLASS_STATIC,
+            STORAGE_CLASS_AUTO,
+            STORAGE_CLASS_REGISTER,
+        } kind;
+        struct span span;
+    } *storage_class;  // NULL if no storage class exists.
+    struct function_spec {
+        enum function_spec_kind {
+            FUNCTION_SPEC_INLINE,
+        } kind;
+        struct span span;
+    } *function_spec;  // NULL if no function specifier exists.
 
-    // Used when kind == DECL_FUN
-    struct decl_fun {
-        struct decl_fun_name {
-            struct string value;
-            struct span span;
-        } name;
-        struct decl_fun_param {
-            struct decl_fun_param *next;
-            struct type *type;
-            struct decl_fun_param_name {
+    // 0 or more declaration of function or variable.
+    struct decl_item {
+        struct decl_item *next;
+        enum decl_kind {
+            DECL_FUN,
+            DECL_VAR,
+        } kind;
+        struct type *type;
+        struct span span;
+
+        // Used when kind == DECL_FUN
+        struct decl_fun {
+            struct decl_fun_name {
                 struct string value;
                 struct span span;
             } name;
-        } *params;
-    } fun;
+            struct decl_fun_param {
+                struct decl_fun_param *next;
+                struct type *type;
+                struct decl_fun_param_name {
+                    struct string value;
+                    struct span span;
+                } name;
+            } *params;
+        } fun;
 
-    // Used when kind == DECL_VAR
-    struct decl_var {
-        struct decl_var_name {
-            struct string value;
-            struct span span;
-        } name;
-        struct initializer *init;  // NULL if no initializer exists.
-    } var;
+        // Used when kind == DECL_VAR
+        struct decl_var {
+            struct decl_var_name {
+                struct string value;
+                struct span span;
+            } name;
+            struct initializer *init;  // NULL if no initializer exists.
+        } var;
+    } *decls;
 };
 
 struct fun_def {
