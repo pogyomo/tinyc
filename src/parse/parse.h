@@ -1,5 +1,7 @@
-#ifndef PCC_PARSE_PARSE_H_
-#define PCC_PARSE_PARSE_H_
+// Copyrignts (C) 2024 pogyomo. Released under the MIT license.
+
+#ifndef TINYC_PARSE_PARSE_H_
+#define TINYC_PARSE_PARSE_H_
 
 #include <stdbool.h>
 
@@ -7,4 +9,4 @@
 
 bool parse_file(struct context *ctx, const char *path);
 
-#endif  // PCC_PARSE_PARSE_H_
+#endif  // TINYC_PARSE_PARSE_H_

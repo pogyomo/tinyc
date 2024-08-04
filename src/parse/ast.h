@@ -1,5 +1,7 @@
-#ifndef PCC_PARSE_AST_H_
-#define PCC_PARSE_AST_H_
+// Copyrignts (C) 2024 pogyomo. Released under the MIT license.
+
+#ifndef TINYC_PARSE_AST_H_
+#define TINYC_PARSE_AST_H_
 
 #include <stdbool.h>
 
@@ -448,4 +450,4 @@ struct trans_unit {
     struct fun_def *fun_def;
 };
 
-#endif  // PCC_PARSE_AST_H_
+#endif  // TINYC_PARSE_AST_H_
