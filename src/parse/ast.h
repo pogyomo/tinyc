@@ -1,5 +1,14 @@
 // Copyrignts (C) 2024 pogyomo. Released under the MIT license.
 
+// This file contains a definition of abstract syntax tree (AST) for c.
+//
+// The AST can represent invalid c program for conveniency, and it should be
+// check in the future.
+//
+// The example of invalid c program which the AST can represent is as follow:
+// - The struct or union declaration may contains function declaration.
+// - The combination of type specifier maybe invalid.
+
 #ifndef TINYC_PARSE_AST_H_
 #define TINYC_PARSE_AST_H_
 
@@ -42,19 +51,89 @@ struct initializer {
     } *list;
 };
 
-// TODO: Complete this
 struct type {
     enum type_kind {
         TYPE_BUILTIN,
+        TYPE_STRUCT,
+        TYPE_UNION,
+        TYPE_ENUM,
         TYPE_POINTER,
         TYPE_ARRAY,
         TYPE_FUN_PTR,
     } kind;
     struct span span;
+    struct type_quantifier {
+        struct type_quantifier *next;
+        enum type_quantifier_kind {
+            TYPE_QUANTIFIER_CONST,
+            TYPE_QUANTIFIER_RESTRICT,
+            TYPE_QUANTIFIER_VOLATILE,
+        } kind;
+        struct span span;
+    } *quantifiers;
 
     // Used when kind == TYPE_BUILTIN
     struct type_builtin {
+        struct type_builtin_spec {
+            struct type_builtin_spec *next;
+            enum type_builtin_spec_kind {
+                TYPE_BUILTIN_SPEC_VOID,
+                TYPE_BUILTIN_SPEC_CHAR,
+                TYPE_BUILTIN_SPEC_SHORT,
+                TYPE_BUILTIN_SPEC_INT,
+                TYPE_BUILTIN_SPEC_LONG,
+                TYPE_BUILTIN_SPEC_FLOAT,
+                TYPE_BUILTIN_SPEC_DOUBLE,
+                TYPE_BUILTIN_SPEC_SIGNED,
+                TYPE_BUILTIN_SPEC_UNSIGNED,
+                TYPE_BUILTIN_SPEC__BOOL,
+                TYPE_BUILTIN_SPEC__COMPLEX,
+                TYPE_BUILTIN_SPEC_TYPEDEF_NAME,
+            } kind;
+            struct span span;
+
+            // Used when kind == TYPE_BUILTIN_SPEC_TYPEDEF_NAME
+            struct string typedef_name;
+        } *specs;  // One or more specifiers. Validity is not checked.
     } builtin;
+
+    // Used when kind == TYPE_STRUCT
+    struct type_struct {
+        struct type_struct_name {
+            struct string value;
+            struct span span;
+        } *name;         // NULL if no name specified.
+        bool is_opaque;  // true if { ... } omitted.
+        struct type_struct_decl {
+            struct type_struct_decl *next;
+            struct decl *decl;  // kind maybe DECL_FUN, as c doesn't allow.
+        } *decls;  // NULL if no declaration exists, or is_opaque is true.
+    } struct_;
+
+    // Used when kind == TYPE_UNION
+    struct type_union {
+        struct type_union_name {
+            struct string value;
+            struct span span;
+        } *name;         // NULL if no name specified.
+        bool is_opaque;  // true if { ... } omitted.
+        struct type_union_decl {
+            struct type_union_decl *next;
+            struct decl *decl;  // kind maybe DECL_FUN, as c doesn't allow.
+        } *decls;  // NULL if no declaration exists, or is_opaque is true.
+    } union_;
+
+    // Used when kind == TYPE_UNION
+    struct type_enum {
+        struct type_enum_name {
+            struct string value;
+            struct span span;
+        } *name;         // NULL if no name specified.
+        bool is_opaque;  // true if { ... } omitted.
+        struct type_enum_enumerator {
+            struct type_enum_enumerator *next;
+        } *enumerators;  // NULL if no enumerator exists, or is_opaque is true.
+    } enum_;
 
     // Used when kind == TYPE_POINTER
     struct type_pointer {
@@ -65,8 +144,15 @@ struct type {
     struct type_array {
         struct type *of;
         struct type_array_size {
-            unsigned long long size;
-            bool is_omitted;  // true if ... of [...] is omitted.
+            enum type_array_size_kind {
+                TYPE_ARRAY_SIZE_OMITTED,    // []
+                TYPE_ARRAY_SIZE_SPECIFIED,  // [size]
+                TYPE_ARRAY_SIZE_STAR,       // [*]
+            } kind;
+            struct span span;
+
+            // Used when kind == TYPE_ARRAY_SIZE_SPECIFIED
+            unsigned long long value;
         } size;
     } array;
 
@@ -76,7 +162,7 @@ struct type {
         struct type_fun_ptr_param {
             struct type_fun_ptr_param *next;
             struct type *type;
-            bool is_variadic;  // if it's `...`. `next` is NULL if it's true.
+            bool is_variadic;  // if this is `...`. `next` will be NULL if true.
         } *params;
     } fun_ptr;
 };
