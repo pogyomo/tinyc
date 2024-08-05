@@ -15,6 +15,12 @@ void context_init(struct context *ctx) {
     vector_init(&ctx->caches, sizeof(struct cache_entry));
 }
 
+void context_suppress_report(struct context *ctx) {
+    ctx->should_report = false;
+}
+
+void context_activate_report(struct context *ctx) { ctx->should_report = true; }
+
 size_t context_cache_file(struct context *ctx, const char *path) {
     FILE *fp = fopen(path, "r");
     if (!fp) fatal_error("no such file exists: %s", path);

@@ -48,6 +48,8 @@ static void splitline(const struct string *s, struct vector *lines) {
 }
 
 void report(struct context *ctx, struct report_info *info) {
+    if (!ctx->should_report) return;
+
     const struct cache_entry *entry = context_fetch(ctx, info->span.id);
 
     struct position *start = &info->span.start;

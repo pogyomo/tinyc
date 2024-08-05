@@ -24,6 +24,12 @@ struct context {
 // Initialize `context`. Should be called before use it.
 void context_init(struct context *ctx);
 
+// Suppress report.
+void context_suppress_report(struct context *ctx);
+
+// Activate report.
+void context_activate_report(struct context *ctx);
+
 // Cache given file, returns unique id for it.
 size_t context_cache_file(struct context *ctx, const char *path);
 

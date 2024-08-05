@@ -6,7 +6,9 @@
 #include <stdbool.h>
 
 #include "../context.h"
+#include "ast.h"
 
-bool parse_file(struct context *ctx, const char *path);
+bool parse_file(struct context *ctx, const char *path,
+                struct trans_unit **units);
 
 #endif  // TINYC_PARSE_PARSE_H_
