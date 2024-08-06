@@ -584,8 +584,10 @@ bool parse_unary_expr(struct parse_context *ctx, struct tstream *ts,
                 *expr = expr_sizeof_expr_new(*expr, &span);
                 return true;
             }
+            merge_span(&span, &tstream_curr(ts)->span, &span);
             tstream_advance(ts);
 
+            *expr = expr_sizeof_type_new(type, &span);
             return true;
         } else {
             context_activate_report(ctx->ctx);
