@@ -129,7 +129,7 @@ bool parse_block_stmt(struct parse_context *ctx, struct tstream *ts,
             struct stmt *stmt;
             struct tstream ts_save = *ts;
 
-            if (ts_startwith_type(ctx, ts)) {
+            if (startwith_type(ctx, ts)) {
                 *ts = ts_save;
                 TRY(parse_decl(ctx, ts, &decl));
                 item_prev->next = stmt_block_item_decl_new(decl);

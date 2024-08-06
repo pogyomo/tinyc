@@ -18,7 +18,7 @@ bool parse_fun_def(struct parse_context *ctx, struct tstream *ts,
     struct type_rest_name name;
     struct function_spec *fun_spec;
 
-    TRY(parse_type_head(ctx, ts, &type, NULL, &fun_spec));
+    TRY(parse_type_head(ctx, ts, &type, NULL, &fun_spec, NULL));
     TRY(parse_type_rest(ctx, ts, type, &type, &name));
 
     if (type->kind != TYPE_FUNC) return false;

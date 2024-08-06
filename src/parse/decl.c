@@ -166,7 +166,7 @@ bool parse_decl(struct parse_context *ctx, struct tstream *ts,
     struct type *head = NULL;
     struct storage_class *class = NULL;
     struct function_spec *func_spec = NULL;
-    TRY(parse_type_head(ctx, ts, &head, &class, &func_spec));
+    TRY(parse_type_head(ctx, ts, &head, &class, &func_spec, NULL));
 
     struct decl decl_head = {NULL};
     struct decl *decl_prev = &decl_head;

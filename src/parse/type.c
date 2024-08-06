@@ -12,23 +12,24 @@
 
 bool parse_type_name(struct parse_context *ctx, struct tstream *ts,
                      struct type **type) {
-    TRY(parse_type_head(ctx, ts, type, NULL, NULL));
+    TRY(parse_type_head(ctx, ts, type, NULL, NULL, NULL));
     TRY(parse_type_rest(ctx, ts, *type, type, NULL));
     return true;
 }
 
-bool ts_startwith_type(struct parse_context *ctx, struct tstream *ts) {
+bool startwith_type(struct parse_context *ctx, struct tstream *ts) {
     struct tstream ts_save = *ts;
     context_suppress_report(ctx->ctx);
 
     struct type *type;
     struct storage_class *class;
     struct function_spec *func_spec;
-    bool res = parse_type_head(ctx, ts, &type, &class, &func_spec);
+    bool maybe;
+    bool res = parse_type_head(ctx, ts, &type, &class, &func_spec, &maybe);
 
     context_activate_report(ctx->ctx);
     *ts = ts_save;
-    return res;
+    return res || maybe;
 }
 
 // Parse a field by assuming its base type is `head`.
@@ -95,7 +96,7 @@ static bool parse_struct_or_union_type(struct parse_context *ctx,
             while (true) {
                 struct type_struct_or_union_decl *decl;
                 struct type *head;
-                TRY(parse_type_head(ctx, ts, &head, NULL, NULL));
+                TRY(parse_type_head(ctx, ts, &head, NULL, NULL, NULL));
                 TRY(parse_struct_or_union_field(ctx, ts, head, &decl));
                 decl_prev->next = decl;
                 decl_prev = decl_prev->next;
@@ -123,14 +124,9 @@ static int comp_token_keyword_kind(const void *a, const void *b) {
 }
 
 // Parse builtin type like `int`, `unsigned long long`, etc.
-static bool parse_builtin_type(struct parse_context *ctx, struct tstream *ts,
-                               struct type **type) {
-    static enum token_keyword_kind keywords[] = {
-        TK_KEYWORD_VOID,   TK_KEYWORD_CHAR,     TK_KEYWORD_SHORT,
-        TK_KEYWORD_INT,    TK_KEYWORD_LONG,     TK_KEYWORD_FLOAT,
-        TK_KEYWORD_DOUBLE, TK_KEYWORD_UNSIGNED, TK_KEYWORD_SIGNED,
-        TK_KEYWORD__BOOL,  TK_KEYWORD__COMPLEX, TK_KEYWORD__IMAGINARY,
-    };
+static bool validate_builtin_type(struct parse_context *ctx, struct span *span,
+                                  enum token_keyword_kind *extracted,
+                                  size_t len, struct type **type) {
     static struct {
         enum token_keyword_kind keywords[4];
         size_t num_keyword;
@@ -219,41 +215,6 @@ static bool parse_builtin_type(struct parse_context *ctx, struct tstream *ts,
          TYPE_BUILTIN_I_LDOUBLE},
     };
 
-    struct span span;
-    size_t len = 0;
-    enum token_keyword_kind extracted[5];
-    for (size_t i = 0; i < sizeof extracted / sizeof extracted[0]; i++) {
-        bool found = false;
-        for (size_t j = 0; j < sizeof keywords / sizeof keywords[0]; j++) {
-            if (tstream_is_keyword(ts, keywords[j])) {
-                if (len == 0)
-                    span = tstream_curr(ts)->span;
-                else
-                    merge_span(&span, &tstream_curr(ts)->span, &span);
-
-                tstream_advance(ts);
-
-                extracted[i] = keywords[j];
-                found = true;
-                len++;
-                break;
-            }
-        }
-        if (!found) break;
-    }
-
-    if (len == 0) {
-        struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
-                                   "expected type specifier after this", ""};
-        report(ctx->ctx, &info);
-        return false;
-    } else if (len == 5) {
-        struct report_info info = {REPORT_ERROR, span,
-                                   "too many type specifier", ""};
-        report(ctx->ctx, &info);
-        return false;
-    }
-
     // Normalize the order of keywords.
     qsort(extracted, len, sizeof(enum token_keyword_kind),
           &comp_token_keyword_kind);
@@ -263,12 +224,54 @@ static bool parse_builtin_type(struct parse_context *ctx, struct tstream *ts,
         for (size_t j = 0; j < len; j++) {
             if (kw_to_type[i].keywords[j] != extracted[j]) continue;
         }
-        *type = type_builtin_new(kw_to_type[i].type_kind, NULL, &span);
+        *type = type_builtin_new(kw_to_type[i].type_kind, NULL, span);
         return true;
     }
-    struct report_info info = {REPORT_ERROR, span,
+    struct report_info info = {REPORT_ERROR, *span,
                                "invalid combination of type specifier", ""};
     report(ctx->ctx, &info);
+    return false;
+}
+
+static bool extract_builtin_type_item(struct parse_context *ctx,
+                                      struct tstream *ts,
+                                      enum token_keyword_kind *kind) {
+    static enum token_keyword_kind keywords[] = {
+        TK_KEYWORD_VOID,   TK_KEYWORD_CHAR,     TK_KEYWORD_SHORT,
+        TK_KEYWORD_INT,    TK_KEYWORD_LONG,     TK_KEYWORD_FLOAT,
+        TK_KEYWORD_DOUBLE, TK_KEYWORD_UNSIGNED, TK_KEYWORD_SIGNED,
+        TK_KEYWORD__BOOL,  TK_KEYWORD__COMPLEX, TK_KEYWORD__IMAGINARY,
+    };
+    for (size_t i = 0; i < sizeof keywords / sizeof keywords[0]; i++) {
+        if (tstream_is_keyword(ts, keywords[i])) {
+            *kind = keywords[i];
+            tstream_advance(ts);
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool extract_storage_class(struct parse_context *ctx, struct tstream *ts,
+                                  struct storage_class **class) {
+    static struct {
+        enum token_keyword_kind kw_kind;
+        enum storage_class_kind class_kind;
+    } kw_to_class[] = {
+        {TK_KEYWORD_TYPEDEF, STORAGE_CLASS_TYPEDEF},
+        {TK_KEYWORD_EXTERN, STORAGE_CLASS_EXTERN},
+        {TK_KEYWORD_STATIC, STORAGE_CLASS_STATIC},
+        {TK_KEYWORD_AUTO, STORAGE_CLASS_AUTO},
+        {TK_KEYWORD_REGISTER, STORAGE_CLASS_REGISTER},
+    };
+    for (size_t i = 0; i < sizeof kw_to_class / sizeof kw_to_class[0]; i++) {
+        if (tstream_is_keyword(ts, kw_to_class[i].kw_kind)) {
+            *class = storage_class_new(kw_to_class[i].class_kind,
+                                       &tstream_curr(ts)->span);
+            tstream_advance(ts);
+            return true;
+        }
+    }
     return false;
 }
 
@@ -293,89 +296,92 @@ static bool extract_type_qual(struct parse_context *ctx, struct tstream *ts,
     return false;
 }
 
+static bool extract_func_spec(struct parse_context *ctx, struct tstream *ts,
+                              struct function_spec **func_spec) {
+    if (tstream_is_keyword(ts, TK_KEYWORD_INLINE)) {
+        *func_spec =
+            function_spec_new(FUNCTION_SPEC_INLINE, &tstream_curr(ts)->span);
+        tstream_advance(ts);
+        return true;
+    }
+    return false;
+}
+
 bool parse_type_head(struct parse_context *ctx, struct tstream *ts,
                      struct type **type, struct storage_class **class,
-                     struct function_spec **func_spec) {
-    static struct {
-        enum token_keyword_kind kw_kind;
-        enum storage_class_kind class_kind;
-    } kw_to_class[] = {
-        {TK_KEYWORD_TYPEDEF, STORAGE_CLASS_TYPEDEF},
-        {TK_KEYWORD_EXTERN, STORAGE_CLASS_EXTERN},
-        {TK_KEYWORD_STATIC, STORAGE_CLASS_STATIC},
-        {TK_KEYWORD_AUTO, STORAGE_CLASS_AUTO},
-        {TK_KEYWORD_REGISTER, STORAGE_CLASS_REGISTER},
-    };
-
+                     struct function_spec **func_spec, bool *maybe) {
+    if (maybe) *maybe = false;
     if (class) *class = NULL;
     if (func_spec) *func_spec = NULL;
 
+    struct span span = tstream_curr(ts)->span;
+    size_t len = 0;
+    enum token_keyword_kind extracted[5];
+    struct storage_class *class_;
+    struct function_spec *func_spec_;
     bool type_found = false;
+    bool storage_class_found = false;
+    bool func_spec_found = false;
     struct type_qual head = {NULL};
     struct type_qual *prev = &head;
     while (true) {
-        bool class_found = false;
-        for (size_t i = 0; i < sizeof kw_to_class / sizeof kw_to_class[0];
-             i++) {
-            if (tstream_is_keyword(ts, kw_to_class[i].kw_kind)) {
-                if (!class) {
-                    struct report_info info = {
-                        REPORT_ERROR, tstream_curr(ts)->span,
-                        "storage class specifier is not expected here", ""};
-                    report(ctx->ctx, &info);
-                    return false;
-                } else if (*class) {
-                    struct report_info info = {REPORT_ERROR,
-                                               tstream_curr(ts)->span,
-                                               "cannot use this with other "
-                                               "storage class specifier",
-                                               ""};
-                    report(ctx->ctx, &info);
-                    return false;
-                } else {
-                    *class = storage_class_new(kw_to_class[i].class_kind,
-                                               &tstream_curr(ts)->span);
-                    tstream_advance(ts);
-                    class_found = true;
-                    break;
-                }
+        if (extract_storage_class(ctx, ts, &class_)) {
+            if (storage_class_found) {
+                struct report_info info = {
+                    REPORT_ERROR, tstream_curr(ts)->span,
+                    "cannot combine with oter storage class specifier", ""};
+                report(ctx->ctx, &info);
+                return false;
+            } else if (!class) {
+                struct report_info info = {
+                    REPORT_ERROR, tstream_curr(ts)->span,
+                    "storage class specifier is not expected here", ""};
+                report(ctx->ctx, &info);
+                return false;
             }
+            merge_span(&span, &tstream_last(ts)->span, &span);
+            *class = class_;
+            if (maybe) *maybe = true;
+            storage_class_found = true;
+            continue;
         }
-        if (class_found) continue;
+
+        if (extract_func_spec(ctx, ts, &func_spec_)) {
+            if (func_spec_found) {
+                struct report_info info = {
+                    REPORT_ERROR, tstream_curr(ts)->span,
+                    "cannot combine with oter function specifier", ""};
+                report(ctx->ctx, &info);
+                return false;
+            } else if (!func_spec) {
+                struct report_info info = {
+                    REPORT_ERROR, tstream_curr(ts)->span,
+                    "functionn specifier is not expected here", ""};
+                report(ctx->ctx, &info);
+                return false;
+            }
+            merge_span(&span, &tstream_last(ts)->span, &span);
+            *func_spec = func_spec_;
+            if (maybe) *maybe = true;
+            func_spec_found = true;
+            continue;
+        }
 
         if (extract_type_qual(ctx, ts, &prev->next)) {
+            if (maybe) *maybe = true;
             prev = prev->next;
             continue;
         }
 
-        if (tstream_is_keyword(ts, TK_KEYWORD_INLINE)) {
-            if (!func_spec) {
-                struct report_info info = {
-                    REPORT_ERROR, tstream_curr(ts)->span,
-                    "function specifier is not expected here", ""};
-                report(ctx->ctx, &info);
-                return false;
-            } else if (*func_spec) {
-                struct report_info info = {
-                    REPORT_ERROR, tstream_curr(ts)->span,
-                    "cannot use this with other function specifier", ""};
-                report(ctx->ctx, &info);
-                return false;
-            } else {
-                *func_spec = function_spec_new(FUNCTION_SPEC_INLINE,
-                                               &tstream_curr(ts)->span);
-                tstream_advance(ts);
-                continue;
-            }
-        }
-
         if (type_found) break;
-        if (tstream_is_ident(ts)) {
+        if (tstream_is_ident(ts) && len == 0) {
             char *value = tstream_curr(ts)->ident.value.str;
             if (parse_context_typedef_name_exists(ctx, value)) {
                 *type = type_typedef_name_new(value, &tstream_curr(ts)->span);
                 type_found = true;
                 tstream_advance(ts);
+                merge_span(&span, &tstream_last(ts)->span, &span);
+                if (maybe) *maybe = true;
                 continue;
             } else {
                 struct report_info info = {REPORT_ERROR, tstream_curr(ts)->span,
@@ -383,12 +389,33 @@ bool parse_type_head(struct parse_context *ctx, struct tstream *ts,
                 report(ctx->ctx, &info);
                 return false;
             }
-        } else if (tstream_is_keyword(ts, TK_KEYWORD_STRUCT) ||
-                   tstream_is_keyword(ts, TK_KEYWORD_UNION)) {
+        } else if ((tstream_is_keyword(ts, TK_KEYWORD_STRUCT) ||
+                    tstream_is_keyword(ts, TK_KEYWORD_UNION)) &&
+                   len == 0) {
+            if (maybe) *maybe = true;
+            if (len != 0) {
+                struct report_info info = {
+                    REPORT_ERROR, tstream_curr(ts)->span,
+                    "invalid combination of type specifier", ""};
+                report(ctx->ctx, &info);
+                return false;
+            }
             TRY(parse_struct_or_union_type(ctx, ts, type));
             type_found = true;
         } else {
-            TRY(parse_builtin_type(ctx, ts, type));
+            if (extract_builtin_type_item(ctx, ts, &extracted[len++])) {
+                if (len == sizeof extracted / sizeof extracted[0]) {
+                    struct report_info info = {REPORT_ERROR,
+                                               tstream_curr(ts)->span,
+                                               "too many type specifier", ""};
+                    report(ctx->ctx, &info);
+                    return false;
+                }
+                if (maybe) *maybe = true;
+                merge_span(&span, &tstream_last(ts)->span, &span);
+                continue;
+            }
+            TRY(validate_builtin_type(ctx, &span, extracted, len, type));
             type_found = true;
         }
     }
@@ -485,7 +512,7 @@ static bool parse_func(struct parse_context *ctx, struct tstream *ts,
         } else {
             struct type *head, *type;
             struct type_rest_name name_;
-            TRY(parse_type_head(ctx, ts, &head, NULL, NULL));
+            TRY(parse_type_head(ctx, ts, &head, NULL, NULL, NULL));
             TRY(parse_type_rest(ctx, ts, head, &type, &name_));
 
             struct type_func_param_name name = {name_.exists, name_.name,
