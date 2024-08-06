@@ -126,6 +126,7 @@ bool parse_block_stmt(struct parse_context *ctx, struct tstream *ts,
         } else {
             struct decl *decl;
             struct stmt *stmt;
+            struct tstream ts_save = *ts;
             context_suppress_report(ctx->ctx);
             if (parse_decl(ctx, ts, &decl)) {
                 context_activate_report(ctx->ctx);
@@ -133,6 +134,7 @@ bool parse_block_stmt(struct parse_context *ctx, struct tstream *ts,
                 item_prev = item_prev->next;
             } else {
                 context_activate_report(ctx->ctx);
+                *ts = ts_save;
                 TRY(parse_stmt(ctx, ts, &stmt));
                 item_prev->next = stmt_block_item_stmt_new(stmt);
                 item_prev = item_prev->next;

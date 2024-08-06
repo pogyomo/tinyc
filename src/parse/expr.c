@@ -742,9 +742,9 @@ bool parse_primary_expr(struct parse_context *ctx, struct tstream *ts,
         tstream_advance(ts);
         return true;
     } else {
-        struct report_info info = {
-            REPORT_ERROR, tstream_last(ts)->span,
-            "expected one of identifier, constant, string literal or `(`", ""};
+        TRY(tstream_check_eos(ctx->ctx, ts));
+        struct report_info info = {REPORT_ERROR, tstream_curr(ts)->span,
+                                   "expexted primary expression here", ""};
         report(ctx->ctx, &info);
         return false;
     }
