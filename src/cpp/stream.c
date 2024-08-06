@@ -14,8 +14,14 @@ void stream_advance(struct stream *st, struct position *pos) {
     pos->row = st->row;
     pos->col = st->col;
 
-    st->col++;
+    if (stream_char(st) == '\n') {
+        st->row++;
+        st->col = 0;
+    } else {
+        st->col++;
+    }
     st->offset++;
+
     while (st->s[st->offset] && st->s[st->offset + 1]) {
         if (st->s[st->offset] == '\\' && st->s[st->offset + 1] == '\n') {
             st->offset += 2;
