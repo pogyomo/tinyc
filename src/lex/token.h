@@ -71,6 +71,8 @@ enum token_punct_kind {
     TK_PUNCT_MODASSIGN,     // `%=`
 };
 
+char *token_punct_kind_to_str(enum token_punct_kind kind);
+
 enum token_keyword_kind {
     // For type
     // Don't modify the order as I sort kinds to detect the type.
@@ -114,6 +116,8 @@ enum token_keyword_kind {
     TK_KEYWORD_VOLATILE,  // `volatile`
     TK_KEYWORD_WHILE,     // `while`
 };
+
+char *token_keyword_kind_to_str(enum token_keyword_kind kind);
 
 enum token_int_radix {
     TK_INT_OCT,

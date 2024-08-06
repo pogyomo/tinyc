@@ -1,6 +1,7 @@
 #include "stream.h"
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "../panic.h"
 #include "../report.h"
@@ -40,9 +41,11 @@ bool tstream_check_eos(struct context *ctx, struct tstream *ts) {
 bool tstream_check_punct(struct context *ctx, struct tstream *ts,
                          enum token_punct_kind kind) {
     if (!tstream_is_punct(ts, kind)) {
-        // TODO: display concrete punctuation.
-        struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
-                                   "expected punctuation after this", ""};
+        char what[500];
+        snprintf(what, 500, "expected `%s` after this",
+                 token_punct_kind_to_str(kind));
+        struct report_info info = {REPORT_ERROR, tstream_last(ts)->span, what,
+                                   ""};
         report(ctx, &info);
         return false;
     } else {
@@ -53,9 +56,11 @@ bool tstream_check_punct(struct context *ctx, struct tstream *ts,
 bool tstream_check_keyword(struct context *ctx, struct tstream *ts,
                            enum token_keyword_kind kind) {
     if (!tstream_is_keyword(ts, kind)) {
-        // TODO: display concrete keyword.
-        struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
-                                   "expected keyword after this", ""};
+        char what[500];
+        snprintf(what, 500, "expected `%s` after this",
+                 token_keyword_kind_to_str(kind));
+        struct report_info info = {REPORT_ERROR, tstream_last(ts)->span, what,
+                                   ""};
         report(ctx, &info);
         return false;
     } else {
