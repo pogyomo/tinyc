@@ -5,7 +5,7 @@
 
 #include <stdbool.h>
 
-#include "ast.h"
+#include "ast/stmt.h"
 #include "context.h"
 #include "stream.h"
 

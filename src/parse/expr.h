@@ -5,7 +5,7 @@
 
 #include <stdbool.h>
 
-#include "ast.h"
+#include "ast/expr.h"
 #include "context.h"
 #include "stream.h"
 
@@ -13,6 +13,11 @@
 // Returns false if error happen.
 bool parse_expr(struct parse_context *ctx, struct tstream *ts,
                 struct expr **expr);
+
+// Parse `ts` as constant-expression, then initialize `*expr` with it.
+// Returns false if error happen.
+bool parse_const_expr(struct parse_context *ctx, struct tstream *ts,
+                      struct expr **expr);
 
 // Parse `ts` as assignment-expression, then initialize `*expr` with it.
 // Returns false if error happen.

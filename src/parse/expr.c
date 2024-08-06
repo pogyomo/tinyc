@@ -3,8 +3,9 @@
 #include <stdlib.h>
 
 #include "../report.h"
-#include "ast.h"
+#include "ast/expr.h"
 #include "stream.h"
+#include "type.h"
 
 bool parse_expr(struct parse_context *ctx, struct tstream *ts,
                 struct expr **expr) {
@@ -28,6 +29,11 @@ bool parse_expr(struct parse_context *ctx, struct tstream *ts,
     }
     *expr = lhs;
     return true;
+}
+
+bool parse_const_expr(struct parse_context *ctx, struct tstream *ts,
+                      struct expr **expr) {
+    return parse_cond_expr(ctx, ts, expr);
 }
 
 bool parse_assign_expr(struct parse_context *ctx, struct tstream *ts,
@@ -438,8 +444,35 @@ bool parse_multiplicative_expr(struct parse_context *ctx, struct tstream *ts,
 
 bool parse_cast_expr(struct parse_context *ctx, struct tstream *ts,
                      struct expr **expr) {
-    // TODO: Parse ( type-name ) cast-expression
-    return parse_unary_expr(ctx, ts, expr);
+    if (tstream_is_punct(ts, TK_PUNCT_LPAREN)) {
+        struct span span = tstream_curr(ts)->span;
+        struct tstream ts_save = *ts;
+        tstream_advance(ts);
+
+        context_suppress_report(ctx->ctx);
+
+        struct type *type;
+        if (!parse_type_name(ctx, ts, &type)) {
+            context_activate_report(ctx->ctx);
+            *ts = ts_save;
+            return parse_unary_expr(ctx, ts, expr);
+        }
+
+        context_activate_report(ctx->ctx);
+        if (!tstream_is_punct(ts, TK_PUNCT_RPAREN)) {
+            *ts = ts_save;
+            return parse_unary_expr(ctx, ts, expr);
+        }
+        tstream_advance(ts);
+
+        TRY(parse_cast_expr(ctx, ts, expr));
+        merge_span(&span, &(*expr)->span, &span);
+
+        *expr = expr_cast_new(type, *expr, &span);
+        return true;
+    } else {
+        return parse_unary_expr(ctx, ts, expr);
+    }
 }
 
 bool parse_unary_expr(struct parse_context *ctx, struct tstream *ts,
@@ -525,11 +558,42 @@ bool parse_unary_expr(struct parse_context *ctx, struct tstream *ts,
         *expr = expr_unary_new(*expr, &op, &span);
         return true;
     } else if (tstream_is_keyword(ts, TK_KEYWORD_SIZEOF)) {
-        // TODO: implement this.
-        struct report_info info = {REPORT_ERROR, tstream_curr(ts)->span,
-                                   "not yet implemented", ""};
-        report(ctx->ctx, &info);
-        return false;
+        struct span span = tstream_curr(ts)->span;
+        tstream_advance(ts);
+        if (tstream_is_punct(ts, TK_PUNCT_LPAREN)) {
+            struct tstream ts_save = *ts;
+            tstream_advance(ts);
+
+            context_suppress_report(ctx->ctx);
+
+            struct type *type;
+            if (!parse_type_name(ctx, ts, &type)) {
+                context_activate_report(ctx->ctx);
+                *ts = ts_save;
+                TRY(parse_unary_expr(ctx, ts, expr));
+                merge_span(&span, &(*expr)->span, &span);
+                *expr = expr_sizeof_expr_new(*expr, &span);
+                return true;
+            }
+
+            context_activate_report(ctx->ctx);
+            if (!tstream_is_punct(ts, TK_PUNCT_RPAREN)) {
+                *ts = ts_save;
+                TRY(parse_unary_expr(ctx, ts, expr));
+                merge_span(&span, &(*expr)->span, &span);
+                *expr = expr_sizeof_expr_new(*expr, &span);
+                return true;
+            }
+            tstream_advance(ts);
+
+            return true;
+        } else {
+            context_activate_report(ctx->ctx);
+            TRY(parse_unary_expr(ctx, ts, expr));
+            merge_span(&span, &(*expr)->span, &span);
+            *expr = expr_sizeof_expr_new(*expr, &span);
+            return true;
+        }
     } else {
         return parse_postfix_expr(ctx, ts, expr);
     }

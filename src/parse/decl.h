@@ -5,9 +5,14 @@
 
 #include <stdbool.h>
 
-#include "ast.h"
+#include "ast/decl.h"
 #include "context.h"
 #include "stream.h"
+
+// Parse `ts` as initializer, then initialize `*init` with it.
+// Returns false if error happen.
+bool parse_initializer(struct parse_context *ctx, struct tstream *ts,
+                       struct initializer **init);
 
 // Parse `ts` as declaration, then initialize `*decl` with it.
 // Returns false if error happen.

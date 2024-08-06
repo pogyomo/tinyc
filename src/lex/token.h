@@ -56,6 +56,7 @@ enum token_punct_kind {
     TK_PUNCT_QUESTION,      // `?`
     TK_PUNCT_SHARP,         // `#`
     TK_PUNCT_DOT,           // `.`
+    TK_PUNCT_DOTDOTDOT,     // `...`
     TK_PUNCT_ARROW,         // `->`
     TK_PUNCT_ASSIGN,        // `=`
     TK_PUNCT_ORASSIGN,      // `|=`
@@ -71,43 +72,47 @@ enum token_punct_kind {
 };
 
 enum token_keyword_kind {
-    TK_KEYWORD_AUTO,        // `auto`
-    TK_KEYWORD_BREAK,       // `break`
-    TK_KEYWORD_CASE,        // `case`
-    TK_KEYWORD_CHAR,        // `char`
-    TK_KEYWORD_CONST,       // `const`
-    TK_KEYWORD_CONTINUE,    // `continue`
-    TK_KEYWORD_DEFAULT,     // `default`
-    TK_KEYWORD_DO,          // `do`
-    TK_KEYWORD_DOUBLE,      // `double`
-    TK_KEYWORD_ELSE,        // `else`
-    TK_KEYWORD_ENUM,        // `enum`
-    TK_KEYWORD_EXTERN,      // `extern`
-    TK_KEYWORD_FLOAT,       // `float`
-    TK_KEYWORD_FOR,         // `for`
-    TK_KEYWORD_GOTO,        // `goto`
-    TK_KEYWORD_IF,          // `if`
-    TK_KEYWORD_INLINE,      // `inline`
-    TK_KEYWORD_INT,         // `int`
-    TK_KEYWORD_LONG,        // `long`
-    TK_KEYWORD_REGISTER,    // `register`
-    TK_KEYWORD_RESTRICT,    // `restrict`
-    TK_KEYWORD_RETURN,      // `return`
-    TK_KEYWORD_SHORT,       // `short`
+    // For type
+    // Don't modify the order as I sort kinds to detect the type.
     TK_KEYWORD_SIGNED,      // `signed`
-    TK_KEYWORD_SIZEOF,      // `sizeof`
-    TK_KEYWORD_STATIC,      // `static`
-    TK_KEYWORD_STRUCT,      // `struct`
-    TK_KEYWORD_SWITCH,      // `switch`
-    TK_KEYWORD_TYPEDEF,     // `typedef`
-    TK_KEYWORD_UNION,       // `union`
     TK_KEYWORD_UNSIGNED,    // `unsigned`
     TK_KEYWORD_VOID,        // `void`
-    TK_KEYWORD_VOLATILE,    // `volatile`
-    TK_KEYWORD_WHILE,       // `while`
+    TK_KEYWORD_CHAR,        // `char`
+    TK_KEYWORD_SHORT,       // `short`
+    TK_KEYWORD_LONG,        // `long`
+    TK_KEYWORD_INT,         // `int`
+    TK_KEYWORD_FLOAT,       // `float`
+    TK_KEYWORD_DOUBLE,      // `double`
     TK_KEYWORD__BOOL,       // `_Bool`
     TK_KEYWORD__COMPLEX,    // `_Complex`
     TK_KEYWORD__IMAGINARY,  // `_Imaginary`
+
+    // For other usage
+    TK_KEYWORD_AUTO,      // `auto`
+    TK_KEYWORD_BREAK,     // `break`
+    TK_KEYWORD_CASE,      // `case`
+    TK_KEYWORD_CONST,     // `const`
+    TK_KEYWORD_CONTINUE,  // `continue`
+    TK_KEYWORD_DEFAULT,   // `default`
+    TK_KEYWORD_DO,        // `do`
+    TK_KEYWORD_ELSE,      // `else`
+    TK_KEYWORD_ENUM,      // `enum`
+    TK_KEYWORD_EXTERN,    // `extern`
+    TK_KEYWORD_FOR,       // `for`
+    TK_KEYWORD_GOTO,      // `goto`
+    TK_KEYWORD_IF,        // `if`
+    TK_KEYWORD_INLINE,    // `inline`
+    TK_KEYWORD_REGISTER,  // `register`
+    TK_KEYWORD_RESTRICT,  // `restrict`
+    TK_KEYWORD_RETURN,    // `return`
+    TK_KEYWORD_SIZEOF,    // `sizeof`
+    TK_KEYWORD_STATIC,    // `static`
+    TK_KEYWORD_STRUCT,    // `struct`
+    TK_KEYWORD_SWITCH,    // `switch`
+    TK_KEYWORD_TYPEDEF,   // `typedef`
+    TK_KEYWORD_UNION,     // `union`
+    TK_KEYWORD_VOLATILE,  // `volatile`
+    TK_KEYWORD_WHILE,     // `while`
 };
 
 enum token_int_radix {

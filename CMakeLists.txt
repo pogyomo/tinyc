@@ -15,14 +15,20 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/lex/token.c
     src/main.c
     src/panic.c
-    src/parse/ast.c
+    src/parse/ast/decl.c
+    src/parse/ast/expr.c
+    src/parse/ast/fun_def.c
+    src/parse/ast/stmt.c
+    src/parse/ast/type.c
+    src/parse/ast/unit.c
     src/parse/context.c
     src/parse/decl.c
     src/parse/expr.c
+    src/parse/fun_def.c
     src/parse/parse.c
     src/parse/stmt.c
     src/parse/stream.c
-    src/parse/utils.c
+    src/parse/type.c
     src/report.c
     src/span.c
     src/string.c

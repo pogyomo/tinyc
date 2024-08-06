@@ -25,7 +25,8 @@ static int cmp_position(const struct position *lhs,
 
 void merge_span(const struct span *lhs, const struct span *rhs,
                 struct span *merged) {
-    if (lhs->id != rhs->id) fatal_error("cache id mismatched");
+    if (lhs->id != rhs->id)
+        fatal_error("cache id mismatched: %zu != %zu", lhs->id, rhs->id);
     int cmp_start = cmp_position(&lhs->start, &rhs->start);
     int cmp_end = cmp_position(&lhs->end, &rhs->end);
     merged->start = cmp_start <= 0 ? lhs->start : rhs->start;

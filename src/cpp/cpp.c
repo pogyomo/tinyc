@@ -56,6 +56,7 @@ static struct {
     {"!", TK_PUNCT_NOT},
     {"?", TK_PUNCT_QUESTION},
     {"#", TK_PUNCT_SHARP},
+    {"...", TK_PUNCT_DOTDOTDOT},
     {".", TK_PUNCT_DOT},
     {"->", TK_PUNCT_ARROW},
     {"==", TK_PUNCT_EQ},

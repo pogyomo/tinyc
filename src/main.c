@@ -1,16 +1,11 @@
-#include <stdio.h>
-
 #include "context.h"
-#include "lex/lex.h"
+#include "parse/ast/unit.h"
+#include "parse/parse.h"
 
 int main() {
     struct context ctx;
     context_init(&ctx);
 
-    struct token *tokens;
-    if (!lex_file(&ctx, "main.c", &tokens)) return 1;
-    token_iter(token, tokens) {
-        printf("%d:%zu:%zu\n", token->kind, token->span.start.row,
-               token->span.start.col);
-    }
+    struct trans_unit *units;
+    if (!parse_file(&ctx, "main.c", &units)) return 1;
 }

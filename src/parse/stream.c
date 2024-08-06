@@ -39,7 +39,7 @@ bool tstream_check_eos(struct context *ctx, struct tstream *ts) {
 
 bool tstream_check_punct(struct context *ctx, struct tstream *ts,
                          enum token_punct_kind kind) {
-    if (tstream_is_punct(ts, kind)) {
+    if (!tstream_is_punct(ts, kind)) {
         // TODO: display concrete punctuation.
         struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
                                    "expected punctuation after this", ""};
@@ -52,7 +52,7 @@ bool tstream_check_punct(struct context *ctx, struct tstream *ts,
 
 bool tstream_check_keyword(struct context *ctx, struct tstream *ts,
                            enum token_keyword_kind kind) {
-    if (tstream_is_keyword(ts, kind)) {
+    if (!tstream_is_keyword(ts, kind)) {
         // TODO: display concrete keyword.
         struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
                                    "expected keyword after this", ""};
@@ -64,7 +64,7 @@ bool tstream_check_keyword(struct context *ctx, struct tstream *ts,
 }
 
 bool tstream_check_int(struct context *ctx, struct tstream *ts) {
-    if (tstream_is_int(ts)) {
+    if (!tstream_is_int(ts)) {
         struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
                                    "expected integer after this", ""};
         report(ctx, &info);
@@ -75,7 +75,7 @@ bool tstream_check_int(struct context *ctx, struct tstream *ts) {
 }
 
 bool tstream_check_float(struct context *ctx, struct tstream *ts) {
-    if (tstream_is_float(ts)) {
+    if (!tstream_is_float(ts)) {
         struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
                                    "expected floating number after this", ""};
         report(ctx, &info);
@@ -86,7 +86,7 @@ bool tstream_check_float(struct context *ctx, struct tstream *ts) {
 }
 
 bool tstream_check_ident(struct context *ctx, struct tstream *ts) {
-    if (tstream_is_ident(ts)) {
+    if (!tstream_is_ident(ts)) {
         struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
                                    "expected identifier after this", ""};
         report(ctx, &info);
@@ -97,7 +97,7 @@ bool tstream_check_ident(struct context *ctx, struct tstream *ts) {
 }
 
 bool tstream_check_string(struct context *ctx, struct tstream *ts) {
-    if (tstream_is_string(ts)) {
+    if (!tstream_is_string(ts)) {
         struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
                                    "expected string after this", ""};
         report(ctx, &info);
@@ -108,7 +108,7 @@ bool tstream_check_string(struct context *ctx, struct tstream *ts) {
 }
 
 bool tstream_check_char(struct context *ctx, struct tstream *ts) {
-    if (tstream_is_char(ts)) {
+    if (!tstream_is_char(ts)) {
         struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
                                    "expected character after this", ""};
         report(ctx, &info);

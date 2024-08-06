@@ -1,6 +1,6 @@
 #include "stmt.h"
 
-#include "ast.h"
+#include "ast/expr.h"
 #include "decl.h"
 #include "expr.h"
 #include "stream.h"
@@ -117,7 +117,7 @@ bool parse_block_stmt(struct parse_context *ctx, struct tstream *ts,
     span = tstream_curr(ts)->span;
     tstream_advance(ts);
 
-    struct stmt_block_item item_head;
+    struct stmt_block_item item_head = {NULL};
     struct stmt_block_item *item_prev = &item_head;
     while (true) {
         TRY(tstream_check_eos(ctx->ctx, ts));

@@ -6,8 +6,10 @@
 #include <stdbool.h>
 
 #include "../context.h"
-#include "ast.h"
+#include "ast/unit.h"
 
+// Convert file into translation unit: list of definition and declaration.
+// Returns false if error happen.
 bool parse_file(struct context *ctx, const char *path,
                 struct trans_unit **units);
 
