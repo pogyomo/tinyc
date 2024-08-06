@@ -112,7 +112,8 @@ static bool parse_struct_or_union_type(struct parse_context *ctx,
     merge_span(&span, &tstream_curr(ts)->span, &span);
     tstream_advance(ts);
 
-    *type = type_struct_or_union_new(is_struct, &name, decl_head.next, &span);
+    *type =
+        type_struct_or_union_new(is_struct, NULL, &name, decl_head.next, &span);
 
     return true;
 }
@@ -262,12 +263,33 @@ static bool parse_builtin_type(struct parse_context *ctx, struct tstream *ts,
         for (size_t j = 0; j < len; j++) {
             if (kw_to_type[i].keywords[j] != extracted[j]) continue;
         }
-        *type = type_builtin_new(kw_to_type[i].type_kind, &span);
+        *type = type_builtin_new(kw_to_type[i].type_kind, NULL, &span);
         return true;
     }
     struct report_info info = {REPORT_ERROR, span,
                                "invalid combination of type specifier", ""};
     report(ctx->ctx, &info);
+    return false;
+}
+
+static bool extract_type_qual(struct parse_context *ctx, struct tstream *ts,
+                              struct type_qual **qual) {
+    static struct {
+        enum token_keyword_kind kw_kind;
+        enum type_qual_kind qual_kind;
+    } kw_to_qual[] = {
+        {TK_KEYWORD_CONST, TYPE_QUAL_CONST},
+        {TK_KEYWORD_RESTRICT, TYPE_QUAL_RESTRICT},
+        {TK_KEYWORD_VOLATILE, TYPE_QUAL_VOLATILE},
+    };
+    for (size_t i = 0; i < sizeof kw_to_qual / sizeof kw_to_qual[0]; i++) {
+        if (tstream_is_keyword(ts, kw_to_qual[i].kw_kind)) {
+            *qual =
+                type_qual_new(kw_to_qual[i].qual_kind, &tstream_curr(ts)->span);
+            tstream_advance(ts);
+            return true;
+        }
+    }
     return false;
 }
 
@@ -289,6 +311,8 @@ bool parse_type_head(struct parse_context *ctx, struct tstream *ts,
     if (func_spec) *func_spec = NULL;
 
     bool type_found = false;
+    struct type_qual head = {NULL};
+    struct type_qual *prev = &head;
     while (true) {
         bool class_found = false;
         for (size_t i = 0; i < sizeof kw_to_class / sizeof kw_to_class[0];
@@ -318,6 +342,11 @@ bool parse_type_head(struct parse_context *ctx, struct tstream *ts,
             }
         }
         if (class_found) continue;
+
+        if (extract_type_qual(ctx, ts, &prev->next)) {
+            prev = prev->next;
+            continue;
+        }
 
         if (tstream_is_keyword(ts, TK_KEYWORD_INLINE)) {
             if (!func_spec) {
@@ -363,34 +392,8 @@ bool parse_type_head(struct parse_context *ctx, struct tstream *ts,
             type_found = true;
         }
     }
+    (*type)->quals = head.next;
     return true;
-}
-
-static void parse_type_quants(struct parse_context *ctx, struct tstream *ts,
-                              struct type_quant **quants) {
-    struct type_quant head = {NULL};
-    struct type_quant *prev = &head;
-    while (!tstream_eos(ts)) {
-        if (tstream_is_keyword(ts, TK_KEYWORD_CONST)) {
-            prev->next =
-                type_quant_new(TYPE_QUANT_CONST, &tstream_curr(ts)->span);
-            prev = prev->next;
-            tstream_advance(ts);
-        } else if (tstream_is_keyword(ts, TK_KEYWORD_RESTRICT)) {
-            prev->next =
-                type_quant_new(TYPE_QUANT_RESTRICT, &tstream_curr(ts)->span);
-            prev = prev->next;
-            tstream_advance(ts);
-        } else if (tstream_is_keyword(ts, TK_KEYWORD_VOLATILE)) {
-            prev->next =
-                type_quant_new(TYPE_QUANT_VOLATILE, &tstream_curr(ts)->span);
-            prev = prev->next;
-            tstream_advance(ts);
-        } else {
-            *quants = head.next;
-            return;
-        }
-    }
 }
 
 // Parse `[...]` in type, merge it into `*type`.
@@ -410,8 +413,11 @@ static bool parse_array(struct parse_context *ctx, struct tstream *ts,
         tstream_advance(ts);
     }
 
-    struct type_quant *quants;
-    parse_type_quants(ctx, ts, &quants);
+    struct type_qual quals_head = {NULL};
+    struct type_qual *quals_prev = &quals_head;
+    while (extract_type_qual(ctx, ts, &quals_prev->next)) {
+        quals_prev = quals_prev->next;
+    }
 
     if (!has_static && tstream_is_keyword(ts, TK_KEYWORD_STATIC)) {
         has_static = true;
@@ -442,7 +448,7 @@ static bool parse_array(struct parse_context *ctx, struct tstream *ts,
     merge_span(&span, &tstream_curr(ts)->span, &span);
     tstream_advance(ts);
 
-    *type = type_array_new(*type, has_static, quants, size, &span);
+    *type = type_array_new(*type, has_static, quals_head.next, size, &span);
     return true;
 }
 
@@ -518,11 +524,16 @@ bool parse_type_rest(struct parse_context *ctx, struct tstream *ts,
         if (tstream_is_punct(ts, TK_PUNCT_STAR)) {
             struct span span = head->span;
             tstream_advance(ts);
-            struct type_quant *quants;
-            parse_type_quants(ctx, ts, &quants);
+
+            struct type_qual quals_head = {NULL};
+            struct type_qual *quals_prev = &quals_head;
+            while (extract_type_qual(ctx, ts, &quals_prev->next)) {
+                quals_prev = quals_prev->next;
+            }
+
             merge_span(&span, &tstream_last(ts)->span, &span);
 
-            head = type_pointer_new(head, quants, &span);
+            head = type_pointer_new(head, quals_head.next, &span);
         } else {
             break;
         }

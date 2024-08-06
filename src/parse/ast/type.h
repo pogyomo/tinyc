@@ -18,15 +18,15 @@ struct type {
         TYPE_TYPEDEF_NAME,
     } kind;
     struct span span;
-    struct type_quant {
-        struct type_quant *next;
-        enum type_quant_kind {
-            TYPE_QUANT_CONST,
-            TYPE_QUANT_RESTRICT,
-            TYPE_QUANT_VOLATILE,
+    struct type_qual {
+        struct type_qual *next;
+        enum type_qual_kind {
+            TYPE_QUAL_CONST,
+            TYPE_QUAL_RESTRICT,
+            TYPE_QUAL_VOLATILE,
         } kind;
         struct span span;
-    } *quants;
+    } *quals;
 
     // Used when kind == TYPE_BUILTIN
     struct type_builtin {
@@ -97,7 +97,6 @@ struct type {
     struct type_array {
         struct type *of;
         bool has_static;
-        struct type_quant *quants;  // NULL if no quantifier exists.
         struct type_array_size {
             enum type_array_size_kind {
                 TYPE_ARRAY_SIZE_EXPR,
@@ -113,7 +112,6 @@ struct type {
     // Used when kind == TYPE_POINTER
     struct type_pointer {
         struct type *of;
-        struct type_quant *quants;  // NULL if no quantifier exists.
     } pointer;
 
     // Used when kind == TYPE_FUNC
@@ -144,28 +142,29 @@ struct type {
 };
 
 struct type *type_new();
-struct type *type_builtin_new(enum type_builtin_kind kind, struct span *span);
-struct type *type_struct_or_union_new(bool is_struct,
+struct type *type_builtin_new(enum type_builtin_kind kind,
+                              struct type_qual *quals, struct span *span);
+struct type *type_struct_or_union_new(bool is_struct, struct type_qual *quals,
                                       struct type_struct_or_union_name *name,
                                       struct type_struct_or_union_decl *decls,
                                       struct span *span);
 struct type_struct_or_union_decl *type_struct_or_union_decl_new(
     struct type *type, struct type_struct_or_union_decl_name *name,
     struct span *span, struct expr *bit_field);
-struct type *type_enum_new(struct type_enum_name *name,
+struct type *type_enum_new(struct type_enum_name *name, struct type_qual *quals,
                            struct type_enum_enumerator *enumerators,
                            struct span *span);
 struct type_enum_enumerator *type_enum_enumerator_new(
     struct type_enum_enumerator_name *name, struct expr *value,
     struct span *span);
 struct type *type_array_new(struct type *of, bool has_static,
-                            struct type_quant *quants,
+                            struct type_qual *quants,
                             struct type_array_size *size, struct span *span);
 struct type_array_size *type_array_size_new();
 struct type_array_size *type_array_size_expr_new(struct expr *value,
                                                  struct span *span);
 struct type_array_size *type_array_size_star_new(struct span *span);
-struct type *type_pointer_new(struct type *of, struct type_quant *quants,
+struct type *type_pointer_new(struct type *of, struct type_qual *quants,
                               struct span *span);
 struct type *type_func_new(struct type *ret_type,
                            struct type_func_param *params, struct span *span);
@@ -174,6 +173,6 @@ struct type_func_param *type_func_param_normal_new(
     struct type *type, struct type_func_param_name *name, struct span *span);
 struct type_func_param *type_func_param_varidic_new(struct span *span);
 struct type *type_typedef_name_new(char *value, struct span *span);
-struct type_quant *type_quant_new(enum type_quant_kind kind, struct span *span);
+struct type_qual *type_qual_new(enum type_qual_kind kind, struct span *span);
 
 #endif  // TINYC_PARSE_AST_TYPE_H_

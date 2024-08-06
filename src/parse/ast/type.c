@@ -12,16 +12,18 @@ struct type *type_new() {
     return type;
 }
 
-struct type *type_builtin_new(enum type_builtin_kind kind, struct span *span) {
+struct type *type_builtin_new(enum type_builtin_kind kind,
+                              struct type_qual *quals, struct span *span) {
     assert(span != NULL);
     struct type *res = type_new();
     res->kind = TYPE_BUILTIN;
     res->span = *span;
+    res->quals = quals;
     res->builtin.kind = kind;
     return res;
 }
 
-struct type *type_struct_or_union_new(bool is_struct,
+struct type *type_struct_or_union_new(bool is_struct, struct type_qual *quals,
                                       struct type_struct_or_union_name *name,
                                       struct type_struct_or_union_decl *decls,
                                       struct span *span) {
@@ -29,6 +31,7 @@ struct type *type_struct_or_union_new(bool is_struct,
     struct type *res = type_new();
     res->kind = TYPE_STRUCT_OR_UNION;
     res->span = *span;
+    res->quals = quals;
     res->struct_or_union.is_struct = is_struct;
     res->struct_or_union.name = *name;
     res->struct_or_union.decls = decls;
@@ -50,13 +53,14 @@ struct type_struct_or_union_decl *type_struct_or_union_decl_new(
     return decl;
 }
 
-struct type *type_enum_new(struct type_enum_name *name,
+struct type *type_enum_new(struct type_enum_name *name, struct type_qual *quals,
                            struct type_enum_enumerator *enumerators,
                            struct span *span) {
     assert(name != NULL && span != NULL);
     struct type *res = type_new();
     res->kind = TYPE_ENUM;
     res->span = *span;
+    res->quals = quals;
     res->enum_.name = *name;
     res->enum_.enumerators = enumerators;
     return res;
@@ -77,15 +81,15 @@ struct type_enum_enumerator *type_enum_enumerator_new(
 }
 
 struct type *type_array_new(struct type *of, bool has_static,
-                            struct type_quant *quants,
+                            struct type_qual *quals,
                             struct type_array_size *size, struct span *span) {
     assert(of != NULL && span != NULL);
     struct type *res = type_new();
     res->kind = TYPE_ARRAY;
     res->span = *span;
+    res->quals = quals;
     res->array.of = of;
     res->array.has_static = has_static;
-    res->array.quants = quants;
     res->array.size = size;
     return res;
 }
@@ -114,14 +118,14 @@ struct type_array_size *type_array_size_star_new(struct span *span) {
     return res;
 }
 
-struct type *type_pointer_new(struct type *of, struct type_quant *quants,
+struct type *type_pointer_new(struct type *of, struct type_qual *quals,
                               struct span *span) {
     assert(of != NULL && span != NULL);
     struct type *res = type_new();
     res->kind = TYPE_POINTER;
     res->span = *span;
+    res->quals = quals;
     res->pointer.of = of;
-    res->pointer.quants = quants;
     return res;
 }
 
@@ -172,10 +176,9 @@ struct type *type_typedef_name_new(char *value, struct span *span) {
     return res;
 }
 
-struct type_quant *type_quant_new(enum type_quant_kind kind,
-                                  struct span *span) {
+struct type_qual *type_qual_new(enum type_qual_kind kind, struct span *span) {
     assert(span != NULL);
-    struct type_quant *quant = malloc(sizeof(struct type_quant));
+    struct type_qual *quant = malloc(sizeof(struct type_qual));
     if (!quant) fatal_error("memory allocation failed");
     quant->kind = kind;
     quant->span = *span;
