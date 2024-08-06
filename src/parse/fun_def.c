@@ -40,6 +40,9 @@ bool parse_fun_def(struct parse_context *ctx, struct tstream *ts,
         }
     }
 
+    if (!tstream_is_punct(ts, TK_PUNCT_LCURLY)) {
+        return false;
+    }
     *fallback = false;
 
     struct stmt *body;
