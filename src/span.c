@@ -29,6 +29,7 @@ void merge_span(const struct span *lhs, const struct span *rhs,
         fatal_error("cache id mismatched: %zu != %zu", lhs->id, rhs->id);
     int cmp_start = cmp_position(&lhs->start, &rhs->start);
     int cmp_end = cmp_position(&lhs->end, &rhs->end);
+    merged->id = lhs->id;
     merged->start = cmp_start <= 0 ? lhs->start : rhs->start;
     merged->end = cmp_end >= 0 ? lhs->end : rhs->end;
 }
