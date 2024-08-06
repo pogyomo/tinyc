@@ -29,8 +29,6 @@ static void put_kind(FILE *os, enum report_kind kind) {
     }
 }
 
-static void end_color() { fputs("\e[0m", stdout); }
-
 static void splitline(const struct string *s, struct vector *lines) {
     vector_init(lines, sizeof(struct string));
 
