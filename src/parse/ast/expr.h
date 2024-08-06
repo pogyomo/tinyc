@@ -18,6 +18,7 @@ struct expr {
         // Unary expressions
         EXPR_UNARY,
         EXPR_SIZEOF,
+        EXPR_DEFINED,
 
         // Cast expression
         EXPR_CAST,
@@ -128,6 +129,16 @@ struct expr {
         struct type *type;
     } sizeof_;
 
+    // Used when kind == EXPR_DEFINED
+    //
+    // Only used in preprocessing phase.
+    struct expr_defined {
+        struct expr_defined_ident {
+            char *value;
+            struct span span;
+        } ident;
+    } defined;
+
     // Used when kind == EXPR_CAST
     struct expr_cast {
         struct type *type;
@@ -214,6 +225,8 @@ struct expr *expr_unary_new(struct expr *expr, struct expr_unary_op *op,
                             struct span *span);
 struct expr *expr_sizeof_expr_new(struct expr *expr, struct span *span);
 struct expr *expr_sizeof_type_new(struct type *type, struct span *span);
+struct expr *expr_defined_new(struct expr_defined_ident *ident,
+                              struct span *span);
 struct expr *expr_cast_new(struct type *type, struct expr *expr,
                            struct span *span);
 struct expr *expr_index_new(struct expr *body, struct expr *index,

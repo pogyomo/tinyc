@@ -71,6 +71,15 @@ struct expr *expr_sizeof_type_new(struct type *type, struct span *span) {
     return res;
 }
 
+struct expr *expr_defined_new(struct expr_defined_ident *ident,
+                              struct span *span) {
+    struct expr *res = expr_new();
+    res->kind = EXPR_DEFINED;
+    res->span = *span;
+    res->defined.ident = *ident;
+    return res;
+}
+
 struct expr *expr_cast_new(struct type *type, struct expr *expr,
                            struct span *span) {
     struct expr *res = expr_new();

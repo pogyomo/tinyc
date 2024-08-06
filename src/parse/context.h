@@ -13,10 +13,12 @@ struct typedef_name {
 struct parse_context {
     struct context *ctx;
     struct typedef_name *typedef_names;
+    bool in_preprocess;
 };
 
 // Initialize `parse_context`. Should be called before use it.
-void parse_context_init(struct parse_context *parse_ctx, struct context *ctx);
+void parse_context_init(struct parse_context *parse_ctx, struct context *ctx,
+                        bool in_preprocess);
 
 // Add `name` as typedef name.
 void parse_context_insert_typedef_name(struct parse_context *ctx,

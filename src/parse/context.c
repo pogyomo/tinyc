@@ -5,9 +5,11 @@
 
 #include "../panic.h"
 
-void parse_context_init(struct parse_context *parse_ctx, struct context *ctx) {
+void parse_context_init(struct parse_context *parse_ctx, struct context *ctx,
+                        bool in_preprocess) {
     parse_ctx->ctx = ctx;
     parse_ctx->typedef_names = NULL;
+    parse_ctx->in_preprocess = in_preprocess;
 }
 
 void parse_context_insert_typedef_name(struct parse_context *ctx,

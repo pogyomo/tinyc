@@ -1,6 +1,7 @@
 #include "expr.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "../report.h"
 #include "ast/expr.h"
@@ -600,6 +601,43 @@ bool parse_unary_expr(struct parse_context *ctx, struct tstream *ts,
             *expr = expr_sizeof_expr_new(*expr, &span);
             return true;
         }
+    } else if (tstream_is_ident(ts) &&
+               strcmp(tstream_curr(ts)->ident.value.str, "defined") == 0 &&
+               ctx->in_preprocess) {
+        struct span span = tstream_curr(ts)->span;
+        tstream_advance(ts);
+
+        bool has_paren = false;
+        if (tstream_is_punct(ts, TK_PUNCT_LPAREN)) {
+            has_paren = true;
+            tstream_advance(ts);
+        }
+
+        if (!tstream_is_ident(ts)) {
+            struct report_info info = {REPORT_ERROR, tstream_curr(ts)->span,
+                                       "identifier expected inside defined",
+                                       ""};
+            report(ctx->ctx, &info);
+            return false;
+        }
+        struct expr_defined_ident ident = {tstream_curr(ts)->ident.value.str,
+                                           tstream_curr(ts)->span};
+        merge_span(&span, &ident.span, &span);
+        tstream_advance(ts);
+
+        if (has_paren) {
+            if (!tstream_is_punct(ts, TK_PUNCT_RPAREN)) {
+                struct report_info info = {REPORT_ERROR, tstream_last(ts)->span,
+                                           "`)` expected after this", ""};
+                report(ctx->ctx, &info);
+                return false;
+            }
+            merge_span(&span, &tstream_curr(ts)->span, &span);
+            tstream_advance(ts);
+        }
+
+        *expr = expr_defined_new(&ident, &span);
+        return true;
     } else {
         return parse_postfix_expr(ctx, ts, expr);
     }

@@ -24,7 +24,7 @@ bool parse_file(struct context *ctx, const char *path,
     }
 
     struct parse_context parse_ctx;
-    parse_context_init(&parse_ctx, ctx);
+    parse_context_init(&parse_ctx, ctx, false);
 
     struct trans_unit head = {NULL};
     struct trans_unit *prev = &head;
