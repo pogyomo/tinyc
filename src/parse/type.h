@@ -15,12 +15,15 @@
 bool parse_type_name(struct parse_context *ctx, struct tstream *ts,
                      struct type **type);
 
+// Checks if `ts` will start with type.
+// Unlike other function, this will generate no error.
+bool ts_startwith_type(struct parse_context *ctx, struct tstream *ts);
+
 // Parse type from `ts` which appear in lhs of declaration/definition, and then
 // initialize `*type` with it.
 // This also, update `*class` and `*func_spec` if storage-class-specifier and
 // function-specifier found. `*class` and `*func_spec` will be NULL if not
-// found.
-// If you pass NULL to `class` or `func_spec`, you can reject it.
+// found. If you pass NULL to `class` or `func_spec`, you can reject it.
 // Returns false if error happen.
 bool parse_type_head(struct parse_context *ctx, struct tstream *ts,
                      struct type **type, struct storage_class **class,

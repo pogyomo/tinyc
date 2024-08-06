@@ -193,6 +193,10 @@ bool parse_decl(struct parse_context *ctx, struct tstream *ts,
             }
             decl_prev = decl_prev->next;
 
+            if (class && class->kind == STORAGE_CLASS_TYPEDEF && name.exists) {
+                parse_context_insert_typedef_name(ctx, name.name);
+            }
+
             if (tstream_is_punct(ts, TK_PUNCT_SEMICOLON)) {
                 break;
             } else if (tstream_is_punct(ts, TK_PUNCT_COMMA)) {

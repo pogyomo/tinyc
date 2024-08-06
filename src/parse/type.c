@@ -17,6 +17,20 @@ bool parse_type_name(struct parse_context *ctx, struct tstream *ts,
     return true;
 }
 
+bool ts_startwith_type(struct parse_context *ctx, struct tstream *ts) {
+    struct tstream ts_save = *ts;
+    context_suppress_report(ctx->ctx);
+
+    struct type *type;
+    struct storage_class *class;
+    struct function_spec *func_spec;
+    bool res = parse_type_head(ctx, ts, &type, &class, &func_spec);
+
+    context_activate_report(ctx->ctx);
+    *ts = ts_save;
+    return res;
+}
+
 // Parse a field by assuming its base type is `head`.
 static bool parse_struct_or_union_field(
     struct parse_context *ctx, struct tstream *ts, struct type *head,
