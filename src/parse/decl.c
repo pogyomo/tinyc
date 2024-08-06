@@ -185,6 +185,7 @@ bool parse_decl(struct parse_context *ctx, struct tstream *ts,
             } else {
                 struct initializer *init = NULL;
                 if (tstream_is_punct(ts, TK_PUNCT_ASSIGN)) {
+                    tstream_advance(ts);
                     TRY(parse_initializer(ctx, ts, &init));
                 }
                 TRY(convert_type_to_decl_var(ctx, class, func_spec, type, &name,
