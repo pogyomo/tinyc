@@ -55,10 +55,13 @@ bool parse_assign_expr(struct parse_context *ctx, struct tstream *ts,
         {TK_PUNCT_XORASSIGN, EXPR_ASSIGN_OP_BITXOR},
     };
 
+    struct tstream ts_save = *ts;
+
     context_suppress_report(ctx->ctx);
 
     struct expr *lhs;
     if (!parse_unary_expr(ctx, ts, &lhs)) {
+        *ts = ts_save;
         context_activate_report(ctx->ctx);
         return parse_cond_expr(ctx, ts, expr);
     }
@@ -76,6 +79,7 @@ bool parse_assign_expr(struct parse_context *ctx, struct tstream *ts,
         }
     }
     if (!found) {
+        *ts = ts_save;
         return parse_cond_expr(ctx, ts, expr);
     }
 
