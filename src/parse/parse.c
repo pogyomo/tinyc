@@ -33,10 +33,10 @@ bool parse_file(struct context *ctx, const char *path,
     while (!tstream_eos(&ts)) {
         struct span span = tstream_curr(&ts)->span;
 
-        context_suppress_report(ctx);
         struct fun_def *def;
         struct decl *decl;
         struct tstream ts_save = ts;
+        context_suppress_report(ctx);
         if (parse_fun_def(&parse_ctx, &ts, &def)) {
             context_activate_report(ctx);
             merge_span(&span, &tstream_last(&ts)->span, &span);

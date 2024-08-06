@@ -5,6 +5,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "string.h"
 #include "vector.h"
@@ -18,11 +19,14 @@ struct cache_entry {
 // Collection of data used through entire compile process.
 struct context {
     struct vector caches;  // Collection of `cache_entry`.
-    bool should_report;
+    uint64_t suppress_count;
 };
 
 // Initialize `context`. Should be called before use it.
 void context_init(struct context *ctx);
+
+// Returns true if `report` should report.
+bool context_should_report(struct context *ctx);
 
 // Suppress report.
 void context_suppress_report(struct context *ctx);
