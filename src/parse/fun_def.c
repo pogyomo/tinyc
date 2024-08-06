@@ -11,7 +11,9 @@
 #include "type.h"
 
 bool parse_fun_def(struct parse_context *ctx, struct tstream *ts,
-                   struct fun_def **def) {
+                   struct fun_def **def, bool *fallback) {
+    *fallback = true;
+
     struct type *type;
     struct type_rest_name name;
     struct function_spec *fun_spec;
@@ -19,12 +21,7 @@ bool parse_fun_def(struct parse_context *ctx, struct tstream *ts,
     TRY(parse_type_head(ctx, ts, &type, NULL, &fun_spec));
     TRY(parse_type_rest(ctx, ts, type, &type, &name));
 
-    if (type->kind != TYPE_FUNC) {
-        struct report_info info = {REPORT_ERROR, type->span,
-                                   "expected this to be function", ""};
-        report(ctx->ctx, &info);
-        return false;
-    }
+    if (type->kind != TYPE_FUNC) return false;
 
     struct fun_def_param head = {NULL};
     struct fun_def_param *prev = &head;
@@ -42,6 +39,8 @@ bool parse_fun_def(struct parse_context *ctx, struct tstream *ts,
             prev = prev->next;
         }
     }
+
+    *fallback = false;
 
     struct stmt *body;
     TRY(parse_block_stmt(ctx, ts, &body));

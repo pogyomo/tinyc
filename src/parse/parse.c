@@ -36,15 +36,16 @@ bool parse_file(struct context *ctx, const char *path,
         struct fun_def *def;
         struct decl *decl;
         struct tstream ts_save = ts;
-        context_suppress_report(ctx);
-        if (parse_fun_def(&parse_ctx, &ts, &def)) {
-            context_activate_report(ctx);
+        bool fallback;
+        if (parse_fun_def(&parse_ctx, &ts, &def, &fallback)) {
             merge_span(&span, &tstream_last(&ts)->span, &span);
             prev->next = tran_unit_fun_def_new(def, &span);
             prev = prev->next;
         } else {
+            if (!fallback) {
+                return false;
+            }
             ts = ts_save;
-            context_activate_report(ctx);
             TRY(parse_decl(&parse_ctx, &ts, &decl));
             merge_span(&span, &tstream_last(&ts)->span, &span);
             prev->next = tran_unit_decl_new(decl, &span);
