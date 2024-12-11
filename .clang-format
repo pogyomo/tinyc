@@ -1,0 +1,16 @@
+BasedOnStyle: Google
+AlignArrayOfStructures: Left
+IndentWidth: 4
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: Empty
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackParameters: false
+AlignAfterOpenBracket: BlockIndent
+IndentPPDirectives: BeforeHash
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 1000
+PenaltyBreakAssignment: 1000
+QualifierAlignment: Custom
+QualifierOrder: [static, inline, const, volatile, restrict, type]
+ColumnLimit: 80
