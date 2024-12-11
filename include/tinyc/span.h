@@ -28,6 +28,6 @@ struct tinyc_span {
 };
 
 /// Add two span, returns it.
-struct tinyc_span tinyc_add_span(struct tinyc_span s1, struct tinyc_span s2);
+struct tinyc_span tinyc_span_add(struct tinyc_span s1, struct tinyc_span s2);
 
 #endif  // TINYC_SPAN_H_

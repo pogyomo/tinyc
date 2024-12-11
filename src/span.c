@@ -22,14 +22,14 @@ static inline size_t max(size_t a, size_t b) {
     return a > b ? a : b;
 }
 
-struct tinyc_span tinyc_add_span(struct tinyc_span s1, struct tinyc_span s2) {
+struct tinyc_span tinyc_span_add(struct tinyc_span s1, struct tinyc_span s2) {
     struct tinyc_position start = {
         min(s1.start.row, s2.start.row),
         min(s1.start.offset, s1.start.offset),
     };
     struct tinyc_position end = {
-        max(s1.start.row, s2.start.row),
-        max(s1.start.offset, s1.start.offset),
+        max(s1.end.row, s2.end.row),
+        max(s1.end.offset, s1.end.offset),
     };
     return (struct tinyc_span){start, end};
 }
