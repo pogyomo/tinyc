@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <tinyc/span.h>
 
-void test_add_cross(void) {
+static void test_add_cross(void) {
     struct tinyc_span s1 = {
         {1, 10},
         {3, 5 }
@@ -18,7 +18,7 @@ void test_add_cross(void) {
     assert(s.end.offset == 5);
 }
 
-void test_add_surround(void) {
+static void test_add_surround(void) {
     struct tinyc_span s1 = {
         {1, 10},
         {4, 8 }
@@ -35,7 +35,7 @@ void test_add_surround(void) {
     assert(s.end.offset == s1.end.offset);
 }
 
-void test_add_same(void) {
+static void test_add_same(void) {
     struct tinyc_span s1 = {
         {1, 10},
         {4, 8 }
