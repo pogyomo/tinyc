@@ -113,8 +113,8 @@ static const struct {
     {"||",   TINYC_TOKEN_VVERT    },
     {"|",    TINYC_TOKEN_VERT     },
     {",",    TINYC_TOKEN_COMMA    },
-    {"#",    TINYC_TOKEN_SHARP    },
     {"##",   TINYC_TOKEN_SSHARP   },
+    {"#",    TINYC_TOKEN_SHARP    },
 };
 
 struct tinyc_token_header *tinyc_lex_once(struct tinyc_lex *lex) {}
