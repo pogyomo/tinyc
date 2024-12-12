@@ -37,11 +37,7 @@ bool tinyc_string_from(struct tinyc_string *this, char *from);
 /// Returns false if operation failed.
 bool tinyc_string_push(struct tinyc_string *this, char c);
 
-/// Compare two string.
-/// Returns following value x:
-/// - x < 0 if s1 < s2
-/// - x == 0 if s1 == s2
-/// - x > 0 if s1 > s2
+/// Compare two string. Semantics is same as strcmp.
 int tinyc_string_cmp(struct tinyc_string s1, struct tinyc_string s2);
 
 #endif  // TINYC_STRING_H_
