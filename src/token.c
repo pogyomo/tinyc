@@ -16,9 +16,6 @@
 
 #include <stdlib.h>
 
-#define head(it) (it)
-#define tail(it) ((it)->prev)
-
 static void insert_between(
     struct tinyc_token *ld,
     struct tinyc_token *rd,
