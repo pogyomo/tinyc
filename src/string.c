@@ -25,9 +25,14 @@ static inline size_t min(size_t a, size_t b) {
 
 static inline bool copy_alloc(struct tinyc_string *this) {
     const char *from = this->cstr;
-    this->cap = this->len + 1 + DEFAULT_CAP;
-    this->cstr = malloc(sizeof(char) * this->cap);
-    if (!this->cstr) return false;
+    const size_t new_cap = this->len + 1 + DEFAULT_CAP;
+
+    char *new_cstr = realloc(this->cstr, sizeof(char) * new_cap);
+    if (!new_cstr) return false;
+
+    this->cstr = new_cstr;
+    this->cap = new_cap;
+
     strcpy(this->cstr, from);
     return true;
 }
