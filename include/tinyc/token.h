@@ -244,7 +244,7 @@ struct tinyc_token *tinyc_token_create_pp_number(
 );
 
 /// Create a header token, returns pointer to token.
-struct tinyc_token *tinyc_pp_token_create_header(
+struct tinyc_token *tinyc_token_create_header(
     struct tinyc_span span,
     bool is_std,
     struct tinyc_string path
