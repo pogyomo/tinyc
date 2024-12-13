@@ -182,23 +182,17 @@ struct tinyc_token_header {
     struct tinyc_string path;  // Path inside <> or "".
 };
 
-/// Insert src after dst, returns src.
-struct tinyc_token *tinyc_token_insert_next(
-    struct tinyc_token *dst,
-    struct tinyc_token *src
+/// Insert tokens after it, returns first token in tokens.
+struct tinyc_token *tinyc_token_insert(
+    struct tinyc_token *it,
+    struct tinyc_token *tokens
 );
 
-/// Insert src before dst, returns src.
-struct tinyc_token *tinyc_token_insert_prev(
-    struct tinyc_token *dst,
-    struct tinyc_token *src
-);
-
-/// Replace dst with src, returns src.
+/// Replace it with tokens, returns first token in tokens.
 /// Replaced token be a list contains only itself.
 struct tinyc_token *tinyc_token_replace(
-    struct tinyc_token *dst,
-    struct tinyc_token *src
+    struct tinyc_token *it,
+    struct tinyc_token *tokens
 );
 
 /// Create a punctuation token, returns pointer to token.

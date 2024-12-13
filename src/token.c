@@ -16,43 +16,40 @@
 
 #include <stdlib.h>
 
-static inline struct tinyc_token *insert_between(
-    struct tinyc_token *l,
-    struct tinyc_token *r,
-    struct tinyc_token *t
+#define head(it) (it)
+#define tail(it) ((it)->prev)
+
+static void insert_between(
+    struct tinyc_token *ld,
+    struct tinyc_token *rd,
+    struct tinyc_token *tokens
 ) {
-    l->next = r->prev = t;
-    t->next = r;
-    t->prev = l;
-    return t;
+    struct tinyc_token *ls = tokens, *rs = tokens->prev;
+    ld->next = ls;
+    rd->prev = rs;
+    ls->prev = ld;
+    rs->next = rd;
 }
 
-struct tinyc_token *tinyc_token_insert_next(
-    struct tinyc_token *dst,
-    struct tinyc_token *src
+struct tinyc_token *tinyc_token_insert(
+    struct tinyc_token *it,
+    struct tinyc_token *tokens
 ) {
-    return insert_between(dst, dst->next, src);
-}
-
-struct tinyc_token *tinyc_token_insert_prev(
-    struct tinyc_token *dst,
-    struct tinyc_token *src
-) {
-    return insert_between(dst->prev, dst, src);
+    insert_between(it, it->next, tokens);
+    return tokens;
 }
 
 struct tinyc_token *tinyc_token_replace(
-    struct tinyc_token *dst,
-    struct tinyc_token *src
+    struct tinyc_token *it,
+    struct tinyc_token *tokens
 ) {
-    if (dst->next != dst) {
-        src->next = dst->next;
-        src->prev = dst->prev;
-        src->next->prev = src;
-        src->prev->next = src;
-        dst->next = dst->prev = dst;
+    if (it->next == it && it->prev == it) {
+        return tokens;
+    } else {
+        insert_between(it->prev, it->next, tokens);
+        it->next = it->prev = it;
+        return tokens;
     }
-    return src;
 }
 
 struct tinyc_token *tinyc_token_create_punct(
@@ -148,7 +145,7 @@ struct tinyc_token *tinyc_token_create_pp_number(
     return &tk->token;
 }
 
-struct tinyc_token *tinyc_pp_token_create_header(
+struct tinyc_token *tinyc_token_create_header(
     struct tinyc_span span,
     bool is_std,
     struct tinyc_string path
