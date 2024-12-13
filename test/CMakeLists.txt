@@ -5,3 +5,7 @@ add_test(NAME test-string COMMAND test-string)
 add_executable(test-span span.c)
 target_link_libraries(test-span tinyc-core)
 add_test(NAME test-span COMMAND test-span)
+
+add_executable(test-token token.c)
+target_link_libraries(test-token tinyc-core)
+add_test(NAME test-token COMMAND test-token)
