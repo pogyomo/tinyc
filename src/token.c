@@ -79,3 +79,71 @@ struct tinyc_token *tinyc_token_create_string(
     tk->value = value;
     return &tk->token;
 }
+
+struct tinyc_token *tinyc_token_create_int(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
+    struct tinyc_span span,
+    struct tinyc_token_int_value value
+) {
+    struct tinyc_token_int *tk = malloc(sizeof(struct tinyc_token_int));
+    if (!tk) return NULL;
+    tk->token.prev = prev;
+    tk->token.next = next;
+    tk->token.span = span;
+    tk->token.kind = TINYC_TOKEN_INT;
+    tk->value = value;
+    return &tk->token;
+}
+
+struct tinyc_token *tinyc_token_create_float(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
+    struct tinyc_span span,
+    struct tinyc_token_float_value value
+) {
+    struct tinyc_token_float *tk = malloc(sizeof(struct tinyc_token_float));
+    if (!tk) return NULL;
+    tk->token.prev = prev;
+    tk->token.next = next;
+    tk->token.span = span;
+    tk->token.kind = TINYC_TOKEN_FLOAT;
+    tk->value = value;
+    return &tk->token;
+}
+
+struct tinyc_token *tinyc_token_create_pp_number(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
+    struct tinyc_span span,
+    struct tinyc_string value
+) {
+    struct tinyc_token_pp_number *tk = malloc(
+        sizeof(struct tinyc_token_pp_number)
+    );
+    if (!tk) return NULL;
+    tk->token.prev = prev;
+    tk->token.next = next;
+    tk->token.span = span;
+    tk->token.kind = TINYC_TOKEN_PP_NUMBER;
+    tk->value = value;
+    return &tk->token;
+}
+
+struct tinyc_token *tinyc_pp_token_create_header(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
+    struct tinyc_span span,
+    bool is_std,
+    struct tinyc_string path
+) {
+    struct tinyc_token_header *tk = malloc(sizeof(struct tinyc_token_header));
+    if (!tk) return NULL;
+    tk->token.prev = prev;
+    tk->token.next = next;
+    tk->token.span = span;
+    tk->token.kind = TINYC_TOKEN_HEADER;
+    tk->is_std = is_std;
+    tk->path = path;
+    return &tk->token;
+}

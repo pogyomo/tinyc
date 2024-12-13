@@ -23,6 +23,12 @@ enum tinyc_token_kind {
     TINYC_TOKEN_IDENT,
     TINYC_TOKEN_KEYWORD,
     TINYC_TOKEN_STRING,
+    TINYC_TOKEN_INT,
+    TINYC_TOKEN_FLOAT,
+
+    // Tokens used at preprocess
+    TINYC_TOKEN_PP_NUMBER,
+    TINYC_TOKEN_HEADER,
 };
 
 enum tinyc_token_punct_kind {
@@ -145,7 +151,36 @@ struct tinyc_token_string {
     struct tinyc_string value;
 };
 
-/// Create a punctuation token, returns pointer to header.
+struct tinyc_token_int_value {
+    // TODO: Add members
+};
+
+struct tinyc_token_int {
+    struct tinyc_token token;
+    struct tinyc_token_int_value value;
+};
+
+struct tinyc_token_float_value {
+    // TODO: Add members
+};
+
+struct tinyc_token_float {
+    struct tinyc_token token;
+    struct tinyc_token_float_value value;
+};
+
+struct tinyc_token_pp_number {
+    struct tinyc_token token;
+    struct tinyc_string value;
+};
+
+struct tinyc_token_header {
+    struct tinyc_token token;
+    bool is_std;               // True if <> style.
+    struct tinyc_string path;  // Path inside <> or "".
+};
+
+/// Create a punctuation token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_punct(
     struct tinyc_token *prev,
     struct tinyc_token *next,
@@ -153,7 +188,7 @@ struct tinyc_token *tinyc_token_create_punct(
     enum tinyc_token_punct_kind kind
 );
 
-/// Create a identifier token, returns pointer to header.
+/// Create a identifier token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_ident(
     struct tinyc_token *prev,
     struct tinyc_token *next,
@@ -161,7 +196,7 @@ struct tinyc_token *tinyc_token_create_ident(
     struct tinyc_string value
 );
 
-/// Create a keyword token, returns pointer to header.
+/// Create a keyword token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_keyword(
     struct tinyc_token *prev,
     struct tinyc_token *next,
@@ -169,12 +204,45 @@ struct tinyc_token *tinyc_token_create_keyword(
     enum tinyc_token_keyword_kind kind
 );
 
-/// Create a string token, returns pointer to header.
+/// Create a string token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_string(
     struct tinyc_token *prev,
     struct tinyc_token *next,
     struct tinyc_span span,
     struct tinyc_string value
+);
+
+/// Create a integer token, returns pointer to token.
+struct tinyc_token *tinyc_token_create_int(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
+    struct tinyc_span span,
+    struct tinyc_token_int_value value
+);
+
+/// Create a floating number token, returns pointer to token.
+struct tinyc_token *tinyc_token_create_float(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
+    struct tinyc_span span,
+    struct tinyc_token_float_value value
+);
+
+/// Create a pp-number token, returns pointer to token.
+struct tinyc_token *tinyc_token_create_pp_number(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
+    struct tinyc_span span,
+    struct tinyc_string value
+);
+
+/// Create a header token, returns pointer to token.
+struct tinyc_token *tinyc_pp_token_create_header(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
+    struct tinyc_span span,
+    bool is_std,
+    struct tinyc_string path
 );
 
 #endif  // TINYC_TOKEN_H_
