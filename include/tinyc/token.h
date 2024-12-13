@@ -18,7 +18,7 @@
 #include "tinyc/span.h"
 #include "tinyc/string.h"
 
-enum tinyc_token_header_kind {
+enum tinyc_token_kind {
     TINYC_TOKEN_PUNCT,
     TINYC_TOKEN_IDENT,
     TINYC_TOKEN_KEYWORD,
@@ -119,60 +119,60 @@ enum tinyc_token_keyword_kind {
 /// Struct all concrete header holds at beginning of its member.
 /// All header is manipulated through pointer to this struct, and be downcasted
 /// if concrete value required.
-struct tinyc_token_header {
-    struct tinyc_token_header *next, *prev;
+struct tinyc_token {
+    struct tinyc_token *next, *prev;
     struct tinyc_span span;
-    enum tinyc_token_header_kind kind;
+    enum tinyc_token_kind kind;
 };
 
 struct tinyc_token_punct {
-    struct tinyc_token_header header;
+    struct tinyc_token token;
     enum tinyc_token_punct_kind kind;
 };
 
 struct tinyc_token_ident {
-    struct tinyc_token_header header;
+    struct tinyc_token token;
     struct tinyc_string value;
 };
 
 struct tinyc_token_keyword {
-    struct tinyc_token_header header;
+    struct tinyc_token token;
     enum tinyc_token_keyword_kind kind;
 };
 
 struct tinyc_token_string {
-    struct tinyc_token_header header;
+    struct tinyc_token token;
     struct tinyc_string value;
 };
 
 /// Create a punctuation token, returns pointer to header.
-struct tinyc_token_header *tinyc_create_punct(
-    struct tinyc_token_header *prev,
-    struct tinyc_token_header *next,
+struct tinyc_token *tinyc_token_create_punct(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
     struct tinyc_span span,
     enum tinyc_token_punct_kind kind
 );
 
 /// Create a identifier token, returns pointer to header.
-struct tinyc_token_header *tinyc_create_ident(
-    struct tinyc_token_header *prev,
-    struct tinyc_token_header *next,
+struct tinyc_token *tinyc_token_create_ident(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
     struct tinyc_span span,
     struct tinyc_string value
 );
 
 /// Create a keyword token, returns pointer to header.
-struct tinyc_token_header *tinyc_create_keyword(
-    struct tinyc_token_header *prev,
-    struct tinyc_token_header *next,
+struct tinyc_token *tinyc_token_create_keyword(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
     struct tinyc_span span,
     enum tinyc_token_keyword_kind kind
 );
 
 /// Create a string token, returns pointer to header.
-struct tinyc_token_header *tinyc_create_string(
-    struct tinyc_token_header *prev,
-    struct tinyc_token_header *next,
+struct tinyc_token *tinyc_token_create_string(
+    struct tinyc_token *prev,
+    struct tinyc_token *next,
     struct tinyc_span span,
     struct tinyc_string value
 );

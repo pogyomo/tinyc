@@ -1,4 +1,5 @@
 add_library(tinyc-core STATIC
+    pp-token.c
     span.c
     string.c
     token.c
