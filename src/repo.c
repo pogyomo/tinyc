@@ -51,10 +51,10 @@ tinyc_repo_id tinyc_repo_registory(
     struct tinyc_repo *this,
     struct tinyc_source source
 ) {
-    if (!this->head) {
-        return create(this, source);
-    } else {
+    if (this->head) {
         return append(this, source);
+    } else {
+        return create(this, source);
     }
 }
 
@@ -62,10 +62,8 @@ struct tinyc_source *tinyc_repo_query(
     struct tinyc_repo this,
     tinyc_repo_id id
 ) {
-    struct tinyc_repo_entry *it = this.head;
-    while (it) {
+    for (struct tinyc_repo_entry *it = this.head; it; it = it->next) {
         if (it->id == id) return &it->source;
-        it = it->next;
     }
     return NULL;
 }
