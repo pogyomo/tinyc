@@ -24,6 +24,7 @@ void init_from_file(void) {
     tinyc_string_from(&content, "hello\nworld\n");
 
     FILE *fp = tmpfile();
+    assert(fp);
     for (size_t i = 0; i < content.len; i++) {
         fputc(content.cstr[i], fp);
     }
@@ -33,6 +34,8 @@ void init_from_file(void) {
     assert(tinyc_source_from_fs(&source, name, fp));
     assert(tinyc_string_cmp(source.name, name) == 0);
     assert(tinyc_string_cmp(source.content, content) == 0);
+
+    fclose(fp);
 }
 
 int main(void) {
