@@ -24,8 +24,15 @@ static void test_add_cross(void) {
         {2, 8},
         {4, 5}
     };
-    struct tinyc_span s = tinyc_span_add(s1, s2);
+    struct tinyc_span s;
 
+    tinyc_span_add(&s1, &s2, &s);
+    assert(s.start.row == 1);
+    assert(s.start.offset == 10);
+    assert(s.end.row == 4);
+    assert(s.end.offset == 5);
+
+    tinyc_span_add(&s2, &s1, &s);
     assert(s.start.row == 1);
     assert(s.start.offset == 10);
     assert(s.end.row == 4);
@@ -41,8 +48,15 @@ static void test_add_surround(void) {
         {2, 8},
         {3, 5}
     };
-    struct tinyc_span s = tinyc_span_add(s1, s2);
+    struct tinyc_span s;
 
+    tinyc_span_add(&s1, &s2, &s);
+    assert(s.start.row == s1.start.row);
+    assert(s.start.offset == s1.start.offset);
+    assert(s.end.row == s1.end.row);
+    assert(s.end.offset == s1.end.offset);
+
+    tinyc_span_add(&s2, &s1, &s);
     assert(s.start.row == s1.start.row);
     assert(s.start.offset == s1.start.offset);
     assert(s.end.row == s1.end.row);
@@ -54,8 +68,9 @@ static void test_add_same(void) {
         {1, 10},
         {4, 8 }
     };
-    struct tinyc_span s = tinyc_span_add(s1, s1);
+    struct tinyc_span s;
 
+    tinyc_span_add(&s1, &s1, &s);
     assert(s.start.row == s1.start.row);
     assert(s.start.offset == s1.start.offset);
     assert(s.end.row == s1.end.row);

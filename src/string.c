@@ -80,17 +80,20 @@ bool tinyc_string_push(struct tinyc_string *this, char c) {
     return true;
 }
 
-int tinyc_string_cmp(struct tinyc_string s1, struct tinyc_string s2) {
-    for (size_t i = 0; i < min(s1.len, s2.len); ++i) {
-        if (s1.cstr[i] < s2.cstr[i]) {
+int tinyc_string_cmp(
+    const struct tinyc_string *s1,
+    const struct tinyc_string *s2
+) {
+    for (size_t i = 0; i < min(s1->len, s2->len); ++i) {
+        if (s1->cstr[i] < s2->cstr[i]) {
             return -1;
-        } else if (s1.cstr[i] > s2.cstr[i]) {
+        } else if (s1->cstr[i] > s2->cstr[i]) {
             return 1;
         }
     }
-    if (s1.len < s2.len) {
+    if (s1->len < s2->len) {
         return -1;
-    } else if (s1.len > s2.len) {
+    } else if (s1->len > s2->len) {
         return 1;
     } else {
         return 0;

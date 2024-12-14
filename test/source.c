@@ -31,9 +31,9 @@ void init_from_file(void) {
     rewind(fp);
 
     struct tinyc_source source;
-    assert(tinyc_source_from_fs(&source, name, fp));
-    assert(tinyc_string_cmp(source.name, name) == 0);
-    assert(tinyc_string_cmp(source.content, content) == 0);
+    assert(tinyc_source_from_fs(&source, &name, fp));
+    assert(tinyc_string_cmp(&source.name, &name) == 0);
+    assert(tinyc_string_cmp(&source.content, &content) == 0);
 
     fclose(fp);
 }

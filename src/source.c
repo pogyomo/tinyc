@@ -29,9 +29,9 @@ static inline bool read(struct tinyc_string *content, FILE *fp) {
 
 bool tinyc_source_from_fs(
     struct tinyc_source *this,
-    struct tinyc_string name,
+    const struct tinyc_string *name,
     FILE *fp
 ) {
-    this->name = name;
+    this->name = *name;
     return read(&this->content, fp);
 }

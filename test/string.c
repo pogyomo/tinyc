@@ -66,21 +66,21 @@ static void test_tinyc_string_cmp_l(void) {
     struct tinyc_string s1, s2;
     tinyc_string_from(&s1, "aaa");
     tinyc_string_from(&s2, "aab");
-    assert(tinyc_string_cmp(s1, s2) < 0);
+    assert(tinyc_string_cmp(&s1, &s2) < 0);
 }
 
 static void test_tinyc_string_cmp_g(void) {
     struct tinyc_string s1, s2;
     tinyc_string_from(&s1, "aab");
     tinyc_string_from(&s2, "aaa");
-    assert(tinyc_string_cmp(s1, s2) > 0);
+    assert(tinyc_string_cmp(&s1, &s2) > 0);
 }
 
 static void test_tinyc_string_cmp_e(void) {
     struct tinyc_string s1, s2;
     tinyc_string_from(&s1, "aaa");
     tinyc_string_from(&s2, "aaa");
-    assert(tinyc_string_cmp(s1, s2) == 0);
+    assert(tinyc_string_cmp(&s1, &s2) == 0);
 }
 
 int main(void) {

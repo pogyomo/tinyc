@@ -29,7 +29,7 @@ struct tinyc_source {
 /// Returns false if failed.
 bool tinyc_source_from_fs(
     struct tinyc_source *this,
-    struct tinyc_string name,
+    const struct tinyc_string *name,
     FILE *fp
 );
 
