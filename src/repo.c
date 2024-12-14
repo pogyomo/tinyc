@@ -18,25 +18,25 @@
 
 static inline tinyc_repo_id create(
     struct tinyc_repo *this,
-    struct tinyc_source source
+    const struct tinyc_source *source
 ) {
     this->head = malloc(sizeof(struct tinyc_repo_entry));
     if (!this->head) return -1;
     this->head->id = this->next_id++;
     this->head->next = NULL;
-    this->head->source = source;
+    this->head->source = *source;
     return this->head->id;
 }
 
 static inline tinyc_repo_id append(
     struct tinyc_repo *this,
-    struct tinyc_source source
+    const struct tinyc_source *source
 ) {
     struct tinyc_repo_entry *entry = malloc(sizeof(struct tinyc_repo_entry));
     if (!entry) return -1;
     entry->id = this->next_id++;
     entry->next = this->head;
-    entry->source = source;
+    entry->source = *source;
     this->head = entry;
     return this->head->id;
 }
@@ -49,7 +49,7 @@ bool tinyc_repo_init(struct tinyc_repo *this) {
 
 tinyc_repo_id tinyc_repo_registory(
     struct tinyc_repo *this,
-    struct tinyc_source source
+    const struct tinyc_source *source
 ) {
     if (this->head) {
         return append(this, source);
@@ -59,10 +59,10 @@ tinyc_repo_id tinyc_repo_registory(
 }
 
 struct tinyc_source *tinyc_repo_query(
-    struct tinyc_repo this,
+    const struct tinyc_repo *this,
     tinyc_repo_id id
 ) {
-    for (struct tinyc_repo_entry *it = this.head; it; it = it->next) {
+    for (struct tinyc_repo_entry *it = this->head; it; it = it->next) {
         if (it->id == id) return &it->source;
     }
     return NULL;

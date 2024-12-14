@@ -14,22 +14,47 @@
 
 #include "tinyc/span.h"
 
-static inline size_t min(size_t a, size_t b) {
-    return a < b ? a : b;
+static inline void set_start(
+    const struct tinyc_span *s1,
+    const struct tinyc_span *s2,
+    struct tinyc_span *res
+) {
+    if (s1->start.row < s2->start.row) {
+        res->start = s1->start;
+    } else if (s1->start.row > s2->start.row) {
+        res->start = s2->start;
+    } else {
+        if (s1->start.offset < s2->start.offset) {
+            res->start = s1->start;
+        } else {
+            res->start = s2->start;
+        }
+    }
 }
 
-static inline size_t max(size_t a, size_t b) {
-    return a > b ? a : b;
+static inline void set_end(
+    const struct tinyc_span *s1,
+    const struct tinyc_span *s2,
+    struct tinyc_span *res
+) {
+    if (s1->end.row < s2->end.row) {
+        res->end = s2->end;
+    } else if (s1->end.row > s2->end.row) {
+        res->end = s1->end;
+    } else {
+        if (s1->end.offset < s2->end.offset) {
+            res->end = s2->end;
+        } else {
+            res->end = s1->end;
+        }
+    }
 }
 
-struct tinyc_span tinyc_span_add(struct tinyc_span s1, struct tinyc_span s2) {
-    struct tinyc_position start = {
-        min(s1.start.row, s2.start.row),
-        min(s1.start.offset, s1.start.offset),
-    };
-    struct tinyc_position end = {
-        max(s1.end.row, s2.end.row),
-        max(s1.end.offset, s1.end.offset),
-    };
-    return (struct tinyc_span){start, end};
+void tinyc_span_add(
+    const struct tinyc_span *s1,
+    const struct tinyc_span *s2,
+    struct tinyc_span *res
+) {
+    set_start(s1, s2, res);
+    set_end(s1, s2, res);
 }

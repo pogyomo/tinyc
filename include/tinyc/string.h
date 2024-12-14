@@ -38,6 +38,9 @@ bool tinyc_string_from(struct tinyc_string *this, char *from);
 bool tinyc_string_push(struct tinyc_string *this, char c);
 
 /// Compare two string. Semantics is same as strcmp.
-int tinyc_string_cmp(struct tinyc_string s1, struct tinyc_string s2);
+int tinyc_string_cmp(
+    const struct tinyc_string *s1,
+    const struct tinyc_string *s2
+);
 
 #endif  // TINYC_STRING_H_
