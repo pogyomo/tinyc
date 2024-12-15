@@ -50,4 +50,11 @@ bool tinyc_source_from_fs(
     FILE *fp
 );
 
+/// Get n-th line of this source.
+/// Returns NULL if n exceed number of lines.
+const struct tinyc_source_line *tinyc_source_at(
+    const struct tinyc_source *this,
+    size_t n
+);
+
 #endif  // TINYC_SOURCE_H_

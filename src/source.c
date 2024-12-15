@@ -83,3 +83,16 @@ bool tinyc_source_from_fs(
         return false;
     }
 }
+
+const struct tinyc_source_line *tinyc_source_at(
+    const struct tinyc_source *this,
+    size_t n
+) {
+    struct tinyc_source_line *line = this->lines;
+    if (!line) return NULL;
+    for (size_t i = 0; i < n; ++i) {
+        line = line->next;
+        if (!line) return NULL;
+    }
+    return line;
+}
