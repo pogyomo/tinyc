@@ -39,6 +39,14 @@ struct tinyc_token *tinyc_token_insert(
     return tokens;
 }
 
+struct tinyc_token *tinyc_token_clone_range(
+    struct tinyc_token *begin,
+    struct tinyc_token *end
+) {
+    // TODO: Implement this.
+    return NULL;
+}
+
 struct tinyc_token *tinyc_token_replace(
     struct tinyc_token *it,
     struct tinyc_token *tokens
@@ -49,6 +57,77 @@ struct tinyc_token *tinyc_token_replace(
         insert_between(it->prev, it->next, tokens);
         it->next = it->prev = it;
         return tokens;
+    }
+}
+
+struct tinyc_token *tinyc_token_clone(struct tinyc_token *token) {
+    switch (token->kind) {
+        case TINYC_TOKEN_PUNCT: {
+            struct tinyc_token_punct *t = (struct tinyc_token_punct *)token;
+            return tinyc_token_create_punct(
+                &t->token.span,
+                t->token.tspaces,
+                t->kind
+            );
+        }
+        case TINYC_TOKEN_IDENT: {
+            struct tinyc_token_ident *t = (struct tinyc_token_ident *)token;
+            return tinyc_token_create_ident(
+                &t->token.span,
+                t->token.tspaces,
+                t->value.cstr
+            );
+        }
+        case TINYC_TOKEN_KEYWORD: {
+            struct tinyc_token_keyword *t = (struct tinyc_token_keyword *)token;
+            return tinyc_token_create_keyword(
+                &t->token.span,
+                t->token.tspaces,
+                t->kind
+            );
+        }
+        case TINYC_TOKEN_STRING: {
+            struct tinyc_token_string *t = (struct tinyc_token_string *)token;
+            return tinyc_token_create_string(
+                &t->token.span,
+                t->token.tspaces,
+                t->value.cstr
+            );
+        }
+        case TINYC_TOKEN_INT: {
+            struct tinyc_token_int *t = (struct tinyc_token_int *)token;
+            return tinyc_token_create_int(
+                &t->token.span,
+                t->token.tspaces,
+                &t->value
+            );
+        }
+        case TINYC_TOKEN_FLOAT: {
+            struct tinyc_token_float *t = (struct tinyc_token_float *)token;
+            return tinyc_token_create_float(
+                &t->token.span,
+                t->token.tspaces,
+                &t->value
+            );
+        }
+        case TINYC_TOKEN_PP_NUMBER: {
+            struct tinyc_token_pp_number *t = (struct tinyc_token_pp_number *)
+                token;
+            return tinyc_token_create_pp_number(
+                &t->token.span,
+                t->token.tspaces,
+                t->value.cstr
+            );
+        }
+        default: {  // TINYC_TOKEN_HEADER
+            struct tinyc_token_header *t = (struct tinyc_token_header *)token;
+            return tinyc_token_create_header(
+                &t->token.span,
+                t->token.tspaces,
+                t->is_std,
+                t->path.cstr
+            );
+        }
     }
 }
 

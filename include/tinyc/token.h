@@ -189,12 +189,21 @@ struct tinyc_token *tinyc_token_insert(
     struct tinyc_token *tokens
 );
 
+/// Copy tokens from begin to end inclusively.
+struct tinyc_token *tinyc_token_clone_range(
+    struct tinyc_token *begin,
+    struct tinyc_token *end
+);
+
 /// Replace it with tokens, returns first token in tokens.
 /// Replaced token be a list contains only itself.
 struct tinyc_token *tinyc_token_replace(
     struct tinyc_token *it,
     struct tinyc_token *tokens
 );
+
+/// Clone given token.
+struct tinyc_token *tinyc_token_clone(struct tinyc_token *token);
 
 /// Returns true if token is identifier.
 bool tinyc_token_is_ident(struct tinyc_token *this);
