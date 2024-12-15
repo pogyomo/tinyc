@@ -45,15 +45,15 @@ static inline const char *color_sequence_by_severity(
 ) {
     switch (severity) {
         case TINYC_DIAG_INFO:
-            return "\033[31m";
+            return "\033[34m";
         case TINYC_DIAG_WARN:
-            return "\033[31m";
+            return "\033[33m";
         default:  // TINYC_DIAG_ERROR
             return "\033[31m";
     }
 }
 
-static inline size_t paint(
+static inline void paint(
     FILE *fs,
     bool color,
     enum tinyc_diag_severity severity,
@@ -62,7 +62,6 @@ static inline size_t paint(
     if (color) fputs(color_sequence_by_severity(severity), fs);
     fputs(s, fs);
     if (color) fputs("\033[0m", fs);
-    return strlen(s);
 }
 
 static inline void emit_loc_info(
@@ -73,17 +72,13 @@ static inline void emit_loc_info(
     const struct tinyc_span *span,
     const struct tinyc_string *what
 ) {
+    const size_t row = span->start.row;
+    const size_t offset = span->start.offset;
+
+    fprintf(fs, "%s:%ld:%ld: ", source->name.cstr, row, offset);
     paint(fs, color, severity, severity_string(severity));
-    fprintf(
-        fs,
-        ":%s:%ld:%ld:%ld:%ld:%s",
-        source->name.cstr,
-        span->start.row,
-        span->start.offset,
-        span->end.row,
-        span->end.offset,
-        what->cstr
-    );
+    paint(fs, color, severity, ":");
+    fprintf(fs, " %s", what->cstr);
 }
 
 static inline void emit_start_line(
@@ -98,7 +93,8 @@ static inline void emit_start_line(
     );
     assert(line);
 
-    fprintf(fs, "%s\n", line->line.cstr);
+    fprintf(fs, " %5ld | %s\n", span->start.row, line->line.cstr);
+    fputs("       | ", fs);
     for (size_t i = 0; i < span->start.offset; ++i) fputc(' ', fs);
     for (size_t i = span->start.offset; i < line->line.len; ++i) fputc('^', fs);
 }
@@ -115,7 +111,8 @@ static inline void emit_end_line(
     );
     assert(line);
 
-    fprintf(fs, "%s\n", line->line.cstr);
+    fprintf(fs, " %5ld | %s\n", span->end.row, line->line.cstr);
+    fputs("       | ", fs);
     for (size_t i = 0; i <= span->end.offset; ++i) fputc('^', fs);
 }
 
@@ -130,7 +127,8 @@ static inline void emit_single_line(
     );
     assert(line);
 
-    fprintf(fs, "%s\n", line->line.cstr);
+    fprintf(fs, " %5ld | %s\n", span->start.row, line->line.cstr);
+    fputs("       | ", fs);
     for (size_t i = 0; i < span->start.offset; ++i) fputc(' ', fs);
     for (size_t i = span->start.offset; i <= span->end.offset; ++i) {
         fputc('^', fs);
