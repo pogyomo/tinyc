@@ -26,7 +26,7 @@ struct tinyc_cpp_macro {
         TINYC_CPP_MACRO_NORMAL,
     } kind;
     struct tinyc_string name;
-    struct tinyc_token *value;
+    struct tinyc_token *value;  // NULL if no body exists.
 };
 
 struct tinyc_cpp_macro_func_param {

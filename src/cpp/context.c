@@ -19,7 +19,7 @@ void tinyc_cpp_context_init(struct tinyc_cpp_context *this) {
     this->macros = NULL;
 }
 
-void tinyc_cpp_insert_macro(
+void tinyc_cpp_context_insert_macro(
     struct tinyc_cpp_context *this,
     struct tinyc_cpp_macro *macro
 ) {
