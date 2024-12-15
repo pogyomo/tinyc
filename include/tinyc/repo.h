@@ -45,7 +45,7 @@ tinyc_repo_id tinyc_repo_registory(
 
 /// Try to get source from repository by id.
 /// Returns NULL if no such source exists.
-struct tinyc_source *tinyc_repo_query(
+const struct tinyc_source *tinyc_repo_query(
     const struct tinyc_repo *this,
     tinyc_repo_id id
 );

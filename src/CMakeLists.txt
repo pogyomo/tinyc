@@ -1,4 +1,5 @@
 add_library(tinyc-core STATIC
+    diag.c
     repo.c
     source.c
     span.c
