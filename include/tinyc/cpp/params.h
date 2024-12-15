@@ -12,33 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "tinyc/cpp/define.h"
+#ifndef TINYC_CPP_PARAMS_H_
+#define TINYC_CPP_PARAMS_H_
 
-#include <assert.h>
-
-#include "tinyc/cpp/helper.h"
-#include "tinyc/cpp/macro.h"
-#include "tinyc/cpp/params.h"
+#include "tinyc/cpp/context.h"
+#include "tinyc/repo.h"
 #include "tinyc/token.h"
 
-/// Parse define directive. it must point to directive name.
-bool tinyc_cpp_parse_define(
+/// Parse function-like params. *params be NULL if failed or no params.
+/// Initially, it must be LPAREN, and after success, it will be RPAREN.
+/// Returns false if failed.
+bool tinyc_cpp_parse_params(
     struct tinyc_cpp_context *ctx,
     const struct tinyc_repo *repo,
     struct tinyc_token *head,
-    struct tinyc_token **it
-) {
-    bool spaces = (*it)->tspaces > 0;
-    if (!tinyc_cpp_expect_token_next(repo, head, it)) return false;
+    struct tinyc_token **it,
+    struct tinyc_cpp_macro_func_param **params
+);
 
-    if (tinyc_token_is_punct_of(*it, TINYC_TOKEN_PUNCT_LPAREN) && spaces) {
-        struct tinyc_cpp_macro_func_param *args;
-        if (!tinyc_cpp_parse_params(ctx, repo, head, it, &args)) {
-            return false;
-        }
-        // TODO: Extract body
-    } else {
-        // TODO: Parse normal macro
-    }
-    return false;
-}
+#endif  // TINYC_CPP_PARAMS_H_

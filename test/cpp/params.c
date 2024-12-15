@@ -1,10 +1,10 @@
+#include "tinyc/cpp/params.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <tinyc/cpp/define.h>
 
 #include "tinyc/cpp/context.h"
-#include "tinyc/cpp/macro.h"
 #include "tinyc/repo.h"
 #include "tinyc/source.h"
 #include "tinyc/span.h"
@@ -65,7 +65,7 @@ static inline void no_param(void) {
 
     struct tinyc_token *it = head;
     struct tinyc_cpp_macro_func_param *args;
-    assert(tinyc_cpp_parse_define_params(&ctx, &repo, head, &it, &args));
+    assert(tinyc_cpp_parse_params(&ctx, &repo, head, &it, &args));
     assert(tinyc_token_is_punct_of(it, TINYC_TOKEN_PUNCT_RPAREN));
 
     assert(args == NULL);
@@ -92,7 +92,7 @@ static inline void one_param(void) {
 
     struct tinyc_token *it = head;
     struct tinyc_cpp_macro_func_param *params;
-    assert(tinyc_cpp_parse_define_params(&ctx, &repo, head, &it, &params));
+    assert(tinyc_cpp_parse_params(&ctx, &repo, head, &it, &params));
     assert(tinyc_token_is_punct_of(it, TINYC_TOKEN_PUNCT_RPAREN));
 
     struct tinyc_cpp_macro_func_param *p0, *p1;
@@ -127,7 +127,7 @@ static inline void two_params(void) {
 
     struct tinyc_token *it = head;
     struct tinyc_cpp_macro_func_param *params;
-    assert(tinyc_cpp_parse_define_params(&ctx, &repo, head, &it, &params));
+    assert(tinyc_cpp_parse_params(&ctx, &repo, head, &it, &params));
     assert(tinyc_token_is_punct_of(it, TINYC_TOKEN_PUNCT_RPAREN));
 
     struct tinyc_cpp_macro_func_param *p0, *p1, *p2;
@@ -156,7 +156,7 @@ static inline void unclosing_no_param(void) {
 
     struct tinyc_token *it = head;
     struct tinyc_cpp_macro_func_param *params;
-    assert(!tinyc_cpp_parse_define_params(&ctx, &repo, head, &it, &params));
+    assert(!tinyc_cpp_parse_params(&ctx, &repo, head, &it, &params));
 }
 
 static inline void unclosing_one_param(void) {
@@ -178,7 +178,7 @@ static inline void unclosing_one_param(void) {
 
     struct tinyc_token *it = head;
     struct tinyc_cpp_macro_func_param *params;
-    assert(!tinyc_cpp_parse_define_params(&ctx, &repo, head, &it, &params));
+    assert(!tinyc_cpp_parse_params(&ctx, &repo, head, &it, &params));
 }
 
 static inline void unclosing_two_params(void) {
@@ -204,7 +204,7 @@ static inline void unclosing_two_params(void) {
 
     struct tinyc_token *it = head;
     struct tinyc_cpp_macro_func_param *params;
-    assert(!tinyc_cpp_parse_define_params(&ctx, &repo, head, &it, &params));
+    assert(!tinyc_cpp_parse_params(&ctx, &repo, head, &it, &params));
 }
 
 static inline void missing_comman(void) {
@@ -230,7 +230,7 @@ static inline void missing_comman(void) {
 
     struct tinyc_token *it = head;
     struct tinyc_cpp_macro_func_param *params;
-    assert(!tinyc_cpp_parse_define_params(&ctx, &repo, head, &it, &params));
+    assert(!tinyc_cpp_parse_params(&ctx, &repo, head, &it, &params));
 }
 
 int main(void) {

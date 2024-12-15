@@ -19,17 +19,6 @@
 #include "tinyc/repo.h"
 #include "tinyc/token.h"
 
-/// Parse function-like params. *params be NULL if failed or no params.
-/// Initially, it must be LPAREN, and after success, it will be RPAREN.
-/// Returns false if failed.
-bool tinyc_cpp_parse_define_params(
-    struct tinyc_cpp_context *ctx,
-    const struct tinyc_repo *repo,
-    struct tinyc_token *head,
-    struct tinyc_token **it,
-    struct tinyc_cpp_macro_func_param **params
-);
-
 /// Parse define directive. it must point to directive name.
 bool tinyc_cpp_parse_define(
     struct tinyc_cpp_context *ctx,

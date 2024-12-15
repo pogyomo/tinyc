@@ -4,6 +4,7 @@ add_library(tinyc-core STATIC
     cpp/define.c
     cpp/helper.c
     cpp/macro.c
+    cpp/params.c
     diag.c
     repo.c
     source.c
