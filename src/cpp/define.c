@@ -22,16 +22,16 @@
 #include "tinyc/string.h"
 #include "tinyc/token.h"
 
-bool tinyc_cpp_parse_define_args(
+bool tinyc_cpp_parse_define_params(
     struct tinyc_cpp_context *ctx,
     const struct tinyc_repo *repo,
     struct tinyc_token *head,
     struct tinyc_token **it,
-    struct tinyc_cpp_macro_func_param **args
+    struct tinyc_cpp_macro_func_param **params
 ) {
     if (!tinyc_cpp_expect_token_next(repo, head, it)) return false;
 
-    *args = NULL;
+    *params = NULL;
     for (size_t index = 0;; ++index) {
         if (tinyc_token_is_punct_of(*it, TINYC_TOKEN_PUNCT_RPAREN)) {
             break;
@@ -40,10 +40,10 @@ bool tinyc_cpp_parse_define_args(
         }
 
         struct tinyc_token_ident *name = (struct tinyc_token_ident *)(*it);
-        struct tinyc_cpp_macro_func_param
-            *arg = tinyc_cpp_macro_func_param_create(name->value.cstr, index);
-        if (*args) arg->next = *args;
-        *args = arg;
+        struct tinyc_cpp_macro_func_param *param;
+        param = tinyc_cpp_macro_func_param_create(name->value.cstr, index);
+        if (*params) param->next = *params;
+        *params = param;
 
         if (!tinyc_cpp_expect_token_next(repo, head, it)) return false;
         if (tinyc_token_is_punct_of(*it, TINYC_TOKEN_PUNCT_RPAREN)) {
@@ -76,7 +76,7 @@ bool tinyc_cpp_parse_define(
 
     if (tinyc_token_is_punct_of(*it, TINYC_TOKEN_PUNCT_LPAREN) && spaces) {
         struct tinyc_cpp_macro_func_param *args;
-        if (!tinyc_cpp_parse_define_args(ctx, repo, head, it, &args)) {
+        if (!tinyc_cpp_parse_define_params(ctx, repo, head, it, &args)) {
             return false;
         }
         // TODO: Extract body
