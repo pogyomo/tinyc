@@ -38,15 +38,15 @@ struct tinyc_source {
 /// Returns false if failed.
 bool tinyc_source_from_str(
     struct tinyc_source *this,
-    const struct tinyc_string *name,
-    const struct tinyc_string *content
+    const char *name,
+    const char *content
 );
 
 /// Construct source from file stream.
 /// Returns false if failed.
 bool tinyc_source_from_fs(
     struct tinyc_source *this,
-    const struct tinyc_string *name,
+    const char *name,
     FILE *fp
 );
 

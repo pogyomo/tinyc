@@ -17,28 +17,43 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "tinyc/string.h"
 
-static inline bool read(struct tinyc_string *content, FILE *fp) {
-    char c;
-    tinyc_string_init(content);
-    while ((c = fgetc(fp)) != EOF) {
-        tinyc_string_push(content, c);
+/// Character reader read from either file stream or string.
+struct reader {
+    FILE *fs;       // If non-null, read character from file stream.
+    const char *s;  // if non-null, read character from string.
+    size_t index;
+    size_t len;
+};
+
+static inline int read(struct reader *this) {
+    if (this->fs) {
+        return fgetc(this->fs);
+    } else {
+        if (this->index < this->len) {
+            return this->s[this->index++];
+        } else {
+            return EOF;
+        }
     }
-    return true;
 }
 
 static inline struct tinyc_source_line *extract_line(
-    const struct tinyc_string *content,
-    size_t *index
+    struct reader *reader,
+    char first
 ) {
     struct tinyc_source_line *line = malloc(sizeof(struct tinyc_source_line));
     if (!line) return NULL;
     line->next = NULL;
     tinyc_string_init(&line->line);
-    while (*index < content->len) {
-        char c = content->cstr[(*index)++];
+    if (first == '\n') return line;
+    tinyc_string_push(&line->line, first);
+
+    char c;
+    while ((c = read(reader)) != EOF) {
         if (c == '\n') {
             break;
         } else {
@@ -48,18 +63,16 @@ static inline struct tinyc_source_line *extract_line(
     return line;
 }
 
-bool tinyc_source_from_str(
+static inline bool read_lines(
     struct tinyc_source *this,
-    const struct tinyc_string *name,
-    const struct tinyc_string *content
+    const char *name,
+    struct reader *reader
 ) {
-    this->name = *name;
-    this->lines = NULL;
-
-    size_t index = 0;
-    struct tinyc_source_line *last_line = this->lines;
-    while (index < content->len) {
-        struct tinyc_source_line *line = extract_line(content, &index);
+    tinyc_string_from_copy(&this->name, name);
+    struct tinyc_source_line *last_line = this->lines = NULL;
+    char c;
+    while ((c = read(reader)) != EOF) {
+        struct tinyc_source_line *line = extract_line(reader, c);
         if (!line) return false;
         if (last_line) {
             last_line->next = line;
@@ -71,17 +84,22 @@ bool tinyc_source_from_str(
     return true;
 }
 
+bool tinyc_source_from_str(
+    struct tinyc_source *this,
+    const char *name,
+    const char *content
+) {
+    struct reader reader = {NULL, content, 0, strlen(content)};
+    return read_lines(this, name, &reader);
+}
+
 bool tinyc_source_from_fs(
     struct tinyc_source *this,
-    const struct tinyc_string *name,
-    FILE *fp
+    const char *name,
+    FILE *fs
 ) {
-    struct tinyc_string content;
-    if (read(&content, fp)) {
-        return tinyc_source_from_str(this, name, &content);
-    } else {
-        return false;
-    }
+    struct reader reader = {fs, NULL, 0, 0};
+    return read_lines(this, name, &reader);
 }
 
 const struct tinyc_source_line *tinyc_source_at(
