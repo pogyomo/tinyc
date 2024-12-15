@@ -68,6 +68,8 @@ bool tinyc_cpp_parse_define(
         if (!macro) return false;
         tinyc_cpp_context_insert_macro(ctx, macro);
         return true;
+    } else {
+        *it = (*it)->next;
     }
 
     if (tinyc_token_is_punct_of(*it, TINYC_TOKEN_PUNCT_LPAREN) && spaces) {
