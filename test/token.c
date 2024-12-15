@@ -20,7 +20,7 @@ static inline bool is_single_token(struct tinyc_token *token) {
     return token->next == token && token->prev == token;
 }
 
-void insert_token(void) {
+static void insert_token(void) {
     struct tinyc_span span;
     struct tinyc_string s;
     struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
@@ -42,7 +42,7 @@ void insert_token(void) {
     assert(token2->prev == token1);
 }
 
-void insert_tokens(void) {
+static void insert_tokens(void) {
     struct tinyc_span span;
     struct tinyc_string s;
     struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
@@ -64,7 +64,7 @@ void insert_tokens(void) {
     assert(token2->prev == token1);
 }
 
-void replace_token_with_token(void) {
+static void replace_token_with_token(void) {
     struct tinyc_span span;
     struct tinyc_string s;
     struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
@@ -77,7 +77,7 @@ void replace_token_with_token(void) {
     assert(token2->prev == token2);
 }
 
-void replace_token_with_tokens(void) {
+static void replace_token_with_tokens(void) {
     struct tinyc_span span;
     struct tinyc_string s;
     struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
@@ -98,7 +98,7 @@ void replace_token_with_tokens(void) {
     assert(token2->prev == token1);
 }
 
-void replace_tokens_with_token(void) {
+static void replace_tokens_with_token(void) {
     struct tinyc_span span;
     struct tinyc_string s;
     struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
@@ -119,7 +119,7 @@ void replace_tokens_with_token(void) {
     assert(token2->prev == token1);
 }
 
-void replace_tokens_with_tokens(void) {
+static void replace_tokens_with_tokens(void) {
     struct tinyc_span span;
     struct tinyc_string s;
     struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
