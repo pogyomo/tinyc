@@ -18,10 +18,39 @@
 
 #include "tinyc/string.h"
 
-void init_from_file(void) {
+static inline bool check_lines(
+    struct tinyc_source *source,
+    size_t n,
+    char *lines[n]
+) {
+    struct tinyc_source_line *line = source->lines;
+    for (size_t i = 0; i < n; ++i, line = line->next) {
+        struct tinyc_string expect_line;
+        tinyc_string_from(&expect_line, lines[i]);
+
+        if (!line || tinyc_string_cmp(&line->line, &expect_line) != 0) {
+            return false;
+        }
+    }
+    assert(!line);
+    return true;
+}
+
+static void init_from_str(void) {
     struct tinyc_string name, content;
     tinyc_string_from(&name, "name");
-    tinyc_string_from(&content, "hello\nworld\n");
+    tinyc_string_from(&content, "line1\nline2\nline3\n");
+
+    struct tinyc_source source;
+    assert(tinyc_source_from_str(&source, &name, &content));
+    assert(tinyc_string_cmp(&source.name, &name) == 0);
+    assert(check_lines(&source, 3, (char *[3]){"line1", "line2", "line3"}));
+}
+
+static void init_from_file(void) {
+    struct tinyc_string name, content;
+    tinyc_string_from(&name, "name");
+    tinyc_string_from(&content, "line1\nline2\nline3\n");
 
     FILE *fp = tmpfile();
     assert(fp);
@@ -33,11 +62,48 @@ void init_from_file(void) {
     struct tinyc_source source;
     assert(tinyc_source_from_fs(&source, &name, fp));
     assert(tinyc_string_cmp(&source.name, &name) == 0);
-    assert(tinyc_string_cmp(&source.content, &content) == 0);
+    assert(check_lines(&source, 3, (char *[3]){"line1", "line2", "line3"}));
 
     fclose(fp);
 }
 
+static void missing_tail_newline(void) {
+    struct tinyc_string name, content;
+    tinyc_string_from(&name, "name");
+    tinyc_string_from(&content, "line1\nline2\nline3");
+
+    struct tinyc_source source;
+    assert(tinyc_source_from_str(&source, &name, &content));
+    assert(tinyc_string_cmp(&source.name, &name) == 0);
+    assert(check_lines(&source, 3, (char *[3]){"line1", "line2", "line3"}));
+}
+
+static void empty_source(void) {
+    struct tinyc_string name, content;
+    tinyc_string_from(&name, "name");
+    tinyc_string_from(&content, "");
+
+    struct tinyc_source source;
+    assert(tinyc_source_from_str(&source, &name, &content));
+    assert(tinyc_string_cmp(&source.name, &name) == 0);
+    assert(source.lines == NULL);
+}
+
+static void with_empty_line(void) {
+    struct tinyc_string name, content;
+    tinyc_string_from(&name, "name");
+    tinyc_string_from(&content, "line1\n\nline3");
+
+    struct tinyc_source source;
+    assert(tinyc_source_from_str(&source, &name, &content));
+    assert(tinyc_string_cmp(&source.name, &name) == 0);
+    assert(check_lines(&source, 3, (char *[3]){"line1", "", "line3"}));
+}
+
 int main(void) {
+    init_from_str();
     init_from_file();
+    missing_tail_newline();
+    empty_source();
+    with_empty_line();
 }

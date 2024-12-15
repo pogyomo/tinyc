@@ -18,11 +18,15 @@
 #include "tinyc/source.h"
 #include "tinyc/string.h"
 
-static inline struct tinyc_source generate_source(char *name, char *content) {
+static inline void generate_source(
+    struct tinyc_source *source,
+    char *name,
+    char *content
+) {
     struct tinyc_string name_, content_;
     tinyc_string_from(&name_, name);
     tinyc_string_from(&content_, content);
-    return (struct tinyc_source){name_, content_};
+    tinyc_source_from_str(source, &name_, &content_);
 }
 
 static inline bool query_expect(
@@ -33,20 +37,22 @@ static inline bool query_expect(
     struct tinyc_source *queried = tinyc_repo_query(repo, id);
     return queried != NULL &&
            tinyc_string_cmp(&queried->name, &source->name) == 0 &&
-           tinyc_string_cmp(&queried->content, &source->content) == 0;
+           queried->lines == source->lines;
 }
 
-void register_query(void) {
+static void register_query(void) {
     struct tinyc_repo repo;
     assert(tinyc_repo_init(&repo));
     assert(tinyc_repo_query(&repo, 0) == NULL);
 
-    struct tinyc_source source1 = generate_source("name1", "content1");
+    struct tinyc_source source1;
+    generate_source(&source1, "name1", "content1");
     tinyc_repo_id id1 = tinyc_repo_registory(&repo, &source1);
     assert(query_expect(&repo, id1, &source1));
     assert(tinyc_repo_query(&repo, id1 + 1) == NULL);
 
-    struct tinyc_source source2 = generate_source("name2", "content2");
+    struct tinyc_source source2;
+    generate_source(&source2, "name2", "content2");
     tinyc_repo_id id2 = tinyc_repo_registory(&repo, &source2);
     assert(query_expect(&repo, id2, &source2));
     assert(tinyc_repo_query(&repo, id2 + 1) == NULL);
