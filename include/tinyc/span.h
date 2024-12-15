@@ -17,6 +17,8 @@
 
 #include <stddef.h>
 
+#include "tinyc/repo.h"
+
 /// Position in source code.
 struct tinyc_position {
     size_t row, offset;  // 0-indexed.
@@ -24,6 +26,7 @@ struct tinyc_position {
 
 /// Represent a range of source code.
 struct tinyc_span {
+    tinyc_repo_id id;
     struct tinyc_position start, end;
 };
 

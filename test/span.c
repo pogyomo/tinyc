@@ -17,10 +17,12 @@
 
 static void add_cross(void) {
     struct tinyc_span s1 = {
+        0,
         {1, 10},
         {3, 5 }
     };
     struct tinyc_span s2 = {
+        0,
         {2, 8},
         {4, 5}
     };
@@ -41,10 +43,12 @@ static void add_cross(void) {
 
 static void add_surround(void) {
     struct tinyc_span s1 = {
+        0,
         {1, 10},
         {4, 8 }
     };
     struct tinyc_span s2 = {
+        0,
         {2, 8},
         {3, 5}
     };
@@ -65,6 +69,7 @@ static void add_surround(void) {
 
 static void add_same(void) {
     struct tinyc_span s1 = {
+        0,
         {1, 10},
         {4, 8 }
     };
