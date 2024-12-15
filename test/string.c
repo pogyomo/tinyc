@@ -15,7 +15,7 @@
 #include <assert.h>
 #include <tinyc/string.h>
 
-static void test_tinyc_string_from(void) {
+static void from_str(void) {
     struct tinyc_string s;
     tinyc_string_from(&s, "hello");
 
@@ -27,7 +27,7 @@ static void test_tinyc_string_from(void) {
     assert(s.cstr[4] == 'o');
 }
 
-static void test_tinyc_string_push(void) {
+static void push(void) {
     struct tinyc_string s;
     tinyc_string_init(&s);
 
@@ -45,7 +45,7 @@ static void test_tinyc_string_push(void) {
     assert(s.cstr[4] == 'o');
 }
 
-static void test_tinyc_string_push_extend(void) {
+static void push_extend(void) {
     struct tinyc_string s;
     tinyc_string_init(&s);
     const size_t init_cap = s.cap;
@@ -62,21 +62,21 @@ static void test_tinyc_string_push_extend(void) {
     assert(s.cstr[count] == '\0');
 }
 
-static void test_tinyc_string_cmp_l(void) {
+static void cmp_less(void) {
     struct tinyc_string s1, s2;
     tinyc_string_from(&s1, "aaa");
     tinyc_string_from(&s2, "aab");
     assert(tinyc_string_cmp(&s1, &s2) < 0);
 }
 
-static void test_tinyc_string_cmp_g(void) {
+static void cmp_greater(void) {
     struct tinyc_string s1, s2;
     tinyc_string_from(&s1, "aab");
     tinyc_string_from(&s2, "aaa");
     assert(tinyc_string_cmp(&s1, &s2) > 0);
 }
 
-static void test_tinyc_string_cmp_e(void) {
+static void cmp_equal(void) {
     struct tinyc_string s1, s2;
     tinyc_string_from(&s1, "aaa");
     tinyc_string_from(&s2, "aaa");
@@ -84,10 +84,10 @@ static void test_tinyc_string_cmp_e(void) {
 }
 
 int main(void) {
-    test_tinyc_string_from();
-    test_tinyc_string_push();
-    test_tinyc_string_push_extend();
-    test_tinyc_string_cmp_l();
-    test_tinyc_string_cmp_g();
-    test_tinyc_string_cmp_e();
+    from_str();
+    push();
+    push_extend();
+    cmp_less();
+    cmp_greater();
+    cmp_equal();
 }
