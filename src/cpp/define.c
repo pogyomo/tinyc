@@ -32,8 +32,8 @@ bool tinyc_cpp_parse_define(
     if (!tinyc_cpp_expect_token_next(repo, head, it)) return false;
 
     if (tinyc_token_is_punct_of(*it, TINYC_TOKEN_PUNCT_LPAREN) && spaces) {
-        struct tinyc_cpp_macro_func_param *args;
-        if (!tinyc_cpp_parse_params(ctx, repo, head, it, &args)) {
+        struct tinyc_cpp_macro_func_param *params;
+        if (!tinyc_cpp_parse_params(ctx, repo, head, it, &params)) {
             return false;
         }
         // TODO: Extract body

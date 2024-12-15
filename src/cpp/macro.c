@@ -46,7 +46,7 @@ struct tinyc_cpp_macro_func_param *tinyc_cpp_macro_func_params_at(
 
 struct tinyc_cpp_macro *tinyc_cpp_macro_func_create(
     const char *name,
-    struct tinyc_cpp_macro_func_param *args,
+    struct tinyc_cpp_macro_func_param *params,
     struct tinyc_token *value
 ) {
     struct tinyc_cpp_macro_func *func = malloc(
@@ -56,7 +56,7 @@ struct tinyc_cpp_macro *tinyc_cpp_macro_func_create(
     func->macro.kind = TINYC_CPP_MACRO_FUNC;
     tinyc_string_from_copy(&func->macro.name, name);
     func->macro.value = value;
-    func->params = args;
+    func->params = params;
     return &func->macro;
 }
 

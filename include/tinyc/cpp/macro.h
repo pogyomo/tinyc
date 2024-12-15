@@ -61,7 +61,7 @@ struct tinyc_cpp_macro_func_param *tinyc_cpp_macro_func_params_at(
 /// Returns NULL if creation failed.
 struct tinyc_cpp_macro *tinyc_cpp_macro_func_create(
     const char *name,
-    struct tinyc_cpp_macro_func_param *args,
+    struct tinyc_cpp_macro_func_param *params,
     struct tinyc_token *value
 );
 
