@@ -33,6 +33,11 @@ bool tinyc_string_init(struct tinyc_string *this);
 /// Returns false if initialization failed.
 bool tinyc_string_from(struct tinyc_string *this, char *from);
 
+/// Initialize string from string.
+/// Unlike tinyc_string_from, it copy from and allocate memory for it.
+/// Returns false if initialization failed.
+bool tinyc_string_from_copy(struct tinyc_string *this, const char *from);
+
 /// Push character to string.
 /// Returns false if operation failed.
 bool tinyc_string_push(struct tinyc_string *this, char c);

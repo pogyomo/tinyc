@@ -60,7 +60,7 @@ bool tinyc_string_init(struct tinyc_string *this) {
     this->cap = DEFAULT_CAP;
     this->len = 0;
     this->cstr = malloc(sizeof(char) * this->cap);
-    if (!this->cstr) return NULL;
+    if (!this->cstr) return false;
     this->cstr[0] = '\0';
     return true;
 }
@@ -69,6 +69,15 @@ bool tinyc_string_from(struct tinyc_string *this, char *from) {
     this->cap = 0;
     this->len = strlen(from);
     this->cstr = from;
+    return true;
+}
+
+bool tinyc_string_from_copy(struct tinyc_string *this, const char *from) {
+    this->len = strlen(from);
+    this->cap = this->len + 1 + DEFAULT_CAP;
+    this->cstr = malloc(sizeof(char) * this->cap);
+    if (!this->cstr) return false;
+    strncpy(this->cstr, from, this->cap);
     return true;
 }
 
