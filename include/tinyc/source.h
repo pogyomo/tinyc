@@ -19,11 +19,28 @@
 
 #include "tinyc/string.h"
 
+/// Physical source line.
+struct tinyc_source_line {
+    struct tinyc_source_line *next;  // NULL if no other line exists.
+    struct tinyc_string line;
+};
+
 /// Arbitrary input source e.g. command line, include, etc.
+///
+/// The input is managed as physical lines: strings separated by '\n'.
+/// Currently last characters doesn't end with newline is recognized as line.
 struct tinyc_source {
     struct tinyc_string name;
-    struct tinyc_string content;
+    struct tinyc_source_line *lines;  // NULL if no line exists.
 };
+
+/// Construct source from string.
+/// Returns false if failed.
+bool tinyc_source_from_str(
+    struct tinyc_source *this,
+    const struct tinyc_string *name,
+    const struct tinyc_string *content
+);
 
 /// Construct source from file stream.
 /// Returns false if failed.
