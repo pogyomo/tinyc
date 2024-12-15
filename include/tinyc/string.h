@@ -43,6 +43,7 @@ bool tinyc_string_from_copy(struct tinyc_string *this, const char *from);
 bool tinyc_string_push(struct tinyc_string *this, char c);
 
 /// Compare two string. Semantics is same as strcmp.
+/// Use strcmp unless string may contains null character until its terminate.
 int tinyc_string_cmp(
     const struct tinyc_string *s1,
     const struct tinyc_string *s2

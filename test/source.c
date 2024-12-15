@@ -34,15 +34,6 @@ static inline bool check_lines(
     return true;
 }
 
-static inline bool check_line(
-    const struct tinyc_source_line *line,
-    char *expect_line
-) {
-    struct tinyc_string expect_line_;
-    tinyc_string_from(&expect_line_, expect_line);
-    return tinyc_string_cmp(&line->line, &expect_line_) == 0;
-}
-
 static void init_from_str(void) {
     struct tinyc_source source;
     assert(tinyc_source_from_str(&source, "name", "line1\nline2\nline3\n"));
@@ -93,11 +84,11 @@ static void lines_at(void) {
     struct tinyc_source source;
     assert(tinyc_source_from_str(&source, "name", "line1\nline2\nline3"));
     const struct tinyc_source_line *line1 = tinyc_source_at(&source, 0);
-    assert(line1 && check_line(line1, "line1"));
+    assert(line1 && strcmp(line1->line.cstr, "line1") == 0);
     const struct tinyc_source_line *line2 = tinyc_source_at(&source, 1);
-    assert(line2 && check_line(line2, "line2"));
+    assert(line2 && strcmp(line2->line.cstr, "line2") == 0);
     const struct tinyc_source_line *line3 = tinyc_source_at(&source, 2);
-    assert(line3 && check_line(line3, "line3"));
+    assert(line3 && strcmp(line3->line.cstr, "line3") == 0);
     const struct tinyc_source_line *line4 = tinyc_source_at(&source, 3);
     assert(!line4);
 }

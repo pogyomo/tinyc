@@ -13,30 +13,20 @@
 // limitations under the License.
 
 #include <assert.h>
+#include <string.h>
 #include <tinyc/repo.h>
 
 #include "tinyc/source.h"
 #include "tinyc/string.h"
-
-static inline void generate_source(
-    struct tinyc_source *source,
-    char *name,
-    char *content
-) {
-    struct tinyc_string name_, content_;
-    tinyc_string_from(&name_, name);
-    tinyc_string_from(&content_, content);
-    tinyc_source_from_str(source, &name_, &content_);
-}
 
 static inline bool query_expect(
     const struct tinyc_repo *repo,
     tinyc_repo_id id,
     const struct tinyc_source *source
 ) {
-    struct tinyc_source *queried = tinyc_repo_query(repo, id);
+    const struct tinyc_source *queried = tinyc_repo_query(repo, id);
     return queried != NULL &&
-           tinyc_string_cmp(&queried->name, &source->name) == 0 &&
+           strcmp(queried->name.cstr, source->name.cstr) == 0 &&
            queried->lines == source->lines;
 }
 
@@ -46,13 +36,13 @@ static void register_query(void) {
     assert(tinyc_repo_query(&repo, 0) == NULL);
 
     struct tinyc_source source1;
-    generate_source(&source1, "name1", "content1");
+    tinyc_source_from_str(&source1, "name1", "content1");
     tinyc_repo_id id1 = tinyc_repo_registory(&repo, &source1);
     assert(query_expect(&repo, id1, &source1));
     assert(tinyc_repo_query(&repo, id1 + 1) == NULL);
 
     struct tinyc_source source2;
-    generate_source(&source2, "name2", "content2");
+    tinyc_source_from_str(&source2, "name2", "content2");
     tinyc_repo_id id2 = tinyc_repo_registory(&repo, &source2);
     assert(query_expect(&repo, id2, &source2));
     assert(tinyc_repo_query(&repo, id2 + 1) == NULL);
