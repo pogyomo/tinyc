@@ -41,23 +41,19 @@ static inline int read(struct reader *this) {
     }
 }
 
-static inline char eof(struct reader *this) {
-    if (this->fs) {
-        return feof(this->fs);
-    } else {
-        return this->index >= this->len;
-    }
-}
-
-static inline struct tinyc_source_line *extract_line(struct reader *reader) {
+static inline struct tinyc_source_line *extract_line(
+    struct reader *reader,
+    char first
+) {
     struct tinyc_source_line *line = malloc(sizeof(struct tinyc_source_line));
     if (!line) return NULL;
     line->next = NULL;
     tinyc_string_init(&line->line);
+    if (first == '\n') return line;
+    tinyc_string_push(&line->line, first);
 
     char c;
-    while (!eof(reader)) {
-        c = read(reader);
+    while ((c = read(reader)) != EOF) {
         if (c == '\n') {
             break;
         } else {
@@ -73,18 +69,17 @@ static inline bool read_lines(
     struct reader *reader
 ) {
     tinyc_string_from_copy(&this->name, name);
-    this->lines = NULL;
-
-    struct tinyc_source_line *last_line = this->lines;
-    while (!eof(reader)) {
-        struct tinyc_source_line *line = extract_line(reader);
+    struct tinyc_source_line *last_line = this->lines = NULL;
+    char c;
+    while ((c = read(reader)) != EOF) {
+        struct tinyc_source_line *line = extract_line(reader, c);
         if (!line) return false;
         if (last_line) {
             last_line->next = line;
+            last_line = line;
         } else {
-            this->lines = last_line = line;
+            last_line = this->lines = line;
         }
-        line->next = NULL;
     }
     return true;
 }

@@ -30,8 +30,7 @@ static inline bool check_lines(
             return false;
         }
     }
-    assert(!line);
-    return true;
+    return !line;
 }
 
 static void init_from_str(void) {
