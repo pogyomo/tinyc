@@ -15,6 +15,9 @@
 #include "tinyc/token.h"
 
 #include <stdlib.h>
+#include <string.h>
+
+#include "tinyc/string.h"
 
 static void insert_between(
     struct tinyc_token *ld,
@@ -49,6 +52,27 @@ struct tinyc_token *tinyc_token_replace(
     }
 }
 
+bool tinyc_token_is_ident(struct tinyc_token *this) {
+    return this->kind == TINYC_TOKEN_IDENT;
+}
+
+bool tinyc_token_is_ident_of(struct tinyc_token *this, const char *expect) {
+    return tinyc_token_is_ident(this) &&
+           strcmp(((struct tinyc_token_ident *)this)->value.cstr, expect) == 0;
+}
+
+bool tinyc_token_is_punct(struct tinyc_token *this) {
+    return this->kind == TINYC_TOKEN_PUNCT;
+}
+
+bool tinyc_token_is_punct_of(
+    struct tinyc_token *this,
+    enum tinyc_token_punct_kind kind
+) {
+    return tinyc_token_is_punct(this) &&
+           ((struct tinyc_token_punct *)this)->kind == kind;
+}
+
 struct tinyc_token *tinyc_token_create_punct(
     const struct tinyc_span *span,
     int tspaces,
@@ -67,7 +91,7 @@ struct tinyc_token *tinyc_token_create_punct(
 struct tinyc_token *tinyc_token_create_ident(
     const struct tinyc_span *span,
     int tspaces,
-    const struct tinyc_string *value
+    const char *value
 ) {
     struct tinyc_token_ident *tk = malloc(sizeof(struct tinyc_token_ident));
     if (!tk) return NULL;
@@ -75,7 +99,7 @@ struct tinyc_token *tinyc_token_create_ident(
     tk->token.span = *span;
     tk->token.kind = TINYC_TOKEN_IDENT;
     tk->token.tspaces = tspaces;
-    tk->value = *value;
+    tinyc_string_from_copy(&tk->value, value);
     return &tk->token;
 }
 
@@ -97,7 +121,7 @@ struct tinyc_token *tinyc_token_create_keyword(
 struct tinyc_token *tinyc_token_create_string(
     const struct tinyc_span *span,
     int tspaces,
-    const struct tinyc_string *value
+    const char *value
 ) {
     struct tinyc_token_string *tk = malloc(sizeof(struct tinyc_token_string));
     if (!tk) return NULL;
@@ -105,7 +129,7 @@ struct tinyc_token *tinyc_token_create_string(
     tk->token.span = *span;
     tk->token.kind = TINYC_TOKEN_STRING;
     tk->token.tspaces = tspaces;
-    tk->value = *value;
+    tinyc_string_from_copy(&tk->value, value);
     return &tk->token;
 }
 
@@ -142,7 +166,7 @@ struct tinyc_token *tinyc_token_create_float(
 struct tinyc_token *tinyc_token_create_pp_number(
     const struct tinyc_span *span,
     int tspaces,
-    const struct tinyc_string *value
+    const char *value
 ) {
     struct tinyc_token_pp_number *tk = malloc(
         sizeof(struct tinyc_token_pp_number)
@@ -152,7 +176,7 @@ struct tinyc_token *tinyc_token_create_pp_number(
     tk->token.span = *span;
     tk->token.kind = TINYC_TOKEN_PP_NUMBER;
     tk->token.tspaces = tspaces;
-    tk->value = *value;
+    tinyc_string_from_copy(&tk->value, value);
     return &tk->token;
 }
 
@@ -160,7 +184,7 @@ struct tinyc_token *tinyc_token_create_header(
     const struct tinyc_span *span,
     int tspaces,
     bool is_std,
-    const struct tinyc_string *path
+    const char *path
 ) {
     struct tinyc_token_header *tk = malloc(sizeof(struct tinyc_token_header));
     if (!tk) return NULL;
@@ -169,6 +193,6 @@ struct tinyc_token *tinyc_token_create_header(
     tk->token.kind = TINYC_TOKEN_HEADER;
     tk->token.tspaces = tspaces;
     tk->is_std = is_std;
-    tk->path = *path;
+    tinyc_string_from_copy(&tk->path, path);
     return &tk->token;
 }

@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TINYC_CPP_H_
-#define TINYC_CPP_H_
+#ifndef TINYC_CPP_CONTEXT_H_
+#define TINYC_CPP_CONTEXT_H_
 
-#include "tinyc/cpp/context.h"
 #include "tinyc/cpp/macro.h"
-#include "tinyc/repo.h"
-#include "tinyc/token.h"
 
-/// Do preprocess for tokens in a line, store tokens to *out_tokens.
-/// If no token produced, *out_tokens be NULL.
-/// Returns false if failed.
-bool tinyc_cpp(
-    struct tinyc_cpp_context *ctx,
-    const struct tinyc_repo *repo,
-    struct tinyc_token *tokens,
-    struct tinyc_token **out_tokens
+struct tinyc_cpp_context {
+    int if_count;                    // > 0 if inside if.
+    struct tinyc_cpp_macro *macros;  // NULL if no macro exists.
+};
+
+/// Initialize context for preprocess.
+void tinyc_cpp_context_init(struct tinyc_cpp_context *this);
+
+/// Insert macro to context.
+void tinyc_cpp_insert_macro(
+    struct tinyc_cpp_context *this,
+    struct tinyc_cpp_macro *macro
 );
 
-#endif  // TINYC_CPP_H_
+#endif  // TINYC_CPP_CONTEXT_H_

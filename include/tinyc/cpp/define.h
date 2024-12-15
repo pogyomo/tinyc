@@ -12,22 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TINYC_CPP_H_
-#define TINYC_CPP_H_
+#ifndef TINYC_CPP_DEFINE_H_
+#define TINYC_CPP_DEFINE_H_
 
 #include "tinyc/cpp/context.h"
-#include "tinyc/cpp/macro.h"
 #include "tinyc/repo.h"
 #include "tinyc/token.h"
 
-/// Do preprocess for tokens in a line, store tokens to *out_tokens.
-/// If no token produced, *out_tokens be NULL.
+/// Parse function-like args. *args be NULL if failed or no arguments.
+/// Initially, it must be LPAREN, and after success, it will be RPAREN.
 /// Returns false if failed.
-bool tinyc_cpp(
+bool tinyc_cpp_parse_define_args(
     struct tinyc_cpp_context *ctx,
     const struct tinyc_repo *repo,
-    struct tinyc_token *tokens,
-    struct tinyc_token **out_tokens
+    struct tinyc_token *head,
+    struct tinyc_token **it,
+    struct tinyc_cpp_macro_func_param **args
 );
 
-#endif  // TINYC_CPP_H_
+/// Parse define directive. it must point to directive name.
+bool tinyc_cpp_parse_define(
+    struct tinyc_cpp_context *ctx,
+    const struct tinyc_repo *repo,
+    struct tinyc_token *head,
+    struct tinyc_token **it
+);
+
+#endif  // TINYC_CPP_DEFINE_H_

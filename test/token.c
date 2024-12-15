@@ -22,11 +22,10 @@ static inline bool is_single_token(struct tinyc_token *token) {
 
 static void insert_token(void) {
     struct tinyc_span span;
-    struct tinyc_string s;
-    struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token2 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token3 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token4 = tinyc_token_create_ident(&span, &s);
+    struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token2 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token3 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token4 = tinyc_token_create_ident(&span, 0, "");
 
     assert(tinyc_token_insert(token1, token2) == token2);
     assert(tinyc_token_insert(token2, token3) == token3);
@@ -44,11 +43,10 @@ static void insert_token(void) {
 
 static void insert_tokens(void) {
     struct tinyc_span span;
-    struct tinyc_string s;
-    struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token2 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token3 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token4 = tinyc_token_create_ident(&span, &s);
+    struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token2 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token3 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token4 = tinyc_token_create_ident(&span, 0, "");
 
     assert(tinyc_token_insert(token1, token2) == token2);
     assert(tinyc_token_insert(token2, token3) == token3);
@@ -66,9 +64,8 @@ static void insert_tokens(void) {
 
 static void replace_token_with_token(void) {
     struct tinyc_span span;
-    struct tinyc_string s;
-    struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token2 = tinyc_token_create_ident(&span, &s);
+    struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token2 = tinyc_token_create_ident(&span, 0, "");
 
     assert(tinyc_token_replace(token1, token2) == token2);
 
@@ -79,11 +76,10 @@ static void replace_token_with_token(void) {
 
 static void replace_token_with_tokens(void) {
     struct tinyc_span span;
-    struct tinyc_string s;
-    struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token2 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token3 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token4 = tinyc_token_create_ident(&span, &s);
+    struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token2 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token3 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token4 = tinyc_token_create_ident(&span, 0, "");
 
     tinyc_token_insert(token1, token2);
     tinyc_token_insert(token2, token3);
@@ -100,11 +96,10 @@ static void replace_token_with_tokens(void) {
 
 static void replace_tokens_with_token(void) {
     struct tinyc_span span;
-    struct tinyc_string s;
-    struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token2 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token3 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token4 = tinyc_token_create_ident(&span, &s);
+    struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token2 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token3 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token4 = tinyc_token_create_ident(&span, 0, "");
 
     tinyc_token_insert(token1, token4);
     tinyc_token_insert(token4, token3);
@@ -121,12 +116,11 @@ static void replace_tokens_with_token(void) {
 
 static void replace_tokens_with_tokens(void) {
     struct tinyc_span span;
-    struct tinyc_string s;
-    struct tinyc_token *token1 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token2 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token3 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token4 = tinyc_token_create_ident(&span, &s);
-    struct tinyc_token *token5 = tinyc_token_create_ident(&span, &s);
+    struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token2 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token3 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token4 = tinyc_token_create_ident(&span, 0, "");
+    struct tinyc_token *token5 = tinyc_token_create_ident(&span, 0, "");
 
     tinyc_token_insert(token1, token5);
     tinyc_token_insert(token5, token4);

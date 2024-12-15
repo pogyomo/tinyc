@@ -151,7 +151,7 @@ struct tinyc_token_keyword {
 
 struct tinyc_token_string {
     struct tinyc_token token;
-    struct tinyc_string value;
+    struct tinyc_string value;  // Unescaped string.
 };
 
 struct tinyc_token_int_value {
@@ -196,6 +196,21 @@ struct tinyc_token *tinyc_token_replace(
     struct tinyc_token *tokens
 );
 
+/// Returns true if token is identifier.
+bool tinyc_token_is_ident(struct tinyc_token *this);
+
+/// Returns true if token is specified identifier.
+bool tinyc_token_is_ident_of(struct tinyc_token *this, const char *expect);
+
+/// Returns true if token is punctuation.
+bool tinyc_token_is_punct(struct tinyc_token *this);
+
+/// Returns true if token is punctuation of the kind.
+bool tinyc_token_is_punct_of(
+    struct tinyc_token *this,
+    enum tinyc_token_punct_kind kind
+);
+
 /// Create a punctuation token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_punct(
     const struct tinyc_span *span,
@@ -207,7 +222,7 @@ struct tinyc_token *tinyc_token_create_punct(
 struct tinyc_token *tinyc_token_create_ident(
     const struct tinyc_span *span,
     int tspaces,
-    const struct tinyc_string *value
+    const char *value
 );
 
 /// Create a keyword token, returns pointer to token.
@@ -221,7 +236,7 @@ struct tinyc_token *tinyc_token_create_keyword(
 struct tinyc_token *tinyc_token_create_string(
     const struct tinyc_span *span,
     int tspaces,
-    const struct tinyc_string *value
+    const char *value
 );
 
 /// Create a integer token, returns pointer to token.
@@ -242,7 +257,7 @@ struct tinyc_token *tinyc_token_create_float(
 struct tinyc_token *tinyc_token_create_pp_number(
     const struct tinyc_span *span,
     int tspaces,
-    const struct tinyc_string *value
+    const char *value
 );
 
 /// Create a header token, returns pointer to token.
@@ -250,7 +265,7 @@ struct tinyc_token *tinyc_token_create_header(
     const struct tinyc_span *span,
     int tspaces,
     bool is_std,
-    const struct tinyc_string *path
+    const char *path
 );
 
 #endif  // TINYC_TOKEN_H_

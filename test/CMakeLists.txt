@@ -17,3 +17,11 @@ add_test(NAME test-repo COMMAND test-repo)
 add_executable(test-source source.c)
 target_link_libraries(test-source tinyc-core)
 add_test(NAME test-source COMMAND test-source)
+
+add_executable(test-cpp-define cpp/define.c)
+target_link_libraries(test-cpp-define tinyc-core)
+add_test(NAME test-cpp-define COMMAND test-cpp-define)
+
+add_executable(test-cpp-macro cpp/macro.c)
+target_link_libraries(test-cpp-macro tinyc-core)
+add_test(NAME test-cpp-macro COMMAND test-cpp-macro)

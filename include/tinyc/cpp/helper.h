@@ -12,22 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TINYC_CPP_H_
-#define TINYC_CPP_H_
+#ifndef TINYC_CPP_HELPER_H_
+#define TINYC_CPP_HELPER_H_
 
-#include "tinyc/cpp/context.h"
-#include "tinyc/cpp/macro.h"
+#include <stdbool.h>
+
 #include "tinyc/repo.h"
 #include "tinyc/token.h"
 
-/// Do preprocess for tokens in a line, store tokens to *out_tokens.
-/// If no token produced, *out_tokens be NULL.
-/// Returns false if failed.
-bool tinyc_cpp(
-    struct tinyc_cpp_context *ctx,
+/// Expect token after it, advance it.
+/// Emit diagnostic if not.
+bool tinyc_cpp_expect_token_next(
     const struct tinyc_repo *repo,
-    struct tinyc_token *tokens,
-    struct tinyc_token **out_tokens
+    struct tinyc_token *head,
+    struct tinyc_token **it
 );
 
-#endif  // TINYC_CPP_H_
+/// Expect token to be identifer.
+/// Emit diagnostic if not.
+bool tinyc_cpp_expect_ident(
+    const struct tinyc_repo *repo,
+    struct tinyc_token *token
+);
+
+#endif  // TINYC_CPP_HELPER_H_

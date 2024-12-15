@@ -17,103 +17,54 @@
 #include <assert.h>
 #include <string.h>
 
+#include "tinyc/cpp/define.h"
+#include "tinyc/cpp/helper.h"
 #include "tinyc/diag.h"
 #include "tinyc/repo.h"
 #include "tinyc/token.h"
 
-static inline bool expect_token_next(
+static struct {
+    const char *name;
+    bool (*parser)(
+        struct tinyc_cpp_context *ctx,
+        const struct tinyc_repo *repo,
+        struct tinyc_token *head,
+        struct tinyc_token **it
+    );
+} parsers[] = {
+    {"define", tinyc_cpp_parse_define},
+};
+
+static inline bool parse_directive(
+    struct tinyc_cpp_context *ctx,
     const struct tinyc_repo *repo,
     struct tinyc_token *head,
     struct tinyc_token **it
 ) {
-    if ((*it)->next == head) {
-        tinyc_diag(
-            TINYC_DIAG_ERROR,
-            repo,
-            &(*it)->span,
-            "token not found",
-            "expect token after this"
-        );
-        return false;
+    if (!tinyc_cpp_expect_token_next(repo, head, it)) return false;
+
+    for (size_t i = 0; i < sizeof(parsers) / sizeof(parsers[0]); ++i) {
+        if (tinyc_token_is_ident_of(*it, parsers[i].name)) {
+            return parsers[i].parser(ctx, repo, head, it);
+        }
+    }
+    tinyc_diag(TINYC_DIAG_ERROR, repo, &(*it)->span, "unknown directive", "");
+    return false;
+}
+
+bool tinyc_cpp(
+    struct tinyc_cpp_context *ctx,
+    const struct tinyc_repo *repo,
+    struct tinyc_token *tokens,
+    struct tinyc_token **out_tokens
+) {
+    assert(tokens && out_tokens);
+    if (tinyc_token_is_punct_of(tokens, TINYC_TOKEN_PUNCT_SHARP)) {
+        *out_tokens = NULL;  // No token produced by directive.
+        struct tinyc_token *it = tokens;
+        return parse_directive(ctx, repo, tokens, &it);
     } else {
-        *it = (*it)->next;
+        *out_tokens = tokens;
         return true;
-    }
-}
-
-static inline bool is_ident(struct tinyc_token *token) {
-    return token->kind == TINYC_TOKEN_IDENT;
-}
-
-static inline bool expect_ident(
-    const struct tinyc_repo *repo,
-    struct tinyc_token *token
-) {
-    if (is_ident(token)) {
-        return true;
-    } else {
-        tinyc_diag(
-            TINYC_DIAG_ERROR,
-            repo,
-            &token->span,
-            "unexpected token found",
-            "expect identifier"
-        );
-        return false;
-    }
-}
-
-static inline bool is_punct_of(
-    struct tinyc_token *token,
-    enum tinyc_token_punct_kind kind
-) {
-    return token->kind == TINYC_TOKEN_PUNCT &&
-           ((struct tinyc_token_punct *)token)->kind == kind;
-}
-
-static inline struct tinyc_token *process_define(
-    struct tinyc_cpp_context *ctx,
-    const struct tinyc_repo *repo,
-    struct tinyc_token *head,
-    struct tinyc_token *it
-) {
-    bool spaces = it->tspaces > 0;
-    if (!expect_token_next(repo, head, &it)) return NULL;
-    if (is_punct_of(it, TINYC_TOKEN_PUNCT_LPAREN) && spaces) {
-        // Parse function-like macro
-    } else {
-        // Parse normal macro
-    }
-    return NULL;
-}
-
-static inline struct tinyc_token *process_directive(
-    struct tinyc_cpp_context *ctx,
-    const struct tinyc_repo *repo,
-    struct tinyc_token *head,
-    struct tinyc_token *it
-) {
-    if (!expect_token_next(repo, head, &it)) return NULL;
-    if (!expect_ident(repo, it)) return NULL;
-
-    struct tinyc_token_ident *name = (struct tinyc_token_ident *)it;
-    if (strcmp(name->value.cstr, "define")) {
-        return process_define(ctx, repo, head, it);
-    } else {
-        tinyc_diag(TINYC_DIAG_ERROR, repo, &it->span, "unknown directive", "");
-        return NULL;
-    }
-}
-
-struct tinyc_token *tinyc_cpp(
-    struct tinyc_cpp_context *ctx,
-    const struct tinyc_repo *repo,
-    struct tinyc_token *tokens
-) {
-    assert(tokens);
-    if (is_punct_of(tokens, TINYC_TOKEN_PUNCT_SHARP)) {
-        return process_directive(ctx, repo, tokens, tokens);
-    } else {
-        return tokens;
     }
 }
