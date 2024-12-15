@@ -70,7 +70,7 @@ static inline void emit_loc_info(
     const struct tinyc_source *source,
     enum tinyc_diag_severity severity,
     const struct tinyc_span *span,
-    const struct tinyc_string *what
+    const char *what
 ) {
     const size_t row = span->start.row;
     const size_t offset = span->start.offset;
@@ -78,14 +78,13 @@ static inline void emit_loc_info(
     fprintf(fs, "%s:%ld:%ld: ", source->name.cstr, row, offset);
     paint(fs, color, severity, severity_string(severity));
     paint(fs, color, severity, ":");
-    fprintf(fs, " %s", what->cstr);
+    fprintf(fs, " %s", what);
 }
 
 static inline void emit_start_line(
     FILE *fs,
     const struct tinyc_source *source,
-    const struct tinyc_span *span,
-    const struct tinyc_string *message
+    const struct tinyc_span *span
 ) {
     const struct tinyc_source_line *line = tinyc_source_at(
         source,
@@ -102,8 +101,7 @@ static inline void emit_start_line(
 static inline void emit_end_line(
     FILE *fs,
     const struct tinyc_source *source,
-    const struct tinyc_span *span,
-    const struct tinyc_string *message
+    const struct tinyc_span *span
 ) {
     const struct tinyc_source_line *line = tinyc_source_at(
         source,
@@ -141,8 +139,8 @@ static inline void diagnostic_line(
     enum tinyc_diag_severity severity,
     const struct tinyc_repo *repo,
     const struct tinyc_span *span,
-    const struct tinyc_string *what,
-    const struct tinyc_string *message
+    const char *what,
+    const char *message
 ) {
     const struct tinyc_source *source = tinyc_repo_query(repo, span->id);
     assert(source);
@@ -150,7 +148,7 @@ static inline void diagnostic_line(
     emit_loc_info(fs, color, source, severity, span, what);
     fputc('\n', fs);
     emit_single_line(fs, source, span);
-    fprintf(fs, " %s\n", message->cstr);
+    fprintf(fs, " %s\n", message);
 }
 
 static inline void diagnostic_lines(
@@ -159,18 +157,18 @@ static inline void diagnostic_lines(
     enum tinyc_diag_severity severity,
     const struct tinyc_repo *repo,
     const struct tinyc_span *span,
-    const struct tinyc_string *what,
-    const struct tinyc_string *message
+    const char *what,
+    const char *message
 ) {
     const struct tinyc_source *source = tinyc_repo_query(repo, span->id);
     assert(source);
 
     emit_loc_info(fs, color, source, severity, span, what);
     fputc('\n', fs);
-    emit_start_line(fs, source, span, message);
+    emit_start_line(fs, source, span);
     fputc('\n', fs);
-    emit_end_line(fs, source, span, message);
-    fprintf(fs, " %s\n", message->cstr);
+    emit_end_line(fs, source, span);
+    fprintf(fs, " %s\n", message);
 }
 
 static void diagnostic(
@@ -179,8 +177,8 @@ static void diagnostic(
     enum tinyc_diag_severity severity,
     const struct tinyc_repo *repo,
     const struct tinyc_span *span,
-    const struct tinyc_string *what,
-    const struct tinyc_string *message
+    const char *what,
+    const char *message
 ) {
     validate_span(span);
     if (span->start.row == span->end.row) {
@@ -194,8 +192,8 @@ void tinyc_diag(
     enum tinyc_diag_severity severity,
     const struct tinyc_repo *repo,
     const struct tinyc_span *span,
-    const struct tinyc_string *what,
-    const struct tinyc_string *message
+    const char *what,
+    const char *message
 ) {
     diagnostic(stdout, true, severity, repo, span, what, message);
 }
@@ -205,8 +203,8 @@ void tinyc_diag_fs(
     enum tinyc_diag_severity severity,
     const struct tinyc_repo *repo,
     const struct tinyc_span *span,
-    const struct tinyc_string *what,
-    const struct tinyc_string *message
+    const char *what,
+    const char *message
 ) {
     diagnostic(fs, false, severity, repo, span, what, message);
 }

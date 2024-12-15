@@ -17,7 +17,6 @@
 
 #include "tinyc/repo.h"
 #include "tinyc/span.h"
-#include "tinyc/string.h"
 
 enum tinyc_diag_severity {
     TINYC_DIAG_INFO,
@@ -30,8 +29,8 @@ void tinyc_diag(
     enum tinyc_diag_severity severity,
     const struct tinyc_repo *repo,
     const struct tinyc_span *span,
-    const struct tinyc_string *what,
-    const struct tinyc_string *message
+    const char *what,
+    const char *message
 );
 
 /// Write diagnostic to file stream.
@@ -41,8 +40,8 @@ void tinyc_diag_fs(
     enum tinyc_diag_severity severity,
     const struct tinyc_repo *repo,
     const struct tinyc_span *span,
-    const struct tinyc_string *what,
-    const struct tinyc_string *message
+    const char *what,
+    const char *message
 );
 
 #endif  // TINYC_DIAG_H_
