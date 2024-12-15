@@ -131,6 +131,7 @@ struct tinyc_token {
     struct tinyc_token *prev, *next;
     struct tinyc_span span;
     enum tinyc_token_kind kind;
+    int tspaces;  // Number of spaces after this token.
 };
 
 struct tinyc_token_punct {
@@ -198,48 +199,56 @@ struct tinyc_token *tinyc_token_replace(
 /// Create a punctuation token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_punct(
     const struct tinyc_span *span,
+    int tspaces,
     enum tinyc_token_punct_kind kind
 );
 
 /// Create a identifier token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_ident(
     const struct tinyc_span *span,
+    int tspaces,
     const struct tinyc_string *value
 );
 
 /// Create a keyword token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_keyword(
     const struct tinyc_span *span,
+    int tspaces,
     enum tinyc_token_keyword_kind kind
 );
 
 /// Create a string token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_string(
     const struct tinyc_span *span,
+    int tspaces,
     const struct tinyc_string *value
 );
 
 /// Create a integer token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_int(
     const struct tinyc_span *span,
+    int tspaces,
     const struct tinyc_token_int_value *value
 );
 
 /// Create a floating number token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_float(
     const struct tinyc_span *span,
+    int tspaces,
     const struct tinyc_token_float_value *value
 );
 
 /// Create a pp-number token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_pp_number(
     const struct tinyc_span *span,
+    int tspaces,
     const struct tinyc_string *value
 );
 
 /// Create a header token, returns pointer to token.
 struct tinyc_token *tinyc_token_create_header(
     const struct tinyc_span *span,
+    int tspaces,
     bool is_std,
     const struct tinyc_string *path
 );

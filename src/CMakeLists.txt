@@ -1,4 +1,5 @@
 add_library(tinyc-core STATIC
+    cpp.c
     diag.c
     repo.c
     source.c
