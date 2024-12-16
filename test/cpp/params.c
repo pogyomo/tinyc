@@ -46,6 +46,13 @@ static inline struct tinyc_token *create_comma(
     return tinyc_token_create_punct(span, tspaces, TINYC_TOKEN_PUNCT_COMMA);
 }
 
+static inline struct tinyc_token *create_plus(
+    const struct tinyc_span *span,
+    int tspaces
+) {
+    return tinyc_token_create_punct(span, tspaces, TINYC_TOKEN_PUNCT_PLUS);
+}
+
 static inline void no_param(void) {
     struct tinyc_repo repo;
     tinyc_repo_id id = dummy_repo(&repo);
@@ -233,6 +240,34 @@ static inline void missing_comman(void) {
     assert(!tinyc_cpp_parse_params(&ctx, &repo, head, &it, &params));
 }
 
+static inline void mismatch_param_type(void) {
+    struct tinyc_repo repo;
+    tinyc_repo_id id = dummy_repo(&repo);
+    struct tinyc_span span = {
+        id,
+        {0, 0},
+        {0, 0}
+    };
+
+    struct tinyc_token *lparen = create_lparen(&span, 0);
+    struct tinyc_token *plus = create_plus(&span, 0);
+    struct tinyc_token *comma1 = create_comma(&span, 0);
+    struct tinyc_token *ident2 = create_ident(&span, 0, "ident2");
+    struct tinyc_token *rparen = create_rparen(&span, 0);
+    struct tinyc_token *tokens = lparen, *head = tokens;
+    tokens = tinyc_token_insert(tokens, plus);
+    tokens = tinyc_token_insert(tokens, comma1);
+    tokens = tinyc_token_insert(tokens, ident2);
+    tokens = tinyc_token_insert(tokens, rparen);
+
+    struct tinyc_cpp_context ctx;
+    tinyc_cpp_context_init(&ctx);
+
+    struct tinyc_token *it = head;
+    struct tinyc_cpp_macro_func_param *params;
+    assert(!tinyc_cpp_parse_params(&ctx, &repo, head, &it, &params));
+}
+
 int main(void) {
     no_param();
     one_param();
@@ -241,4 +276,5 @@ int main(void) {
     unclosing_one_param();
     unclosing_two_params();
     missing_comman();
+    mismatch_param_type();
 }
