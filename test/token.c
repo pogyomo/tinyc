@@ -62,6 +62,30 @@ static void insert_tokens(void) {
     assert(token2->prev == token1);
 }
 
+static void clone_range_one(void) {
+    struct tinyc_span span;
+    struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "ident1");
+    struct tinyc_token *cloned = tinyc_token_clone_range(token1, token1);
+    assert(cloned != NULL);
+    assert(tinyc_token_is_ident_of(cloned, "ident1"));
+    assert(tinyc_token_is_ident_of(cloned->next, "ident1"));
+    assert(tinyc_token_is_ident_of(cloned->prev, "ident1"));
+}
+
+static void clone_range_two(void) {
+    struct tinyc_span span;
+    struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "ident1");
+    struct tinyc_token *token2 = tinyc_token_create_ident(&span, 0, "ident2");
+    tinyc_token_insert(token1, token2);
+    struct tinyc_token *cloned = tinyc_token_clone_range(token1, token2);
+    assert(cloned != NULL);
+    assert(tinyc_token_is_ident_of(cloned, "ident1"));
+    assert(tinyc_token_is_ident_of(cloned->next, "ident2"));
+    assert(tinyc_token_is_ident_of(cloned->next->next, "ident1"));
+    assert(tinyc_token_is_ident_of(cloned->prev, "ident2"));
+    assert(tinyc_token_is_ident_of(cloned->prev->prev, "ident1"));
+}
+
 static void replace_token_with_token(void) {
     struct tinyc_span span;
     struct tinyc_token *token1 = tinyc_token_create_ident(&span, 0, "");
@@ -141,6 +165,8 @@ static void replace_tokens_with_tokens(void) {
 int main(void) {
     insert_token();
     insert_tokens();
+    clone_range_one();
+    clone_range_two();
     replace_token_with_token();
     replace_token_with_tokens();
     replace_tokens_with_token();

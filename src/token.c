@@ -43,8 +43,22 @@ struct tinyc_token *tinyc_token_clone_range(
     struct tinyc_token *begin,
     struct tinyc_token *end
 ) {
-    // TODO: Implement this.
-    return NULL;
+    if (begin == end) {
+        return tinyc_token_clone(begin);
+    }
+    struct tinyc_token *head = tinyc_token_clone(begin), *it = head;
+    struct tinyc_token *cloned;
+    begin = begin->next;
+    while (true) {
+        cloned = tinyc_token_clone(begin);
+        it = tinyc_token_insert(it, cloned);
+        if (begin == end) {
+            break;
+        } else {
+            begin = begin->next;
+        }
+    }
+    return head;
 }
 
 struct tinyc_token *tinyc_token_replace(

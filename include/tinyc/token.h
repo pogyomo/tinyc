@@ -189,7 +189,7 @@ struct tinyc_token *tinyc_token_insert(
     struct tinyc_token *tokens
 );
 
-/// Copy tokens from begin to end inclusively.
+/// Copy tokens in [begin, end].
 struct tinyc_token *tinyc_token_clone_range(
     struct tinyc_token *begin,
     struct tinyc_token *end
