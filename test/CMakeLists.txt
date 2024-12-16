@@ -25,3 +25,11 @@ add_test(NAME test-cpp-params COMMAND test-cpp-params)
 add_executable(test-cpp-macro cpp/macro.c)
 target_link_libraries(test-cpp-macro tinyc-core)
 add_test(NAME test-cpp-macro COMMAND test-cpp-macro)
+
+add_executable(test-cpp-define cpp/define.c)
+target_link_libraries(test-cpp-define tinyc-core)
+add_test(NAME test-cpp-define COMMAND test-cpp-define)
+
+add_executable(test-cpp-context cpp/context.c)
+target_link_libraries(test-cpp-context tinyc-core)
+add_test(NAME test-cpp-context COMMAND test-cpp-context)

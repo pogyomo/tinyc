@@ -1,5 +1,7 @@
 #include "tinyc/cpp/params.h"
 
+#include <assert.h>
+
 #include "tinyc/cpp/helper.h"
 #include "tinyc/cpp/macro.h"
 #include "tinyc/diag.h"
@@ -13,6 +15,8 @@ bool tinyc_cpp_parse_params(
     struct tinyc_token **it,
     struct tinyc_cpp_macro_func_param **params
 ) {
+    assert(tinyc_token_is_punct_of(*it, TINYC_TOKEN_PUNCT_LPAREN));
+
     if (!tinyc_cpp_expect_token_next(repo, head, it)) return false;
 
     *params = NULL;

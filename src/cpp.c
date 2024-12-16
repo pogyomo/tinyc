@@ -45,6 +45,7 @@ static inline bool parse_directive(
 
     for (size_t i = 0; i < sizeof(parsers) / sizeof(parsers[0]); ++i) {
         if (tinyc_token_is_ident_of(*it, parsers[i].name)) {
+            if (!tinyc_cpp_expect_token_next(repo, head, it)) return false;
             return parsers[i].parser(ctx, repo, head, it);
         }
     }

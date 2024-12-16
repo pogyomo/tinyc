@@ -15,6 +15,7 @@
 #include "tinyc/cpp/helper.h"
 
 #include "tinyc/diag.h"
+#include "tinyc/token.h"
 
 bool tinyc_cpp_expect_token_next(
     const struct tinyc_repo *repo,
@@ -33,6 +34,25 @@ bool tinyc_cpp_expect_token_next(
     } else {
         *it = (*it)->next;
         return true;
+    }
+}
+
+bool tinyc_cpp_expect_punct_of(
+    const struct tinyc_repo *repo,
+    struct tinyc_token *token,
+    enum tinyc_token_punct_kind kind
+) {
+    if (tinyc_token_is_punct_of(token, kind)) {
+        return true;
+    } else {
+        tinyc_diag(
+            TINYC_DIAG_ERROR,
+            repo,
+            &token->span,
+            "unexpected token found",
+            "expect punctuation"
+        );
+        return false;
     }
 }
 

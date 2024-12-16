@@ -19,7 +19,9 @@
 #include "tinyc/repo.h"
 #include "tinyc/token.h"
 
-/// Parse define directive. it must point to directive name.
+/// Parse define directive.
+/// *it must be token after directive name.
+/// After success, *it will be head->prev.
 bool tinyc_cpp_parse_define(
     struct tinyc_cpp_context *ctx,
     const struct tinyc_repo *repo,

@@ -20,7 +20,7 @@
 #include "tinyc/token.h"
 
 /// Parse function-like params. *params be NULL if failed or no params.
-/// Initially, it must be LPAREN, and after success, it will be RPAREN.
+/// Initially, *it must be LPAREN, and after success, *it will be RPAREN.
 /// Returns false if failed.
 bool tinyc_cpp_parse_params(
     struct tinyc_cpp_context *ctx,

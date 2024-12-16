@@ -31,4 +31,11 @@ void tinyc_cpp_context_insert_macro(
     struct tinyc_cpp_macro *macro
 );
 
+/// Get macro by name.
+/// Returns NULL if not found.
+const struct tinyc_cpp_macro *tinyc_cpp_context_get_macro(
+    const struct tinyc_cpp_context *this,
+    const char *name
+);
+
 #endif  // TINYC_CPP_CONTEXT_H_

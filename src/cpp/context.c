@@ -14,6 +14,8 @@
 
 #include "tinyc/cpp/context.h"
 
+#include <string.h>
+
 void tinyc_cpp_context_init(struct tinyc_cpp_context *this) {
     this->if_count = 0;
     this->macros = NULL;
@@ -29,4 +31,16 @@ void tinyc_cpp_context_insert_macro(
     } else {
         this->macros = macro;
     }
+}
+
+const struct tinyc_cpp_macro *tinyc_cpp_context_get_macro(
+    const struct tinyc_cpp_context *this,
+    const char *name
+) {
+    struct tinyc_cpp_macro *it = this->macros;
+    while (it) {
+        if (strcmp(it->name.cstr, name) == 0) return it;
+        it = it->next;
+    }
+    return false;
 }
