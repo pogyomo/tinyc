@@ -21,14 +21,14 @@ static inline struct tinyc_token *create_lparen(
     const struct tinyc_span *span,
     int tspaces
 ) {
-    return tinyc_token_create_punct(span, 0, TINYC_TOKEN_PUNCT_LPAREN);
+    return tinyc_token_create_punct(span, tspaces, TINYC_TOKEN_PUNCT_LPAREN);
 }
 
 static inline struct tinyc_token *create_rparen(
     const struct tinyc_span *span,
     int tspaces
 ) {
-    return tinyc_token_create_punct(span, 0, TINYC_TOKEN_PUNCT_RPAREN);
+    return tinyc_token_create_punct(span, tspaces, TINYC_TOKEN_PUNCT_RPAREN);
 }
 
 static inline struct tinyc_token *create_ident(
@@ -36,7 +36,7 @@ static inline struct tinyc_token *create_ident(
     int tspaces,
     const char *value
 ) {
-    return tinyc_token_create_ident(span, 0, value);
+    return tinyc_token_create_ident(span, tspaces, value);
 }
 
 static inline struct tinyc_token *create_comma(

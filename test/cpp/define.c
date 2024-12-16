@@ -17,14 +17,14 @@ static inline struct tinyc_token *create_lparen(
     const struct tinyc_span *span,
     int tspaces
 ) {
-    return tinyc_token_create_punct(span, 0, TINYC_TOKEN_PUNCT_LPAREN);
+    return tinyc_token_create_punct(span, tspaces, TINYC_TOKEN_PUNCT_LPAREN);
 }
 
 static inline struct tinyc_token *create_rparen(
     const struct tinyc_span *span,
     int tspaces
 ) {
-    return tinyc_token_create_punct(span, 0, TINYC_TOKEN_PUNCT_RPAREN);
+    return tinyc_token_create_punct(span, tspaces, TINYC_TOKEN_PUNCT_RPAREN);
 }
 
 static inline struct tinyc_token *create_ident(
@@ -32,7 +32,7 @@ static inline struct tinyc_token *create_ident(
     int tspaces,
     const char *value
 ) {
-    return tinyc_token_create_ident(span, 0, value);
+    return tinyc_token_create_ident(span, tspaces, value);
 }
 
 static inline struct tinyc_token *create_comma(
@@ -214,9 +214,60 @@ static inline void func_nobody(void) {
     assert(!param);
 }
 
+static inline void func_spaces_params(void) {
+    struct tinyc_repo repo;
+    tinyc_repo_id id = dummy_repo(&repo);
+    struct tinyc_span span = {
+        id,
+        {0, 0},
+        {0, 0}
+    };
+
+    struct tinyc_token *name = create_ident(&span, 1, "name");
+    struct tinyc_token *lparen = create_lparen(&span, 0);
+    struct tinyc_token *p1 = create_ident(&span, 0, "p1");
+    struct tinyc_token *comma = create_comma(&span, 1);
+    struct tinyc_token *p2 = create_ident(&span, 0, "p2");
+    struct tinyc_token *rparen = create_rparen(&span, 1);
+    struct tinyc_token *token = name, *head = token;
+    token = tinyc_token_insert(token, lparen);
+    token = tinyc_token_insert(token, p1);
+    token = tinyc_token_insert(token, comma);
+    token = tinyc_token_insert(token, p2);
+    token = tinyc_token_insert(token, rparen);
+
+    struct tinyc_cpp_context ctx;
+    tinyc_cpp_context_init(&ctx);
+
+    struct tinyc_token *it = head;
+    assert(tinyc_cpp_parse_define(&ctx, &repo, head, &it));
+    assert(it == head->prev);
+
+    const struct tinyc_cpp_macro *macro;
+    const struct tinyc_cpp_macro_func *func;
+    macro = tinyc_cpp_context_get_macro(&ctx, "name");
+    assert(macro);
+    assert(macro->kind == TINYC_CPP_MACRO_NORMAL);
+    assert(macro->value);
+
+    struct tinyc_token *value = macro->value;
+    assert(tinyc_token_is_punct_of(value, TINYC_TOKEN_PUNCT_LPAREN));
+    value = value->next;
+    assert(tinyc_token_is_ident_of(value, "p1"));
+    value = value->next;
+    assert(tinyc_token_is_punct_of(value, TINYC_TOKEN_PUNCT_COMMA));
+    value = value->next;
+    assert(tinyc_token_is_ident_of(value, "p2"));
+    value = value->next;
+    assert(tinyc_token_is_punct_of(value, TINYC_TOKEN_PUNCT_RPAREN));
+    value = value->next;
+    assert(tinyc_token_is_punct_of(value, TINYC_TOKEN_PUNCT_LPAREN));
+}
+
 int main(void) {
     normal();
     normal_nobody();
     func();
     func_nobody();
+    func_spaces_params();
 }
